@@ -1,2 +1,21 @@
-publish
-.vscode
+## Ignore Visual Studio temporary files, build results,
+
+# User-specific files
+*.suo
+*.user
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+[Bb]in/
+[Oo]bj/
+
+# MSTest test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+
+# publish
+# .vscode

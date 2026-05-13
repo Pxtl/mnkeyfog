@@ -15,43 +15,29 @@ I (Pxtl) got carried away gold-plating, so there are 3 notable features:
 
 # Install and Run
 
-This program is implemented using "csx", which is a single-file variant of C#.
-It was developed under dotnet Core 8 on Windows but may support older versions
-or alternate operating systems (I promise nothing).
+This program is implemented in C# using dotnet core 10.
 
-I am unsure what exact tools are needed to run this.  I'm assuming the SDK is
-necessary.  It was developed under Windows, on dotnet core 8.
+to install dotnet core 10 SDK on Windows:
 
-to install dotnet core 8 SDK on Windows:
+> `winget install dotnet-sdk-10`
 
-> `winget install dotnet-sdk-8`
+but possibly dotnet runtime 10 will be sufficient.
 
-but possibly dotnet runtime 8 will be sufficient.
-
-> `winget install dotnet-runtime-8`
-
-after that, the command-line runner is needed:
-
-> `dotnet tool install -g dotnet-script`
-
-which will allow you to run .csx files.
-
-To execute the file, cd into the directory where you have unpacked the files and
-run
-
-> `dotnet-script .\KriegspielTicTacToe.csx`
+> `winget install dotnet-runtime-10`
 
 to run it in basic gameplay (traditional tic-tac-toe but Kriegspiel, hotseat
 mode).
 
+> `dotnet run KriegspielTicTacToe`
+
 to see other options for play, run
 
-> `dotnet-script .\KriegspielTicTacToe.csx /?`
+> `dotnet run KriegspielTicTacToe --?`
 
 note that dotnet-script will intercept all other variations like `-h` or
 `--help` or `-?`, WIP.  Alternately you can supply any garbage like 
 
-> `dotnet-script .\KriegspielTicTacToe.csx --justshowmethehelp`
+> `dotnet run KriegspielTicTacToe --justshowmethehelp`
 
 and it will insult you but show you the help.
 
@@ -80,17 +66,17 @@ Options:
 
 So, to start a simple 3-player hotseat game between Alice, Bob, and Carol on a 4x4 screen, the command would be
 
-> `dotnet-script .\KriegspielTicTacToe.csx -p A B C -s 4`
+> `dotnet run KriegspielTicTacToe -p A B C -s 4`
 
 Conversely, to start a multiplayer game with the default rules (2 players X and
 O on a 3x3 board) on a fileshare named `\\kosmos\storage` with random
 start-player, the command would be 
 
-> `dotnet-script .\KriegspielTicTacToe.csx -f \\kosmos\storage\temp\ksttt.json -j X -r`
+> `dotnet run KriegspielTicTacToe -f \\kosmos\storage\temp\ksttt.json -j X -r`
 
 And then your friend (on another computer with similar access to `\\kosmos\storage\`) can join with 
 
-> `dotnet-script .\KriegspielTicTacToe.csx -f \\kosmos\storage\temp\ksttt.json -j O`
+> `dotnet run KriegspielTicTacToe -f \\kosmos\storage\temp\ksttt.json -j O`
 
 any game-rule options you pass in when joining an existing game like size,
 players, or randomization will be ignored.
@@ -100,12 +86,6 @@ players, or randomization will be ignored.
 I haven't thought that far ahead.
 
 # Bugs
-
-## Can't run the same .csx file at the same time
-
-If your .csx file is located on a shared location, you may find that multiple
-people can't use it at the same time because it generates a .dll and file-locks
-it.  You'll need to copy the file around per-player.
 
 ## If I do something crazy like have 3 players all running as player X, or join an online game in hotseat mode, the game is broken and bad
 
@@ -117,12 +97,8 @@ Infinite.  I have no idea.  This was a one-evening hackathon.
 
 # TODO
 
-Zach's proposal has been fleshed out a bit today, and has some things that aren't included in this game.
+Zach's proposal was fleshed out a bit later, and has some things that aren't included in this game.
 
 ## Scoring
 
 Zach's KTTT does not end when 3 in a row has been claimed.  Rather, a point is scored in that case.  The game *ends* when the board is full.
-
-## Multiple boards
-
-Zach's KTTT requires 3 separate tic-tac-toe boards and players may draw on any of the 3.  This game as implemented only supports one board of play (but of arbitrary square size).

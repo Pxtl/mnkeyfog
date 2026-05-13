@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/KriegspielTicTacToe.Model/KriegspielTicTacToe.Model.csproj" />
+    <Project Path="src/KriegspielTicTacToe/KriegspielTicTacToe.csproj" />
+  </Folder>
+</Solution>
