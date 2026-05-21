@@ -11,10 +11,6 @@ public class PlayActionBuffer {
         Actions.Clear();
     }
 
-    /// <summary>
-    /// Execute all pending actions in the action buffer.
-    /// Checks for collisions and places impasses where appropriate.
-    /// </summary>
     public void ExecutePendingActions() {
         if (Actions.Count == 0) return;
                
@@ -22,37 +18,30 @@ public class PlayActionBuffer {
             var board = GameState!.GetBoardByIndex(action.BoardIndex);
             var space = board.Spaces[action.Col, action.Row];
             
-            // Skip if board is done
             if (board.IsDone) {
                 continue;
             }
             
-            // Check for collision with opponent
             if (Actions.Any(otherA => 
                 otherA.BoardIndex == action.BoardIndex
                 && otherA.Row == action.Row
                 && otherA.Col == action.Col
-                && otherA.Player != action.Player)
+                && otherA.Value != action.Value)
             ) {
                 space.MarkChar = '█';
                 foreach(var player in GameState.PlayManager.Players) {
-                    space.MakeKnownToPlayer(player);    
+                    space.MakeKnownToPlayer(player.Value);    
                 }
                 continue;
             }
             
-            // Execute successful play
-            space.MarkChar = action.Player;
-            space.MakeKnownToPlayer(action.Player);
+            space.MarkChar = action.Value;
+            space.MakeKnownToPlayer(action.Value);
         }
 
         Clear();
     }
 
-    /// <summary>
-    /// The game state.  Is set by parent's Init, but Init is
-    /// post-constructor so must be nullable.
-    /// </summary>
     [JsonIgnore()]
     public TicTacToeState? GameState { get; internal set; }
 }

@@ -10,7 +10,7 @@ public record ScoreCard {
     public ScoreCard() {
         Scores = Array.Empty<PlayerScore>();
     }
-    public ScoreCard(char player, int score) : this(new PlayerScore(player, score)) {}
+    public ScoreCard(Player player, int score) : this(new PlayerScore(player, score)) {}
     public ScoreCard(PlayerScore playerScore) : this(new[]{playerScore}) {}
     public ScoreCard(IEnumerable<PlayerScore> scores) {
         Scores = scores

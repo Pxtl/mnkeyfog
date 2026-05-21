@@ -9,7 +9,7 @@ using OneOf.Types;
 public class RoundRobinPlayManager : PlayManager
 {
     #region constructors
-    public RoundRobinPlayManager(IReadOnlyList<char> players) {
+    public RoundRobinPlayManager(IReadOnlyList<Player> players) {
         Players = players;
     }
     #endregion
@@ -18,7 +18,7 @@ public class RoundRobinPlayManager : PlayManager
     [JsonIgnore()]
     public override string GameStateText
         => PlayersAvailableForTurn.Count() > 0 
-        ? $"Player {PlayersAvailableForTurn.First()} turn."
+        ? $"Player {PlayersAvailableForTurn.First().Value} turn."
         : "Round over.";
 
     protected override void EndedRound(out bool hasStateChanged) {
@@ -31,7 +31,7 @@ public class RoundRobinPlayManager : PlayManager
     }
 
     [JsonIgnore()]
-    public override IEnumerable<char> PlayersAvailableForTurn
+    public override IEnumerable<Player> PlayersAvailableForTurn
         => ActivePlayers.Except(PlayedPlayersSet).Take(1);
     #endregion
 }

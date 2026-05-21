@@ -9,7 +9,7 @@ using OneOf.Types;
 public class SynchronizedPlayManager : PlayManager
 {
     #region constructors
-    public SynchronizedPlayManager(IReadOnlyList<char> players) {
+    public SynchronizedPlayManager(IReadOnlyList<Player> players) {
         Players = players;
     }
     #endregion
@@ -29,7 +29,7 @@ public class SynchronizedPlayManager : PlayManager
     }
     
     [JsonIgnore()]
-    public override IEnumerable<char> PlayersAvailableForTurn
+    public override IEnumerable<Player> PlayersAvailableForTurn
         => ActivePlayers.Except(PlayedPlayersSet);
     #endregion
 }

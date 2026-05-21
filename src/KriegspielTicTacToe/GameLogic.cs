@@ -23,7 +23,9 @@ internal static class GameLogic {
             state = StateStorage.LoadState(sharedStateFilePath.FullName);
             Console.Out.WriteLine($"Loaded saved game!");
         } else {
-            state = new TicTacToeState(players, boardBuilders, 
+            // Convert char[] to Player[]
+            var playerList = new List<Player>(players.Select(c => new Player(c.ToString())));
+            state = new TicTacToeState(playerList.ToArray(), boardBuilders, 
                 isRandomPlayerOrder: isRandomPlayerOrder,
                 isSynchronousMode: isSynchronousMode
             );
@@ -42,15 +44,16 @@ internal static class GameLogic {
         while (!isGameOver) {
             var currentPlayerChosen = joinAsPlayer.Match(
                 playerChar => {
-                    if (!state.PlayManager.Players.Contains(playerChar)) {
-                        throw new ApplicationException($"Invalid player join, player {playerChar} is not a player in this game.");
+                    var currentPlayer = new Player(playerChar.ToString());
+                    if (!state.PlayManager.Players.Contains(currentPlayer)) {
+                        throw new ApplicationException($"Invalid player join, player {currentPlayer} is not a player in this game.");
                     }
                     bool isDoneWaiting = false;
                     Console.Out.Write("Waiting for your turn.");
 
                     while (!isDoneWaiting) {
                         state = StateStorage.LoadState(sharedStateFilePath.FullName);
-                        if (state.PlayManager.PlayersAvailableForTurn.Contains(playerChar)
+                        if (state.PlayManager.PlayersAvailableForTurn.Contains(currentPlayer)
                             ||
                             state.IsGameOver
                         ) {
@@ -63,14 +66,15 @@ internal static class GameLogic {
                     Console.Out.WriteLine();
                     return (state.IsGameOver)
                         ? OneOf<Result<char>, GameIsOver>.FromT1(new GameIsOver())
-                        : new Result<char>(playerChar);
+                        : new Result<char>(currentPlayer.Value);
                 },
                 localHotseatGame => new Result<char>(DoPlayerChooserLoop(state.PlayManager))
             );
 
             currentPlayerChosen.Switch(
                 playerResult => {
-                    var currentPlayer = playerResult.Value;
+                    var currentPlayerChar = playerResult.Value;
+                    var currentPlayer = new Player(currentPlayerChar);
                     var currentPlayerIsDoneTurn = DoPlayerTurnLoop(state, currentPlayer, sharedStateFilePath.FullName);
 
                     if (currentPlayerIsDoneTurn) {
@@ -125,7 +129,7 @@ internal static class GameLogic {
         sharedStateFilePath.Delete();
     }
 
-    private static bool DoPlayerTurnLoop(TicTacToeState state, char currentPlayer, string sharedStateFilePath) {
+    private static bool DoPlayerTurnLoop(TicTacToeState state, Player currentPlayer, string sharedStateFilePath) {
         var currentPlayerIsDoneTurn = false;
         while (!currentPlayerIsDoneTurn)
         {
@@ -221,7 +225,7 @@ internal static class GameLogic {
                 Console.Out.WriteLine($"Player {currentPlayer} ready? Press any key to continue...");
                 Console.ReadKey(intercept: true);
                 Console.WriteLine();
-                return currentPlayer;
+                return currentPlayer.Value;
             }
             if (playManager.PlayersAvailableForTurn.Count() == 0) {
                 throw new InvalidOperationException("No players are available to take a turn.");
@@ -232,15 +236,15 @@ internal static class GameLogic {
             var key = Console.ReadKey();
 
             // have to convert to string for case-insensitive comparison.
-            var playerCharAsString = playManager
+            var playerAsString = playManager
                 .PlayersAvailableForTurn
-                .Select(c => c.ToString())
+                .Select(c => c.Value)
                 .SingleOrDefault(c => c.Equals(key.KeyChar.ToString(), StringComparison.OrdinalIgnoreCase));
 
-            if (playerCharAsString != null) {
+            if (playerAsString != null) {
                 // write blank line
                 Console.Out.WriteLine();
-                return playerCharAsString.First();
+                return playerAsString;
             }
         }
     }

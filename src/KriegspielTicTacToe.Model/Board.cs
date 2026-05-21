@@ -123,7 +123,7 @@ public record Board {
                         }
                     }
                     if(isWinner) {
-                        result.Add(new PlayerScore(comparator.Value, 1));
+                        result.Add(new PlayerScore(comparator, 1));
                     }
                 }
             }
@@ -140,7 +140,7 @@ public record Board {
                         }
                     }
                     if(isWinner) {
-                        result.Add(new PlayerScore(comparator.Value, 1));
+                        result.Add(new PlayerScore(comparator, 1));
                     }
                 }
             }
@@ -160,7 +160,7 @@ public record Board {
                         }
                     }
                     if(isWinner) {
-                        result.Add(new PlayerScore(comparator.Value, 1));
+                        result.Add(new PlayerScore(comparator, 1));
                     }
                 }
             }
@@ -178,7 +178,7 @@ public record Board {
                         }
                     }
                     if(isWinner) {
-                        result.Add(new PlayerScore(comparator.Value, 1));
+                        result.Add(new PlayerScore(comparator, 1));
                     }
                 }
             }

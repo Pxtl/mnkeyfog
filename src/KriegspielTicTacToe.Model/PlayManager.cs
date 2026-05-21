@@ -9,13 +9,13 @@ using OneOf.Types;
 public abstract class PlayManager
 {
     #region members
-    public IReadOnlyList<char> Players {get;init;} = new List<char>();
+    public IReadOnlyList<Player> Players {get;init;} = new List<Player>();
 
     public int RoundIndex {get;set;}
 
-    public HashSet<char> ResignedPlayersSet {get; init;} = new HashSet<char>();
+    public HashSet<Player> ResignedPlayersSet {get; init;} = new HashSet<Player>();
     
-    public HashSet<char> PlayedPlayersSet {get; init;} = new HashSet<char>();
+    public HashSet<Player> PlayedPlayersSet {get; init;} = new HashSet<Player>();
     #endregion
 
     #region methods
@@ -29,12 +29,12 @@ public abstract class PlayManager
     /// there are 2 "index 0" turns, so we can't use "index 0" as new round in
     /// that case.
     /// </remarks>
-    public void EndTurn(char currentPlayer, out bool hasStateChanged) {
+    public void EndTurn(Player currentPlayer, out bool hasStateChanged) {
         MarkPlayerPlayed(currentPlayer);
         EndedTurn(out hasStateChanged);
     }
 
-    public void MarkPlayerPlayed(char player) {
+    public void MarkPlayerPlayed(Player player) {
         if (PlayedPlayersSet.Contains(player)) {
             throw new InvalidOperationException($"Player {player} has already played");
         }
@@ -50,24 +50,22 @@ public abstract class PlayManager
     /// <summary>
     /// Test if the given player has resigned.
     /// </summary>
-    public bool IsResignedPlayer(char player)
+    public bool IsResignedPlayer(Player player)
         => ResignedPlayersSet.Contains(player);
 
     /// <summary>
     /// Mark the given player as resigned. If it is the current player's turn,
     /// do *not* call NextTurn.
     /// </summary>
-    public void ResignPlayer(char player) {
+    public void ResignPlayer(Player player) {
         ResignedPlayersSet.Add(player);
     }
 
     /// <summary>
     /// True if the given player is able to take a turn.
     /// </summary>
-    public bool CanTakeTurn(char? player)
-        => player.HasValue
-            ? PlayersAvailableForTurn.Contains(player.Value)
-            : false;
+    public bool CanTakeTurn(Player player)
+        => PlayersAvailableForTurn.Contains(player);
 
     protected abstract void EndedTurn(out bool hasStateChanged);
     protected abstract void EndedRound(out bool hasStateChanged);
@@ -82,11 +80,11 @@ public abstract class PlayManager
     /// Get all of the current active players.  Order is consistent.
     /// </summary>
     [JsonIgnore()]
-    public IEnumerable<char> ActivePlayers
+    public IEnumerable<Player> ActivePlayers
         => Players.Except(ResignedPlayersSet);
 
     [JsonIgnore()]
-    public abstract IEnumerable<char> PlayersAvailableForTurn {get;}
+    public abstract IEnumerable<Player> PlayersAvailableForTurn {get;}
 
     [JsonIgnore()]
     public bool IsRoundOver
