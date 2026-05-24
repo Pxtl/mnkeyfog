@@ -1,4 +1,5 @@
 using OneOf;
+using OneOf.Types;
 
 namespace KriegspielTicTacToe.Model;
 
@@ -14,10 +15,10 @@ public record TicTacToeState {
         bool isRandomPlayerOrder,
         bool isSynchronousMode
     ) {
+        var playerList = players.Select(c => (Player)c).ToList();
         if(isRandomPlayerOrder) { 
-            Random.Shared.Shuffle(players); 
+            Random.Shared.Shuffle((Player[])playerList.ToArray());
         }
-        var playerList = players.Select(c => c).ToList();
         PlayManager = (isSynchronousMode)
             ? new SynchronizedPlayManager(playerList)
             : new RoundRobinPlayManager(playerList);
@@ -32,13 +33,11 @@ public record TicTacToeState {
         bool isSynchronousMode
     ) {
         if(isRandomPlayerOrder) { 
-            var shuffled = players.ToList();
-            Random.Shared.Shuffle(shuffled);
-            players = shuffled.ToArray(); 
+            Random.Shared.Shuffle((Player[])players); // explicit generic
         }
         PlayManager = (isSynchronousMode)
-            ? new SynchronizedPlayManager(players)
-            : new RoundRobinPlayManager(players);
+            ? new SynchronizedPlayManager(players.ToList())
+            : new RoundRobinPlayManager(players.ToList());
         Boards = boardBuilders.Select(b => new Board(b)).ToList();
         Initialize();
     }
@@ -62,7 +61,7 @@ public record TicTacToeState {
             ? new BoardIsDone()
             : new Result<int>(boardCode - 1);
 
-    public OneOf<NotFound, BoardIsDone, Result<int>> PlaySpace(
+    public OneOf<NotFound, ActionQueuedSuccessfully, Result<Player>, AlreadyPlayed> PlaySpace(
         int boardIndex,
         int spaceCode,
         Player player
@@ -73,30 +72,17 @@ public record TicTacToeState {
         var board = Boards[boardIndex];
         if (board.TryGetCoordinatesFromSpaceIndexCode(spaceCode, out var col, out var row)) {
             var space = board.Spaces[col, row];
-            var result = ExecutePlay(boardIndex, space, player).Match(
-                success => new NotFound(),
-                result => new NotFound(),
-                alreadyPlayed => new NotFound()
-            );
-            return result;
+            if (space.IsKnownToPlayer(player)) {
+                return new AlreadyPlayed();
+            }
+            if (space.MarkChar.HasValue) {
+                space.MakeKnownToPlayer(player);
+                return new Result<Player>(space.MarkChar.Value);
+            }
+            PlayActionBuffer.Add(new TicTacToePlayAction(boardIndex, 0, 0, player));
+            return new ActionQueuedSuccessfully();
         }
         return new NotFound();
-    }
-
-    private OneOf<ActionQueuedSuccessfully, Result<Player>, AlreadyPlayed> ExecutePlay(
-        int boardIndex,
-        Space space,
-        Player player
-    ) {
-        if (space.IsKnownToPlayer(player)) {
-            return new AlreadyPlayed();
-        }
-        if (space.MarkChar.HasValue) {
-            space.MakeKnownToPlayer(player);
-            return new Result<Player>(space.MarkChar.Value);
-        }
-        PlayActionBuffer.Add(new TicTacToePlayAction(boardIndex, 0, 0, player));
-        return new ActionQueuedSuccessfully();
     }
 
     [JsonIgnore()]

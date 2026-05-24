@@ -1,7 +1,9 @@
 namespace KriegspielTicTacToe;
 
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using OneOf;
+using KriegspielTicTacToe.Model;
 
 /// <summary>
 /// Application entry point.
@@ -31,18 +33,27 @@ class Program {
                 var isSynchronousMode = parseResult.GetValue(Options.SynchronousModeOption);
 
                 var boardBuilders = new Model.BoardBuilder[boardsNumber!.Value];
-                var playerChars = players.Select(p => p[0]).ToArray();
+
+                var playerList = new List<Model.Player>();
+                foreach(var player in players!) {
+                    foreach(var charInPlayer in player) {
+                        playerList.Add(new Model.Player(charInPlayer));
+                    }
+                }
+                var playerArray = playerList.ToArray();
+
                 var joinAsPlayerUnion = joinAsPlayer == null
-                    ? OneOf<char, LocalHotseatGame>.FromT1(new LocalHotseatGame())
-                    : OneOf<char, LocalHotseatGame>.FromT0(joinAsPlayer[0]);
+                    ? OneOf<Model.Player, LocalHotseatGame>.FromT1(new LocalHotseatGame())
+                    : OneOf<Model.Player, LocalHotseatGame>.FromT0(new Model.Player(joinAsPlayer[0]));
 
                 for(var i = 0; i < boardsNumber!; i+=1) {
                     boardBuilders[i] = new Model.BoardBuilder(size!.Value, size!.Value);
                 }
+                
                 GameLogic.RunGame (
                     file,
                     doForceNewGame,
-                    playerChars,
+                    playerArray,
                     boardBuilders,
                     joinAsPlayerUnion,
                     isRandomPlayerOrder: isRandomPlayer,

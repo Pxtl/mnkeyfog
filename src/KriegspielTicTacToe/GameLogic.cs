@@ -12,9 +12,9 @@ internal static class GameLogic {
     public static void RunGame(
         FileInfo sharedStateFilePath,
         bool doForceNewGame,
-        char[] players,
+        Player[] players,
         IEnumerable<BoardBuilder> boardBuilders,
-        OneOf<char, LocalHotseatGame> joinAsPlayer,
+        OneOf<Player, LocalHotseatGame> joinAsPlayer,
         bool isRandomPlayerOrder,
         bool isSynchronousMode
     ) {
@@ -23,9 +23,7 @@ internal static class GameLogic {
             state = StateStorage.LoadState(sharedStateFilePath.FullName);
             Console.Out.WriteLine($"Loaded saved game!");
         } else {
-            // Convert char[] to Player[]
-            var playerList = new List<Player>(players.Select(c => new Player(c)));
-            state = new TicTacToeState(playerList.ToArray(), boardBuilders, 
+            state = new TicTacToeState(players, boardBuilders, 
                 isRandomPlayerOrder: isRandomPlayerOrder,
                 isSynchronousMode: isSynchronousMode
             );
@@ -34,7 +32,7 @@ internal static class GameLogic {
         }
 
         Console.Out.WriteLine(joinAsPlayer.Match(
-            playerChar => $"Joining game-file '{sharedStateFilePath.FullName}' as player '{playerChar}'.",
+            player => $"Joining game-file '{sharedStateFilePath.FullName}' as player '{player}'.",
             localHotseatGame => "Running in hotseat mode."
         ));
         
@@ -43,17 +41,16 @@ internal static class GameLogic {
         bool isGameOver = false;
         while (!isGameOver) {
             var currentPlayerChosen = joinAsPlayer.Match(
-                playerChar => {
-                    var currentPlayer = playerChar;
-                    if (!state.PlayManager.Players.Contains(currentPlayer)) {
-                        throw new ApplicationException($"Invalid player join, player {currentPlayer} is not a player in this game.");
+                player => {
+                    if (!state.PlayManager.Players.Contains(player)) {
+                        throw new ApplicationException($"Invalid player join, player {player} is not a player in this game.");
                     }
                     bool isDoneWaiting = false;
                     Console.Out.Write("Waiting for your turn.");
 
                     while (!isDoneWaiting) {
                         state = StateStorage.LoadState(sharedStateFilePath.FullName);
-                        if (state.PlayManager.PlayersAvailableForTurn.Contains(currentPlayer)
+                        if (state.PlayManager.PlayersAvailableForTurn.Contains(player)
                             ||
                             state.IsGameOver
                         ) {
@@ -65,16 +62,15 @@ internal static class GameLogic {
                     }
                     Console.Out.WriteLine();
                     return (state.IsGameOver)
-                        ? OneOf<Result<char>, GameIsOver>.FromT1(new GameIsOver())
-                        : new Result<char>(currentPlayer.Value);
+                        ? OneOf<Result<Player>, GameIsOver>.FromT1(new GameIsOver())
+                        : new Result<Player>(player);
                 },
-                localHotseatGame => new Result<char>(DoPlayerChooserLoop(state.PlayManager))
+                localHotseatGame => new Result<Player>(DoPlayerChooserLoop(state.PlayManager))
             );
 
             currentPlayerChosen.Switch(
                 playerResult => {
-                    var currentPlayerChar = playerResult.Value;
-                    var currentPlayer = currentPlayerChar;
+                    var currentPlayer = playerResult.Value;
                     var currentPlayerIsDoneTurn = DoPlayerTurnLoop(state, currentPlayer, sharedStateFilePath.FullName);
 
                     if (currentPlayerIsDoneTurn) {
@@ -104,7 +100,7 @@ internal static class GameLogic {
 
                         if (!state.IsGameOver) {
                             joinAsPlayer.Switch(
-                                playerChar => { },
+                                player => { },
                                 localHotseatGame =>
                                 {
                                     Console.Out.WriteLine($"Press any key to continue...");
@@ -155,12 +151,12 @@ internal static class GameLogic {
                             currentPlayerIsDoneTurn = false;
                             Console.WriteLine($"That is not a valid board.  Please pick an incomplete board.");
                         },
-                        boardIsDone => {
+                        boardingIsDone => {
                             currentPlayerIsDoneTurn = false;
                             Console.WriteLine($"That board is already complete.");
                         },
-                        result => {
-                            activeBoardIndex = result.Value;
+                        boardIndex => {
+                            activeBoardIndex = boardIndex.Value;
                         }
                     ),
                     unknown => {
@@ -177,6 +173,7 @@ internal static class GameLogic {
                 var boardCode = boardIndex + 1;
                 BoardRenderer.DrawBoards(state, currentPlayer, boardIndex);
                 var spaceCommand = InputUtility.ReadCommandKeys("Press numeric key(s) to play a space, or 'r' to resign.", state.Boards[boardIndex].SpaceIndexCodeLength);
+                var spaceString = spaceCommand;
                 spaceCommand.Switch(
                     charCode => {
                         currentPlayerIsDoneTurn = true;
@@ -185,29 +182,24 @@ internal static class GameLogic {
                             state.PlayManager.ResignPlayer(currentPlayer);
                         }
                     },
-                    spaceCode => {
-                        using (var stateStorage = new StateStorage(sharedStateFilePath)) {
-                            state = stateStorage.State;
-                            state.PlaySpace(boardIndex, spaceCode, currentPlayer).Switch(
-                                actionQueuedSuccessfully => {
-                                    currentPlayerIsDoneTurn = true;
-                                    Console.WriteLine($"Played on board {boardCode}, space {spaceCode}.");
-                                }, 
-                                resultNewlyLearned => {
-                                    currentPlayerIsDoneTurn = true;
-                                    Console.WriteLine($"Space already taken by player '{resultNewlyLearned.Value}'.");
-                                },
-                                alreadyPlayed => {
-                                    currentPlayerIsDoneTurn = false;
-                                    Console.Out.WriteLine($"Invalid space, that space is already known to player {currentPlayer}");
-                                },
-                                notFound => {
-                                    currentPlayerIsDoneTurn = false;
-                                    Console.WriteLine("Invalid space.");
-                                }
-                            );
+                    boarding => state.PlaySpace(boardIndex, boarding, currentPlayer).Switch(
+                        notFound => {
+                            currentPlayerIsDoneTurn = false;
+                            Console.WriteLine("Invalid space.");
+                        },
+                        actionQueuedSuccessfully => {
+                            currentPlayerIsDoneTurn = true;
+                            Console.WriteLine($"Played on board {boarding}, space {spaceString}");
+                        }, 
+                        resultNewlyLearned => {
+                            currentPlayerIsDoneTurn = true;
+                            Console.WriteLine($"Space already taken by player '{resultNewlyLearned.Value}'.");
+                        },
+                        alreadyPlayed => {
+                            currentPlayerIsDoneTurn = false;
+                            Console.Out.WriteLine($"Invalid space, that space is already known to player {currentPlayer}");
                         }
-                    },
+                    ),
                     unknown => {
                         currentPlayerIsDoneTurn = false;
                     }
@@ -218,14 +210,14 @@ internal static class GameLogic {
         return currentPlayerIsDoneTurn;
     }
 
-    internal static char DoPlayerChooserLoop(PlayManager playManager) {
+    internal static Player DoPlayerChooserLoop(PlayManager playManager) {
         while(true) {
             if (playManager.PlayersAvailableForTurn.Count() == 1) {
                 var currentPlayer = playManager.PlayersAvailableForTurn.Single();
                 Console.Out.WriteLine($"Player {currentPlayer} ready? Press any key to continue...");
                 Console.ReadKey(intercept: true);
                 Console.WriteLine();
-                return currentPlayer.Value;
+                return currentPlayer;
             }
             if (playManager.PlayersAvailableForTurn.Count() == 0) {
                 throw new InvalidOperationException("No players are available to take a turn.");
@@ -236,10 +228,10 @@ internal static class GameLogic {
             var key = Console.ReadKey();
 
             // have to convert to string for case-insensitive comparison.
+            var keyChar = key.KeyChar;
             var playerAsString = playManager
                 .PlayersAvailableForTurn
-                .Select(c => c.Value)
-                .SingleOrDefault(c => c.Equals(key.KeyChar.ToString(), StringComparison.OrdinalIgnoreCase));
+                .SingleOrDefault(p => p.Value == keyChar);
 
             if (playerAsString != null) {
                 // write blank line
@@ -250,6 +242,6 @@ internal static class GameLogic {
     }
 }
 
-public struct LocalHotseatGame {}
+public struct LocalHotseatGame { }
 
-public struct GameIsOver {}
+public struct GameIsOver { }
