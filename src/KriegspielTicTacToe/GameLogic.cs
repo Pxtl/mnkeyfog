@@ -145,7 +145,7 @@ internal static class GameLogic {
                             state.PlayManager.ResignPlayer(currentPlayer);
                         }
                     },
-                    boardCode => state.SelectBoard(boardCode).Switch(
+                    boardNameAsInt => state.SelectBoard(boardNameAsInt.ToString()).Switch(
                         notFound => {
                             currentPlayerIsDoneTurn = false;
                             Console.WriteLine($"That is not a valid board.  Please pick an incomplete board.");
@@ -169,7 +169,6 @@ internal static class GameLogic {
             // which space they wish to play.
             if (activeBoardIndex.HasValue) {
                 var boardIndex = activeBoardIndex.Value;
-                var boardCode = boardIndex + 1;
                 BoardRenderer.DrawBoards(state, currentPlayer, boardIndex);
                 var spaceCommand = InputUtility.ReadCommandKeys("Press numeric key(s) to play a space, or 'r' to resign.", state.Boards[boardIndex].SpaceIndexCodeLength);
                 var spaceString = spaceCommand;
@@ -181,14 +180,14 @@ internal static class GameLogic {
                             state.PlayManager.ResignPlayer(currentPlayer);
                         }
                     },
-                    boarding => state.PlaySpace(boardIndex, boarding, currentPlayer).Switch(
-                        notFound => {
+                    spaceNameAsInt => state.PlaySpace(boardIndex, spaceNameAsInt.ToString(), currentPlayer).Switch(
+                        (notFound) => {
                             currentPlayerIsDoneTurn = false;
                             Console.WriteLine("Invalid space.");
                         },
                         actionQueuedSuccessfully => {
                             currentPlayerIsDoneTurn = true;
-                            Console.WriteLine($"Played on board {boarding}, space {spaceString}");
+                            Console.WriteLine($"Played on board {spaceNameAsInt}, space {spaceString}");
                         }, 
                         resultNewlyLearned => {
                             currentPlayerIsDoneTurn = true;

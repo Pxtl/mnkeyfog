@@ -54,34 +54,55 @@ public record TicTacToeState {
     public IReadOnlyList<Board> Boards {get;init;}
     public PlayActionBuffer PlayActionBuffer {get;init;} = new PlayActionBuffer();
 
-    public Board GetBoardByCode(int boardCode) => Boards[boardCode - 1];
+    public Board GetBoardByCode(int boardName) => Boards[boardName - 1];
     public Board GetBoardByIndex(int boardIndex) => Boards[boardIndex];
 
-    public OneOf<NotFound, BoardIsDone, Result<int>> SelectBoard(int boardCode)
-        => (boardCode <= 0 || boardCode > Boards.Count)
+    public OneOf<NotFound, BoardIsDone, Result<int>> SelectBoard(string boardName)
+        => SelectBoard(int.Parse(boardName));
+
+    protected OneOf<NotFound, BoardIsDone, Result<int>> SelectBoard(int boardNameAsInt)
+        => (boardNameAsInt <= 0 || boardNameAsInt > Boards.Count)
             ? new NotFound()
-            : GetBoardByCode(boardCode).IsDone
+            : GetBoardByCode(boardNameAsInt).IsDone
             ? new BoardIsDone()
-            : new Result<int>(boardCode - 1);
+            : new Result<int>(boardNameAsInt - 1);
 
     public OneOf<NotFound, ActionQueuedSuccessfully, Result<Player>, AlreadyPlayed> PlaySpace(
         int boardIndex,
-        int spaceCode,
+        string spaceName,
+        Player player
+    ) => PlaySpace(boardIndex, int.Parse(spaceName), player);
+        
+    private OneOf<NotFound, ActionQueuedSuccessfully, Result<Player>, AlreadyPlayed> PlaySpace(
+        int boardIndex,
+        int spaceNameAsInt,
         Player player
     ) {
-        if (spaceCode <= 0) {
+        if (spaceNameAsInt <= 0) {
             return new NotFound();
         }
         var board = Boards[boardIndex];
-        if (board.TryGetCoordinatesFromSpaceIndexCode(spaceCode, out var col, out var row)) {
-            var space = board.Spaces[col, row];
-            if (space.Mark != null) {
-                return new AlreadyPlayed();
-            }
+        if (board.TryGetCoordinatesFromSpaceIndexCode(spaceNameAsInt, out var col, out var row))
+        {
+            return PlaySpace(boardIndex, player, board, col, row);
+        }
+        return new NotFound();
+    }
+
+    public OneOf<NotFound, ActionQueuedSuccessfully, Result<Player>, AlreadyPlayed> PlaySpace(
+        int boardIndex,
+        Player player,
+        Board board,
+        int col,
+        int row) 
+    {
+        var space = board.Spaces[col, row];
+        if (space.Mark != null) {
+            return new AlreadyPlayed();
+        } else {
             PlayActionBuffer.Add(new TicTacToePlayAction(boardIndex, col, row, player));
             return new ActionQueuedSuccessfully();
         }
-        return new NotFound();
     }
 
     [JsonIgnore()]
