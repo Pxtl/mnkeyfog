@@ -220,7 +220,7 @@ public class TicTacToeStateTests {
         // B is next to take a turn
         state.PlayManager.CanTakeTurn(new Player("B")).Should().BeTrue();
         state.PlayManager.CanTakeTurn(new Player("C")).Should().BeTrue();
-        state.PlayManager.CanTakeTurn(new Player("D")).Should().BeTrue();
+        state.PlayManager.CanTakeTurn(new Player("D")).Should().BeFalse();
     }
 
 }

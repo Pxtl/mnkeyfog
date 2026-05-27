@@ -121,7 +121,7 @@ public class PlayManagerTests {
     }
 
     [Fact]
-    public void ResignPlayer_OnlyNextPlayerCanTakeTurn() {
+    public void ResignPlayerInRoundRobinMode_OnlyNextPlayerCanTakeTurn() {
         var state = new TicTacToeState(
             [new Player("A"), new Player("B"), new Player("C")],
             [new BoardBuilder(3, 3)],
@@ -133,8 +133,8 @@ public class PlayManagerTests {
 
         state.PlayManager.CanTakeTurn(new Player("A")).Should().BeFalse();
         state.PlayManager.CanTakeTurn(new Player("B")).Should().BeTrue();
-        state.PlayManager.CanTakeTurn(new Player("C")).Should().BeTrue();
-        state.PlayManager.CanTakeTurn(new Player("D")).Should().BeTrue();
+        state.PlayManager.CanTakeTurn(new Player("C")).Should().BeFalse();
+        state.PlayManager.CanTakeTurn(new Player("D")).Should().BeFalse();
     }
 
     [Fact]
@@ -221,7 +221,9 @@ public class PlayManagerTests {
         
         state.PlayManager.CanTakeTurn(new Player("B")).Should().BeTrue();
         state.PlayManager.CanTakeTurn(new Player("C")).Should().BeTrue();
-        state.PlayManager.CanTakeTurn(new Player("D")).Should().BeTrue();
+        
+        // player D does not exist.
+        state.PlayManager.CanTakeTurn(new Player("D")).Should().BeFalse();
     }
 
 }

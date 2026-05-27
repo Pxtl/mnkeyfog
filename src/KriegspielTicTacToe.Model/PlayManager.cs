@@ -65,7 +65,7 @@ public abstract class PlayManager
     /// True if the given player is able to take a turn.
     /// </summary>
     public bool CanTakeTurn(Player? player)
-        => player == null || PlayersAvailableForTurn.Contains(player);
+        => player != null && PlayersAvailableForTurn.Contains(player);
 
     protected abstract void EndedTurn(out bool hasStateChanged);
     protected abstract void EndedRound(out bool hasStateChanged);
