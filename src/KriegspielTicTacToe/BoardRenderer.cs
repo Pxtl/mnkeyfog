@@ -103,7 +103,9 @@ public static class BoardRenderer {
             Console.Out.Write("  ");
 
             for(var col = 0; col < board.ColumnCount; col+=1) {
-                DrawSpaceBody(GetSpaceString(state, player, boardIndex, activeBoardIndex, col, rowIndex), borderBarString);
+                DrawSpaceBody(
+                    ModelToKeyUtility.GetSpaceString(state, player, boardIndex, activeBoardIndex, col, rowIndex), 
+                    borderBarString);
             }
             Console.Out.Write(borderBarString);
         }
@@ -119,33 +121,5 @@ public static class BoardRenderer {
         body = body.PadLeft(2);
         body = body.PadRight(3);
         Console.Out.Write($"{borderBarString}{body}");
-    }
-
-    /// <summary>
-    /// For the given space, for the given player, get the textual
-    /// representation of the space.  If the game is over, all players see
-    /// everything, all marks on the board.  If not, they will only see the ones
-    /// they have created or discovered.  If the player is the
-    /// current-turn-player, then the space index codes will be displayed.
-    /// </summary>
-    private static string GetSpaceString(TicTacToeState state, Player? player, int boardIndex, int? activeBoardIndex, int col, int row) {
-        player = state.IsGameOver //show for all players if the game is over.
-            ? null
-            : player;
-
-        var board = state.Boards[boardIndex];
-        var foundSpace = board.Spaces[col,row].ToString(player);
-        
-        if (
-            string.IsNullOrWhiteSpace(foundSpace) 
-            && !board.IsDone 
-            && state.PlayManager.CanTakeTurn(player)
-            && activeBoardIndex == boardIndex
-        ) {
-            return board.GetSpaceIndexCode(col, row)
-                .ToString(new string('0', board.SpaceIndexCodeLength)); //zero-pad
-        } else {
-            return foundSpace;
-        }
     }
 }
