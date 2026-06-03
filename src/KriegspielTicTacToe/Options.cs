@@ -63,6 +63,10 @@ internal static class Options {
         DefaultValueFactory = result => null
     };
 
+    public static Option<bool> IsBoardDoneWhenScoredOption = new ("--boarddonewhenscored", "-d") {
+        Description = "If set, the the board is done and closed to new moves when a line is scored."
+    };
+
     public static Option<sbyte?> BoardsNumberOption = new ("--boards", "-b") {
         Description = "Number of boards.",
         DefaultValueFactory = result => 3,
@@ -82,6 +86,7 @@ internal static class Options {
     };
 
     public static Option<bool> SynchronousModeOption = new ("--synchronous", "-y") {
-        Description = "Moves do not execute until all players in a round have taken a turn.  If two players move to the same square, that square becomes an impasse marker visible to all."
+        Description = "Moves do not execute until all players in a round have taken a turn. " 
+        + "If two players move to the same square, that square becomes an impasse marker visible to all."
     };
 }

@@ -17,6 +17,20 @@ public class ScoringTests {
         var expectedPlayerScore = new PlayerScore("X", 1);
         board.ScoreSpace("X", (0, 0), (0, 1), 3).Should().Be(new ScoreCard(expectedPlayerScore));
         board.ScoreCard.HighestScore!.Should().Be(expectedPlayerScore);
+        board.IsDone.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Given3x3Board_WhenLineFullAndBoardIsDoneWhenScored_ThenBoardIsDone() {
+        var board = new Board(3, 3, isBoardDoneWhenScored: true);
+
+        board.Spaces[0, 0].Mark = "X";
+        board.Spaces[0, 1].Mark = "X";
+        board.Spaces[0, 2].Mark = "X";
+
+        var expectedPlayerScore = new PlayerScore("X", 1);
+        board.ScoreCard.HighestScore!.Should().Be(expectedPlayerScore);
+        board.IsDone.Should().BeTrue();
     }
 
     [Fact]
@@ -36,6 +50,7 @@ public class ScoringTests {
         board.Spaces[2, 2].Mark = "O";
 
         board.ScoreCard.HighestScore!.Value.Should().Be(new PlayerScore("O", 2));
+        board.IsDone.Should().BeTrue();
     }
     #endregion
     #region 3x3 square boards - baseline diagonal tests
@@ -115,13 +130,14 @@ public class ScoringTests {
 
     [Fact]
     public void Given4x3Board_WhenDiagonalEdgeToEdgeOnly2InLine_ThenNoScore() {
-        var board = new Board(4, 3);
+        var board = new Board(4, 3, isBoardDoneWhenScored: true);
         
         // Only 2 X's inline on diagonal - not a winning line
         board.Spaces[0, 1].Mark = "X";
         board.Spaces[1, 2].Mark = "X";
         
         board.ScoreCard.HighestScore.Should().BeNull();
+        board.IsDone.Should().BeFalse();
     }
     #endregion
 

@@ -9,7 +9,7 @@ public record Board {
     public Board() {}
     public Board(BoardBuilder builder) : this(builder.Width, builder.Height, builder.ScoringLength) {}
     public Board(sbyte width, sbyte height) : this(width, height, null) {}
-    public Board(sbyte width, sbyte height, sbyte? scoringLength = null) {
+    public Board(sbyte width, sbyte height, sbyte? scoringLength = null, bool isBoardDoneWhenScored = false) {
         Spaces = new Space[width, height];
         for (var col = 0; col < Spaces.GetLength(0); col+=1) {
             for (var row = 0; row < Spaces.GetLength(1); row+=1) {
@@ -26,14 +26,17 @@ public record Board {
             VerticalScoringLength = height;
             DiagonalScoringLength = Math.Min(width, height);
         }
+
+        IsBoardDoneWhenScored = isBoardDoneWhenScored;
     }
     #endregion
 
     #region main data properties
     public Space[,] Spaces {get;set;} = new Space[1,1]{{new Space()}}; //default value is dummy board, never use.
-    public sbyte HorizontalScoringLength {get; init;}
-    public sbyte VerticalScoringLength {get; init;}
-    public sbyte DiagonalScoringLength {get; init;}
+    public sbyte HorizontalScoringLength {get;init;}
+    public sbyte VerticalScoringLength {get;init;}
+    public sbyte DiagonalScoringLength {get;init;}
+    public bool IsBoardDoneWhenScored {get;init;}
     #endregion
 
     #region Methods
@@ -117,7 +120,7 @@ public record Board {
     [JsonIgnore()]
     public bool IsDone
         => IsFull 
-        || ScoreCard.HighestScore.HasValue;
+        || (IsBoardDoneWhenScored && ScoreCard.PlayerScores.Any(s => s.Score > 0));
 
     [JsonIgnore()]
     public ScoreCard ScoreCard {

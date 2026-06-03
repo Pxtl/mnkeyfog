@@ -9,13 +9,14 @@ using OneOf.Types;
 public record struct ScoreCard {
     #region constructors
     public ScoreCard() {
-        Scores = _emptyPlayerScoreCollection;
+        _scores = _emptyPlayerScoreCollection;
     }
     public ScoreCard(Player player, int score) : this(new PlayerScore(player, score)) {}
     public ScoreCard(PlayerScore playerScore) : this([playerScore]) {}
     public ScoreCard(IEnumerable<PlayerScore> scores) {
-        Scores = scores
+        _scores = scores
             .GroupBy(s => s.Player)
+            .OrderBy(g => g.Key.Mark)
             .Select(g => new PlayerScore(g.Key, g.Sum(kvp => kvp.Score)))
             .ToValueArray();
     }
@@ -31,17 +32,19 @@ public record struct ScoreCard {
     #endregion
 
     #region state members
-    private ValueArray<PlayerScore> Scores {get;set;}
+    public ValueArray<PlayerScore> _scores {get;private set;}
+    public readonly IReadOnlyList<PlayerScore> PlayerScores
+        => _scores;
     #endregion
 
     #region calculated members
     public bool IsEmpty
-        => Scores.Count == 0;
+        => _scores.Count == 0;
 
     public PlayerScore? HighestScore
-        => Scores.Count == 0 
+        => _scores.Count == 0 
             ? null
-            : Scores.MaxByStrict(s => s.Score);
+            : _scores.MaxByStrict(s => s.Score);
             
     #endregion
 
@@ -49,17 +52,17 @@ public record struct ScoreCard {
     public static ScoreCard operator +(ScoreCard a, ScoreCard b)
         => a.IsEmpty ? b // optimization, if a or b are empty just use the other one directly.
         : b.IsEmpty ? a
-        : new ScoreCard(a.Scores.Concat(b.Scores));
+        : new ScoreCard(a._scores.Concat(b._scores));
 
     public static ScoreCard operator +(ScoreCard a, PlayerScore b)
-        => new ScoreCard(a.Scores.Append(b));
+        => new ScoreCard(a._scores.Append(b));
 
     public static ScoreCard operator +(PlayerScore a, ScoreCard b)
         => new ScoreCard(a) + b;
     #endregion
 
     public static ScoreCard SumScoreCards(IEnumerable<ScoreCard> scoreCards)
-        => new ScoreCard(scoreCards.SelectMany(s => s.Scores));
+        => new ScoreCard(scoreCards.SelectMany(s => s._scores));
 }
 
 public static class ScoreCardExtensions {

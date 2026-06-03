@@ -3,7 +3,6 @@ namespace KriegspielTicTacToe;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using OneOf;
-using KriegspielTicTacToe.Model;
 
 /// <summary>
 /// Application entry point.
@@ -17,6 +16,7 @@ class Program {
             Options.RandomOption,
             Options.SizeOption,
             Options.ScoringLengthOption,
+            Options.IsBoardDoneWhenScoredOption,
             Options.BoardsNumberOption,
             Options.JoinAsPlayerOption,
             Options.SynchronousModeOption
@@ -29,6 +29,7 @@ class Program {
                 var size = parseResult.GetValue(Options.SizeOption);
                 var boardsNumber = parseResult.GetValue(Options.BoardsNumberOption);
                 var scoringLength = parseResult.GetValue(Options.ScoringLengthOption);
+                var isBoardDoneWhenScored = parseResult.GetValue(Options.IsBoardDoneWhenScoredOption);
                 var joinAsPlayer = parseResult.GetValue(Options.JoinAsPlayerOption);
 
                 var isRandomPlayer = parseResult.GetValue(Options.RandomOption);
@@ -47,7 +48,7 @@ class Program {
                     : OneOf<Model.Player, LocalHotseatGame>.FromT0(new Model.Player(joinAsPlayer));
 
                 for(var i = 0; i < boardsNumber!; i+=1) {
-                    boardBuilders[i] = new Model.BoardBuilder(size!.Value, size!.Value, scoringLength);
+                    boardBuilders[i] = new Model.BoardBuilder(size!.Value, size!.Value, scoringLength, isBoardDoneWhenScored);
                 }
                 
                 GameLogic.RunGame (
