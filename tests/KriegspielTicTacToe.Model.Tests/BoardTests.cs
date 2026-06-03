@@ -129,40 +129,4 @@ public class BoardTests {
         board.Spaces[0, 0].KnownToPlayersSet.Should().Contain("O");
     }
     #endregion
-
-    #region ScoreCard
-
-    [Fact]
-    public void ScoreCard_CalculatesWinningBoard_XWins() {
-        var board = new Board(3, 3);
-
-        board.Spaces[0, 0].Mark = "X";
-        board.Spaces[0, 1].Mark = "X";
-        board.Spaces[0, 2].Mark = "X";
-
-        board.ScoreCard.HighestScore.Should().NotBeNull();
-        if(board.ScoreCard.HighestScore.HasValue)
-            board.ScoreCard.HighestScore.Value.Player.Mark.Should().Be("X");
-    }
-
-    [Fact]
-    public void ScoreCard_CalculatesWinningBoardMoreLines_OWins() {
-        var board = new Board(3, 3);
-
-        board.Spaces[0, 0].Mark = "X";
-        board.Spaces[1, 0].Mark = "X";
-        board.Spaces[2, 0].Mark = "X";
-
-        board.Spaces[0, 1].Mark = "O";
-        board.Spaces[1, 1].Mark = "O";
-        board.Spaces[2, 1].Mark = "O";
-
-        board.Spaces[0, 2].Mark = "O";
-        board.Spaces[1, 2].Mark = "O";
-        board.Spaces[2, 2].Mark = "O";
-
-        board.ScoreCard.HighestScore.Should().NotBeNull();
-        board.ScoreCard.HighestScore.Value.Should().Be(new PlayerScore("O", 2));
-    }
-    #endregion
 }

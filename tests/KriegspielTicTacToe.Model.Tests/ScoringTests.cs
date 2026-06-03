@@ -3,8 +3,43 @@ namespace KriegspielTicTacToe.Model.Tests;
 using FluentAssertions;
 using Xunit;
 
-public class DiagonalScoringTests {
-    #region 3x3 square boards - baseline tests
+public class ScoringTests {
+    #region orthogonal tests
+    
+    [Fact]
+    public void ScoreCard_CalculatesWinningBoard_XWins() {
+        var board = new Board(3, 3);
+
+        board.Spaces[0, 0].Mark = "X";
+        board.Spaces[0, 1].Mark = "X";
+        board.Spaces[0, 2].Mark = "X";
+
+        board.ScoreCard.HighestScore.Should().NotBeNull();
+        if(board.ScoreCard.HighestScore.HasValue)
+            board.ScoreCard.HighestScore.Value.Player.Mark.Should().Be("X");
+    }
+
+    [Fact]
+    public void ScoreCard_CalculatesWinningBoardMoreLines_OWins() {
+        var board = new Board(3, 3);
+
+        board.Spaces[0, 0].Mark = "X";
+        board.Spaces[1, 0].Mark = "X";
+        board.Spaces[2, 0].Mark = "X";
+
+        board.Spaces[0, 1].Mark = "O";
+        board.Spaces[1, 1].Mark = "O";
+        board.Spaces[2, 1].Mark = "O";
+
+        board.Spaces[0, 2].Mark = "O";
+        board.Spaces[1, 2].Mark = "O";
+        board.Spaces[2, 2].Mark = "O";
+
+        board.ScoreCard.HighestScore.Should().NotBeNull();
+        board.ScoreCard.HighestScore.Value.Should().Be(new PlayerScore("O", 2));
+    }
+    #endregion
+    #region 3x3 square boards - diagonal tests
     
     [Fact]
     public void ScoreCard_3x3_Diagonal_X_Wins_Identity() {
@@ -31,7 +66,7 @@ public class DiagonalScoringTests {
     }
     #endregion
 
-    #region 4x3 rectangular boards (W=4, H=3, diagLen=3)
+    #region 4x3 rectangular boards (W=4, H=3, diagLen=3) - diagonal tests
     
     [Fact]
     public void ScoreCard_4x3_Diagonal_X_Wins_Identity() {
@@ -71,7 +106,7 @@ public class DiagonalScoringTests {
     }
     #endregion
 
-    #region 3x4 rectangular boards (W=3, H=4, diagLen=3)
+    #region 3x4 rectangular boards (W=3, H=4, diagLen=3) - diagonal tests
     
     [Fact]
     public void ScoreCard_3x4_Diagonal_X_Wins_Identity() {
@@ -100,7 +135,7 @@ public class DiagonalScoringTests {
     }
     #endregion
 
-    #region 4x6 rectangular boards (W=4, H=6, diagLen=4)
+    #region 4x6 rectangular boards (W=4, H=6, diagLen=4) - diagonal tests
     
     [Fact]
     public void ScoreCard_4x6_Diagonal_X_Wins_Identity() {
@@ -131,7 +166,7 @@ public class DiagonalScoringTests {
     }
     #endregion
 
-    #region 6x4 rectangular boards (W=6, H=4, diagLen=4)
+    #region 6x4 rectangular boards (W=6, H=4, diagLen=4) - diagonal tests
     
     [Fact]
     public void ScoreCard_6x4_Diagonal_X_Wins_Identity() {
