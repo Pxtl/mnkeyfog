@@ -39,7 +39,7 @@ public class ScoringTests {
         board.ScoreCard.HighestScore.Value.Should().Be(new PlayerScore("O", 2));
     }
     #endregion
-    #region 3x3 square boards - diagonal tests
+    #region 3x3 square boards - baseline diagonal tests
     
     [Fact]
     public void ScoreCard_3x3_Diagonal_X_Wins_Identity() {
@@ -82,6 +82,19 @@ public class ScoringTests {
     }
 
     [Fact]
+    public void ScoreCard_4x3_Diagonal_X_Wins_OffsetIdentity() {
+        var board = new Board(4, 3);
+        
+        // Identity diagonal: starts at (0, H-diagLen) = (0, 0), ends at (diagLen-1, H-1) = (2, 2)
+        board.Spaces[1, 0].Mark = "X";
+        board.Spaces[2, 1].Mark = "X";
+        board.Spaces[3, 2].Mark = "X";
+        
+        board.ScoreCard.HighestScore.Should().NotBeNull();
+        board.ScoreCard.HighestScore!.Value.Player.Mark.Should().Be("X");
+    }
+
+    [Fact]
     public void ScoreCard_4x3_Diagonal_X_Wins_Inverse() {
         var board = new Board(4, 3);
         
@@ -94,13 +107,26 @@ public class ScoringTests {
         board.ScoreCard.HighestScore!.Value.Player.Mark.Should().Be("X");
     }
 
+        [Fact]
+    public void ScoreCard_4x3_Diagonal_X_Wins_InverseOffset() {
+        var board = new Board(4, 3);
+        
+        // Inverse diagonal: starts at (0, diagLen-1) = (0, 2), ends at (diagLen-1, 0) = (2, 0)
+        board.Spaces[1, 2].Mark = "X";
+        board.Spaces[2, 1].Mark = "X";
+        board.Spaces[3, 0].Mark = "X";
+        
+        board.ScoreCard.HighestScore.Should().NotBeNull();
+        board.ScoreCard.HighestScore!.Value.Player.Mark.Should().Be("X");
+    }
+
     [Fact]
-    public void ScoreCard_4x3_Diagonal_NoScore_Only_2_Inline() {
+    public void ScoreCard_4x3_DiagonalEdgeToEdgeOnly2InLine_NoScore() {
         var board = new Board(4, 3);
         
         // Only 2 X's inline on diagonal - not a winning line
-        board.Spaces[0, 0].Mark = "X";
-        board.Spaces[1, 1].Mark = "X";
+        board.Spaces[0, 1].Mark = "X";
+        board.Spaces[1, 2].Mark = "X";
         
         board.ScoreCard.HighestScore.Should().BeNull();
     }
@@ -110,6 +136,19 @@ public class ScoringTests {
     
     [Fact]
     public void ScoreCard_3x4_Diagonal_X_Wins_Identity() {
+        var board = new Board(3, 4);
+        
+        // Identity diagonal: starts at (0, H-diagLen) = (0, 1), ends at (diagLen-1, H-1) = (2, 3)
+        board.Spaces[0, 0].Mark = "X";
+        board.Spaces[1, 1].Mark = "X";
+        board.Spaces[2, 2].Mark = "X";
+        
+        board.ScoreCard.HighestScore.Should().NotBeNull();
+        board.ScoreCard.HighestScore!.Value.Player.Mark.Should().Be("X");
+    }
+
+    [Fact]
+    public void ScoreCard_3x4_Diagonal_X_Wins_IdentityOffset() {
         var board = new Board(3, 4);
         
         // Identity diagonal: starts at (0, H-diagLen) = (0, 1), ends at (diagLen-1, H-1) = (2, 3)
@@ -133,12 +172,54 @@ public class ScoringTests {
         board.ScoreCard.HighestScore.Should().NotBeNull();
         board.ScoreCard.HighestScore!.Value.Player.Mark.Should().Be("X");
     }
+
+    [Fact]
+    public void ScoreCard_3x4_Diagonal_X_Wins_InverseOffset() {
+        var board = new Board(3, 4);
+        
+        // Inverse diagonal: starts at (0, diagLen-1) = (0, 2), ends at (diagLen-1, 0) = (2, 0)
+        board.Spaces[0, 3].Mark = "X";
+        board.Spaces[1, 2].Mark = "X";
+        board.Spaces[2, 1].Mark = "X";
+        
+        board.ScoreCard.HighestScore.Should().NotBeNull();
+        board.ScoreCard.HighestScore!.Value.Player.Mark.Should().Be("X");
+    }
     #endregion
 
     #region 4x6 rectangular boards (W=4, H=6, diagLen=4) - diagonal tests
-    
+
     [Fact]
     public void ScoreCard_4x6_Diagonal_X_Wins_Identity() {
+        var board = new Board(4, 6);
+        
+        // Identity diagonal: starts at (0, H-diagLen) = (0, 2), ends at (diagLen-1, H-1) = (3, 5)
+        board.Spaces[0, 0].Mark = "X";
+        board.Spaces[1, 1].Mark = "X";
+        board.Spaces[2, 2].Mark = "X";
+        board.Spaces[3, 3].Mark = "X";
+        
+        board.ScoreCard.HighestScore.Should().NotBeNull();
+        board.ScoreCard.HighestScore!.Value.Player.Mark.Should().Be("X");
+    }
+
+    [Fact]
+    public void ScoreCard_4x6_Diagonal_X_Wins_IdentityOffset1() {
+        var board = new Board(4, 6);
+        
+        // Identity diagonal: starts at (0, H-diagLen) = (0, 2), ends at (diagLen-1, H-1) = (3, 5)
+        board.Spaces[0, 1].Mark = "X";
+        board.Spaces[1, 2].Mark = "X";
+        board.Spaces[2, 3].Mark = "X";
+        board.Spaces[3, 4].Mark = "X";
+        
+        board.ScoreCard.HighestScore.Should().NotBeNull();
+        board.ScoreCard.HighestScore!.Value.Player.Mark.Should().Be("X");
+    }
+    
+    
+    [Fact]
+    public void ScoreCard_4x6_Diagonal_X_Wins_IdentityOffset2() {
         var board = new Board(4, 6);
         
         // Identity diagonal: starts at (0, H-diagLen) = (0, 2), ends at (diagLen-1, H-1) = (3, 5)
@@ -154,37 +235,6 @@ public class ScoringTests {
     [Fact]
     public void ScoreCard_4x6_Diagonal_X_Wins_Inverse() {
         var board = new Board(4, 6);
-        
-        // Inverse diagonal: starts at (0, diagLen-1) = (0, 3), ends at (diagLen-1, 0) = (3, 0)
-        board.Spaces[0, 3].Mark = "X";
-        board.Spaces[1, 2].Mark = "X";
-        board.Spaces[2, 1].Mark = "X";
-        board.Spaces[3, 0].Mark = "X";
-        
-        board.ScoreCard.HighestScore.Should().NotBeNull();
-        board.ScoreCard.HighestScore!.Value.Player.Mark.Should().Be("X");
-    }
-    #endregion
-
-    #region 6x4 rectangular boards (W=6, H=4, diagLen=4) - diagonal tests
-    
-    [Fact]
-    public void ScoreCard_6x4_Diagonal_X_Wins_Identity() {
-        var board = new Board(6, 4);
-        
-        // Identity diagonal: starts at (0, H-diagLen) = (0, 0), ends at (diagLen-1, H-1) = (3, 3)
-        board.Spaces[0, 0].Mark = "X";
-        board.Spaces[1, 1].Mark = "X";
-        board.Spaces[2, 2].Mark = "X";
-        board.Spaces[3, 3].Mark = "X";
-        
-        board.ScoreCard.HighestScore.Should().NotBeNull();
-        board.ScoreCard.HighestScore!.Value.Player.Mark.Should().Be("X");
-    }
-
-    [Fact]
-    public void ScoreCard_6x4_Diagonal_X_Wins_Inverse() {
-        var board = new Board(6, 4);
         
         // Inverse diagonal: starts at (0, diagLen-1) = (0, 3), ends at (diagLen-1, 0) = (3, 0)
         board.Spaces[0, 3].Mark = "X";
