@@ -9,10 +9,7 @@ using System.Text;
 /// Draws the full board based on the given gamestate, from the perspective of
 /// the given player.
 /// </summary>
-public static class BoardRenderer
-{
-    private static StringBuilder sb = new StringBuilder();
-
+public static class BoardRenderer {
     public static string DrawBoards(
         TicTacToeState state,
         Player player,
