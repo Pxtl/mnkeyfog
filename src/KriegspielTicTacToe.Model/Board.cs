@@ -82,11 +82,17 @@ public record Board {
     /// Get all of the spaces on the board as a big enumerable that you can
     /// foreach across.
     /// </summary>
-    public IEnumerable<Space> BoardAsEnumerable() {
-        foreach(var space in Spaces) {
-            yield return space;    
+    public IEnumerable<SpaceEnumerator> BoardAsEnumerable() {
+        for(sbyte col = 0; col < Spaces.GetLength(0); col += 1) {
+            for(sbyte row = 0; row < Spaces.GetLength(1); row += 1) {
+                yield return new SpaceEnumerator(col, row, Spaces[col, row]);
+            }
         }
     }
+
+    public IEnumerable<string> SpaceNames
+        => BoardAsEnumerable()
+            .Select(s => GetSpaceNameAsInt(s.Col, s.Row).ToString());
     #endregion
 
     #region helper properties
@@ -118,7 +124,7 @@ public record Board {
     /// </summary>
     [JsonIgnore()]
     public bool IsFull 
-        => BoardAsEnumerable().All(s => s.Mark != null);
+        => BoardAsEnumerable().All(s => s.Space.Mark != null);
 
     [JsonIgnore()]
     public bool IsDone
@@ -132,13 +138,11 @@ public record Board {
             var width = Spaces.GetLength(0);
             var height = Spaces.GetLength(1);
             
-            for(sbyte row = 0; row < height; row+=1) {
-                for(sbyte col = 0; col < width; col+=1) {
-                    string? lineOwnerMark = Spaces[col,row].Mark;
-                    if(lineOwnerMark != null) {
-                        var lineOwnerPlayer = new Player(lineOwnerMark);
-                        result += ScoreSpace(lineOwnerPlayer, (col, row));
-                    }
+            foreach (var spaceEnumerator in BoardAsEnumerable()) {
+                string? lineOwnerMark = spaceEnumerator.Space.Mark;
+                if(lineOwnerMark != null) {
+                    var lineOwnerPlayer = new Player(lineOwnerMark);
+                    result += ScoreSpace(lineOwnerPlayer, (spaceEnumerator.Col, spaceEnumerator.Row));
                 }
             }
             return result;

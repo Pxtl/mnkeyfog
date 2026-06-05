@@ -4,11 +4,6 @@ using OneOf.Types;
 namespace KriegspielTicTacToe.Model;
 
 public record TicTacToeState {
-    public TicTacToeState() { 
-        Boards = [];
-        PlayManager = new RoundRobinPlayManager([]);
-    }
-
     public TicTacToeState(
         char[] players,
         IEnumerable<BoardBuilder> boardBuilders,
@@ -60,6 +55,14 @@ public record TicTacToeState {
         return (boardIndex >= 0 && boardIndex < Boards.Count) 
             ? new Result<int>(boardIndex)
             : new NotFound();
+    }
+
+    public IEnumerable<string> BoardNames {
+        get {
+            for(var i = 1; i <= Boards.Count; i += 1) {
+                yield return i.ToString();
+            }
+        }
     }
         
     public Board GetBoardByIndex(int boardIndex) => Boards[boardIndex];

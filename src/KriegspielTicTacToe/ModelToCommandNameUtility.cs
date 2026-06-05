@@ -9,15 +9,15 @@ using KriegspielTicTacToe.Model;
 /// <remarks>
 /// Because these are functional, they are testable.
 /// </remarks>
-public static class ModelToKeyUtility {
-    public static Dictionary<Player, string> BuildPlayerToKeyMap(IEnumerable<Player> availablePlayers) {
+public static class ModelToCommandNameUtility {
+    public static OrderedDictionary<Player, string> BuildPlayerToCommandNameMap(IEnumerable<Player> availablePlayers) {
         // Build alternate key mapping for ALL players before entering loop
         // Keys are uppercase only (A-Z, 0-9)
         var usedKeys = availablePlayers
             .Select(p => p.Mark)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var playerToKey = new Dictionary<Player, string>();
+        var playerToKey = new OrderedDictionary<Player, string>();
 
         foreach (var player in availablePlayers) {
             // Check if mark is typeable (ASCII letter or digit)
@@ -70,7 +70,7 @@ public static class ModelToKeyUtility {
     /// they have created or discovered.  If the player is the
     /// current-turn-player, then the space index codes will be displayed.
     /// </summary>
-    public static string GetSpaceString(TicTacToeState state, Player? player, int boardIndex, int? activeBoardIndex, int col, int row) {
+    public static string GetSpaceCommandName(TicTacToeState state, Player? player, int boardIndex, int? activeBoardIndex, int col, int row) {
         player = state.IsGameOver //show for all players if the game is over.
             ? null
             : player;

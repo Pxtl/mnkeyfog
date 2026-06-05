@@ -18,7 +18,7 @@ public class ModelToKeyUtilityTests
             players.Add(new Player(mark));
         }
 
-        var result = ModelToKeyUtility.BuildPlayerToKeyMap(players);
+        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
 
         Assert.Equal(4, result.Count);
         foreach (var player in players) {
@@ -35,7 +35,7 @@ public class ModelToKeyUtilityTests
             players.Add(new Player(mark));
         }
 
-        var result = ModelToKeyUtility.BuildPlayerToKeyMap(players);
+        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
 
         foreach (var player in players) {
             Assert.Equal(player.Mark, result[player]);
@@ -51,7 +51,7 @@ public class ModelToKeyUtilityTests
             players.Add(new Player(mark));
         }
 
-        var result = ModelToKeyUtility.BuildPlayerToKeyMap(players);
+        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
 
         foreach (var player in players) {
             Assert.Equal(player.Mark, result[player]);
@@ -67,7 +67,7 @@ public class ModelToKeyUtilityTests
             players.Add(new Player(mark));
         }
 
-        var result = ModelToKeyUtility.BuildPlayerToKeyMap(players);
+        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
 
         foreach (var player in players) {
             var key = result[player];
@@ -87,7 +87,7 @@ public class ModelToKeyUtilityTests
             players.Add(new Player(mark));
         }
 
-        var result = ModelToKeyUtility.BuildPlayerToKeyMap(players);
+        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
 
         Assert.Equal(3, result.Count);
         Assert.Equal("A", result[new Player("A")]);
@@ -112,7 +112,7 @@ public class ModelToKeyUtilityTests
             new Player(typeablePlayer.Mark),
         };
         
-        var result = ModelToKeyUtility.BuildPlayerToKeyMap(players);
+        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
         
         // Single-char typeable mark returns identity
         Assert.Equal(typeableMark, result[typeablePlayer]);
@@ -126,7 +126,7 @@ public class ModelToKeyUtilityTests
             new Player("O")
         };
 
-        var result = ModelToKeyUtility.BuildPlayerToKeyMap(players);
+        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
 
         var originalX = players.First(p => p.Mark == "X");
         Assert.True(result.ContainsKey(originalX));
@@ -137,7 +137,7 @@ public class ModelToKeyUtilityTests
     public void BuildPlayerToKeyMap_ReturnsCorrectCountForEmptyInput()
     {
         var emptyPlayers = new List<Player>();
-        var result = ModelToKeyUtility.BuildPlayerToKeyMap(emptyPlayers);
+        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(emptyPlayers);
         Assert.Empty(result);
     }
 
@@ -150,7 +150,7 @@ public class ModelToKeyUtilityTests
             players.Add(new Player(mark));
         }
 
-        var result = ModelToKeyUtility.BuildPlayerToKeyMap(players);
+        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
 
         foreach (var player in players) {
             Assert.Equal(player.Mark, result[player]);
@@ -170,7 +170,7 @@ public class ModelToKeyUtilityTests
             players.Add(new Player(nt));
         }
 
-        var result = ModelToKeyUtility.BuildPlayerToKeyMap(players);
+        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
 
         Assert.Equal(4, result.Count);
         foreach (var t in typeable) {
@@ -197,7 +197,7 @@ public class ModelToKeyUtilityTests
             players.Add(new Player(mark));
         }
 
-        var result = ModelToKeyUtility.BuildPlayerToKeyMap(players);
+        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
 
         Assert.Equal(4, result.Count);
         Assert.Equal("A", result[new Player("A")]);

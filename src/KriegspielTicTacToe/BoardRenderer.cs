@@ -113,7 +113,7 @@ public static class BoardRenderer {
             sb.Append("  ");
 
             for(var col = 0; col < board.ColumnCount; col += 1) {
-                var body = ModelToKeyUtility.GetSpaceString(state, player, boardIndex, activeBoardIndex, col, rowIndex);
+                var body = ModelToCommandNameUtility.GetSpaceCommandName(state, player, boardIndex, activeBoardIndex, col, rowIndex);
                 DrawSpaceBody(body, borderBarString, sb);
             }
             sb.Append(borderBarString);

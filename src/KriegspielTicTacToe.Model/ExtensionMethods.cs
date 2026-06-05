@@ -23,4 +23,23 @@ public static class ExtensionMethods {
         }
         return maxItem;
     }
+
+    public static OrderedDictionary<TKey, TElement> ToOrderedDictionary<TSource, TKey, TElement>(
+        this IEnumerable<TSource> source,
+        Func<TSource, TKey> keySelector,
+        Func<TSource, TElement> elementSelector,
+        IEqualityComparer<TKey> comparer) where TKey : notnull
+    {
+        var pairs = source.Select(x => KeyValuePair.Create(keySelector(x), elementSelector(x)));
+        return new OrderedDictionary<TKey, TElement>(pairs, comparer);
+    }
+
+    public static OrderedDictionary<TKey, TElement> ToOrderedDictionary<TSource, TKey, TElement>(
+        this IEnumerable<TSource> source,
+        Func<TSource, TKey> keySelector,
+        Func<TSource, TElement> elementSelector) where TKey : notnull
+    {
+        var pairs = source.Select(x => KeyValuePair.Create(keySelector(x), elementSelector(x)));
+        return new OrderedDictionary<TKey, TElement>(pairs);
+    }
 }

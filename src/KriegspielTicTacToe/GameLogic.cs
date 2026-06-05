@@ -138,28 +138,35 @@ internal static class GameLogic {
                 Console.Out.WriteLine(
                     BoardRenderer.DrawBoards(state, currentPlayer, activeBoardIndex, maxWidth: Console.BufferWidth)
                 );
-                var boardCommand = InputUtility.ReadCommandKeys("Press numeric key(s) to pick a board, or 'r' to resign.", 1);
+                var availableBoardCommands = state.BoardNames;
+                var boardCommand = InputUtility.ReadCommandInputWithAddedStandardPlayerCommands(
+                    "Press numeric key(s) to pick a board, or 'r' to resign.",
+                    state.BoardNames
+                );
                 boardCommand.Switch(
-                    charCode => {
-                        currentPlayerIsDoneTurn = true;
-                        using (var stateStorage = new StateStorage(sharedStateFilePath)) {
-                            state = stateStorage.State;
-                            state.PlayManager.ResignPlayer(currentPlayer);
+                    result => {
+                        if(result.Value == "r") {
+                            currentPlayerIsDoneTurn = true;
+                            using (var stateStorage = new StateStorage(sharedStateFilePath)) {
+                                state = stateStorage.State;
+                                state.PlayManager.ResignPlayer(currentPlayer);
+                            }
+                        } else {
+                            state.SelectBoard(result.Value).Switch(
+                                notFound => {
+                                    currentPlayerIsDoneTurn = false;
+                                    Console.WriteLine($"That is not a valid board.  Please pick an incomplete board.");
+                                },
+                                boardIsDone => {
+                                    currentPlayerIsDoneTurn = false;
+                                    Console.WriteLine($"That board is already complete.");
+                                },
+                                boardIndex => {
+                                    activeBoardIndex = boardIndex.Value;
+                                }
+                            );
                         }
                     },
-                    boardNameAsInt => state.SelectBoard(boardNameAsInt.ToString()).Switch(
-                        notFound => {
-                            currentPlayerIsDoneTurn = false;
-                            Console.WriteLine($"That is not a valid board.  Please pick an incomplete board.");
-                        },
-                        boardIsDone => {
-                            currentPlayerIsDoneTurn = false;
-                            Console.WriteLine($"That board is already complete.");
-                        },
-                        boardIndex => {
-                            activeBoardIndex = boardIndex.Value;
-                        }
-                    ),
                     unknown => {
                         currentPlayerIsDoneTurn = false;
                     }
@@ -175,37 +182,37 @@ internal static class GameLogic {
                 Console.Out.WriteLine(
                     BoardRenderer.DrawBoards(state, currentPlayer, boardIndex, maxWidth: Console.BufferWidth)
                 );
-                var spaceCommand = InputUtility.ReadCommandKeys("Press numeric key(s) to play a space, or 'r' to resign.", state.Boards[boardIndex].SpaceNameLength);
+                var spaceCommand = InputUtility.ReadCommandInputWithAddedStandardPlayerCommands(
+                    "Press numeric key(s) to play a space, or 'r' to resign.",
+                    state.Boards[boardIndex].SpaceNames
+                );
                 spaceCommand.Switch(
-                    charCode => {
-                        currentPlayerIsDoneTurn = true;
+                    result => {
                         using (var stateStorage = new StateStorage(sharedStateFilePath)) {
                             state = stateStorage.State;
-                            state.PlayManager.ResignPlayer(currentPlayer);
-                        }
-                    },
-                    spaceNameAsInt => {
-                        using (var stateStorage = new StateStorage(sharedStateFilePath)) {
-                            state = stateStorage.State;
-
-                            state.PlaySpace(boardIndex, spaceNameAsInt.ToString(), currentPlayer).Switch(
-                                notFound => {
-                                    currentPlayerIsDoneTurn = false;
-                                    Console.WriteLine("Invalid space.");
-                                },
-                                actionQueuedSuccessfully => {
-                                    currentPlayerIsDoneTurn = true;
-                                    Console.WriteLine($"Played on board {boardCode}, space {spaceNameAsInt.ToString()}");
-                                }, 
-                                newlyLearned => {
-                                    currentPlayerIsDoneTurn = true;
-                                    Console.WriteLine($"Space already taken by player '{newlyLearned.Value}'.");
-                                },
-                                alreadyPlayed => {
-                                    currentPlayerIsDoneTurn = false;
-                                    Console.Out.WriteLine($"Invalid space, that space is already known to player {currentPlayer}");
-                                }
-                            );
+                            if(result.Value == "r") {
+                                currentPlayerIsDoneTurn = true;
+                                state.PlayManager.ResignPlayer(currentPlayer);
+                            } else {
+                                state.PlaySpace(boardIndex, result.Value, currentPlayer).Switch(
+                                    notFound => {
+                                        currentPlayerIsDoneTurn = false;
+                                        Console.WriteLine("Invalid space.");
+                                    },
+                                    actionQueuedSuccessfully => {
+                                        currentPlayerIsDoneTurn = true;
+                                        Console.WriteLine($"Played on board {boardCode}, space {result.Value}");
+                                    }, 
+                                    newlyLearned => {
+                                        currentPlayerIsDoneTurn = true;
+                                        Console.WriteLine($"Space already taken by player '{newlyLearned.Value}'.");
+                                    },
+                                    alreadyPlayed => {
+                                        currentPlayerIsDoneTurn = false;
+                                        Console.Out.WriteLine($"Invalid space, that space is already known to player {currentPlayer}");
+                                    }
+                                );
+                            }
                         }
                     },
                     unknown => {
@@ -220,10 +227,10 @@ internal static class GameLogic {
 
     internal static OneOf<Result<Player>, GameIsOver> DoPlayerChooserLoop(PlayManager playManager) {
         // Use ModelToKeyUtility for clean, testable key mapping
-        var playerToKey = ModelToKeyUtility.BuildPlayerToKeyMap(playManager.PlayersAvailableForTurn);
+        var playerToCommand = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(playManager.PlayersAvailableForTurn);
 
-        var keyToPlayer = playerToKey
-            .ToDictionary(
+        var commandToPlayer = playerToCommand
+            .ToOrderedDictionary(
                 pair => pair.Value,
                 pair => pair.Key,
                 StringComparer.OrdinalIgnoreCase);
@@ -239,37 +246,28 @@ internal static class GameLogic {
                 throw new InvalidOperationException("No players are available to take a turn.");
             }
 
+            Console.Out.WriteLine(playManager.GameStateText);
+
             // Display all available players with alternate key hints for non-typeable marks
             var playerDisplayList = playManager.PlayersAvailableForTurn
                 .Select(p => {
-                    var altKey = playerToKey[p];
+                    var altKey = playerToCommand[p];
                     var keyDisplay = altKey.Equals(p.Mark, StringComparison.OrdinalIgnoreCase)
                         ? ""
                         : $" ({altKey})";
                     return $"Player {p.Mark}{keyDisplay}";
                 });
-            Console.Out.WriteLine(playManager.GameStateText);
-            Console.Out.WriteLine("Who will take the next turn? Press the player's key to take their turn.");
-            Console.Out.WriteLine(string.Join(" ", playerDisplayList));
 
-            var keyRead = Console.ReadKey();
+            var prompt = "Who will take the next turn? Press the player's key to take their turn (or press 'q' to quit the game for everyone)." + Environment.NewLine
+                + string.Join(" ", playerDisplayList);
+            var validCommands = ((IEnumerable<string>)["q"]).Concat(commandToPlayer.Keys);
+            var commandResult = InputUtility.ReadCommandInputLoop(prompt, validCommands);
 
-            // Handle Escape key to quit the game
-            if (keyRead.Key == ConsoleKey.Escape) {
+            if (commandResult == "q") {
                 Console.Out.WriteLine("Quitting.");
                 return new GameIsOver();
-            }
-
-            var keyStr = keyRead.KeyChar.ToString();
-
-            // Try to find player by alternate key first, then by primary key
-            if (!keyToPlayer.TryGetValue(keyStr, out var selectedPlayer)) {
-                // No player matched - inform user
-                Console.Out.WriteLine($"No player found for '{keyStr}'. Please try again.");
-                continue;
             } else {
-                Console.Out.WriteLine();
-                return new Result<Player>(selectedPlayer);
+                return new Result<Player>(commandToPlayer[commandResult]);
             }
         }
     }
