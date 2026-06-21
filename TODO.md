@@ -6,8 +6,12 @@
 Unit tests for ModelToCommandNameUtility.cs
 
 ## Game Type Files
+Create new GameType object that describes a single GameType for KSTTT, where a
+GameType includes the BoardBuilder list and the isSynchronousMode flag.  Future
+configurations will be added to gametype as they develop.
 
 ### New GameType Model Object
+- Create the GameType model object described above.
 - Add a new Constructor for TicTacToeState that wraps the following constructor:
     ```
     public TicTacToeState(
