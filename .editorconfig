@@ -1,0 +1,42 @@
+# EditorConfig is awesome: https://EditorConfig.org
+# The following is a basic .editorconfig that sets formatting conventions for the project.
+
+[*]
+# Basic global settings
+root = true
+
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+
+[*.{cs,csx}]
+# Formatting defaults for C# code
+
+# Indentation
+indent_style = tab
+indent_size = 2
+tab_width = 2
+
+# Whitespace
+trim_trailing_whitespace = true
+insert_space_after_comma = false
+insert_space_after_semicolon = false
+
+# Line endings
+line_ending_style = lf
+
+[*.{cs,csx}]
+# C# formatting via dotnet format defaults
+csharp_indent_access_modifier = 0
+csharp_line_endings = {previous}
+csharp_object_initializer_brace_style = vertical
+dotnet_format_addImplicitObjectConstraintWithNewerCompiler = false
+dotnet_format_autosortusingdirectives = true
+dotnet_format_allow_multipleusingstatements = false
+dotnet_format_space_around_binary_operators = always
+dotnet_format_space_inside_parentheses_and_angle_brackets = always
+
+[*.sln]
+# Solution file formatting
+line_endings = CRLF
+insert_final_newline = true
