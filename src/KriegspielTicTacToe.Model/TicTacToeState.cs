@@ -9,34 +9,49 @@ public record TicTacToeState {
         IEnumerable<BoardBuilder> boardBuilders,
         bool isRandomPlayerOrder,
         bool isSynchronousMode
-    ) {
-        List<Player> playerList = players
-            .Select(c => new Player(c.ToString()))
-            .ToList();
-        playerList = playerList.ToList();
-        if(isRandomPlayerOrder) { 
-            Random.Shared.Shuffle((Player[])playerList.ToArray());
-        }
-        PlayManager = isSynchronousMode
-            ? new SynchronizedPlayManager(playerList.AsReadOnly())
-            : new RoundRobinPlayManager(playerList.AsReadOnly());
-        Boards = boardBuilders.Select(b => new Board(b)).ToList();
-        Initialize();
-    }
+    ) : this(players, new GameType(boardBuilders, isSynchronousMode), isRandomPlayerOrder) { }
 
     public TicTacToeState(
         Player[] players,
         IEnumerable<BoardBuilder> boardBuilders,
         bool isRandomPlayerOrder,
         bool isSynchronousMode
+    ) : this(players, new GameType(boardBuilders, isSynchronousMode), false) { }
+
+    protected TicTacToeState(
+        char[] players,
+        GameType gameType,
+        bool isRandomPlayerOrder
+    ) {
+        Player[] playerArray;
+        List<Player> playerList = players
+            .Select(c => new Player(c.ToString()))
+            .ToList();
+        if(isRandomPlayerOrder) { 
+            Random.Shared.Shuffle((Player[])playerList.ToArray());
+            playerArray = playerList.ToArray(); // ensure array for passing to PlayManager
+        } else {
+            playerArray = players; // pass-through the original array
+        }
+        PlayManager = gameType.IsSynchronousMode
+            ? new SynchronizedPlayManager(playerArray.AsReadOnly())
+            : new RoundRobinPlayManager(playerArray.AsReadOnly());
+        Boards = gameType.BoardBuilders.Select(b => new Board(b)).ToList();
+        Initialize();
+    }
+
+    protected TicTacToeState(
+        Player[] players,
+        GameType gameType,
+        bool isRandomPlayerOrder
     ) {
         if(isRandomPlayerOrder) { 
             Random.Shared.Shuffle((Player[])players); // explicit generic
         }
-        PlayManager = (isSynchronousMode)
+        PlayManager = (gameType.IsSynchronousMode)
             ? new SynchronizedPlayManager(players.AsReadOnly())
             : new RoundRobinPlayManager(players.AsReadOnly());
-        Boards = boardBuilders.Select(b => new Board(b)).ToList();
+        Boards = gameType.BoardBuilders.Select(b => new Board(b)).ToList();
         Initialize();
     }
 
