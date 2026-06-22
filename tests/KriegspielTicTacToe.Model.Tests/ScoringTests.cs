@@ -31,6 +31,19 @@ public class ScoringTests {
     }
 
     [Fact]
+    public void Given3x3Board_WhenLineFullAndBoardIsNotDoneWhenScored_ThenBoardIsNotDone() {
+        var board = new Board(3, 3, isBoardDoneWhenScored: false);
+
+        board.Spaces[0, 0].Mark = "X";
+        board.Spaces[0, 1].Mark = "X";
+        board.Spaces[0, 2].Mark = "X";
+
+        var expectedPlayerScore = new PlayerScore("X", 1);
+        board.ScoreCard.HighestScore!.Should().Be(expectedPlayerScore);
+        board.IsDone.Should().BeFalse();
+    }
+
+    [Fact]
     public void Given3x3Board_WhenHorizontalFullWithMultipleWinningRows_ThenMajorityWins() {
         var board = new Board(3, 3);
 

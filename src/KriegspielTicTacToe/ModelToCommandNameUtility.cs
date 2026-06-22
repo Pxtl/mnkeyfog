@@ -44,16 +44,18 @@ public static class ModelToCommandNameUtility {
                     }
                 }
 
-                // If needed, use letters (A-Z)
-                // stop at 26 since then we've exhausted letters.
-                for (int letterKeyIndex = 0; letterKeyIndex < 26; letterKeyIndex += 1) {
-                    string letterKey = ((char)('A' + letterKeyIndex)).ToString();
-                    if (usedKeys.Contains(letterKey)) {
-                        continue;
-                    } else {
-                        playerToKey[player] = letterKey;
-                        usedKeys.Add(letterKey);
-                        break;
+                if (!playerToKey.ContainsKey(player)) {
+                    // If needed, use letters (A-Z)
+                    // stop at 26 since then we've exhausted letters.
+                    for (int letterKeyIndex = 0; letterKeyIndex < 26; letterKeyIndex += 1) {
+                        string letterKey = ((char)('A' + letterKeyIndex)).ToString();
+                        if (usedKeys.Contains(letterKey)) {
+                            continue;
+                        } else {
+                            playerToKey[player] = letterKey;
+                            usedKeys.Add(letterKey);
+                            break;
+                        }
                     }
                 }
             }
@@ -71,6 +73,7 @@ public static class ModelToCommandNameUtility {
     /// current-turn-player, then the space index codes will be displayed.
     /// </summary>
     public static string GetSpaceCommandName(TicTacToeState state, Player? player, int boardIndex, int? activeBoardIndex, int col, int row) {
+        ArgumentNullException.ThrowIfNull(state);
         player = state.IsGameOver //show for all players if the game is over.
             ? null
             : player;

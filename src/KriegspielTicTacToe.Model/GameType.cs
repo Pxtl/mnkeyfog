@@ -5,6 +5,5 @@ namespace KriegspielTicTacToe.Model;
 /// </summary>
 public record struct GameType(
     IEnumerable<BoardBuilder> BoardBuilders,
-    bool IsSynchronousMode,
-    bool IsRandomPlayerOrder = false  // defaults to false for default constructor, or set true for random order
+    bool IsSynchronousMode
 );

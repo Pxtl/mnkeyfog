@@ -102,6 +102,10 @@ public record TicTacToeState {
         int row,
         Player player
     ) {
+        if (!PlayManager.CanTakeTurn(player)) {
+            throw new InvalidOperationException($"Player '{player}' cannot take their turn.");
+        }
+        
         var space = Boards[boardIndex].Spaces[col, row];
         if (space.IsKnownToPlayer(player)) {
             return new AlreadyPlayed();

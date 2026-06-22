@@ -2,9 +2,6 @@
 
 ## Automated Testing
 
-### ModelToCommandNameUtility
-Unit tests for ModelToCommandNameUtility.cs
-
 ## Game Type Files
 Create new GameType object that describes a single GameType for KSTTT, where a
 GameType includes the BoardBuilder list and the isSynchronousMode flag.  Future

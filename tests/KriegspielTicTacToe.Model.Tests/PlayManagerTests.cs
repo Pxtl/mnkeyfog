@@ -22,7 +22,7 @@ public class PlayManagerTests {
     public void RoundRobinPlayManagerConstructor_WithMarksSameButDifferentCaseThrows() {
         var expectedPlayers = new List<Player>() { new("X"), new("O"), new("x") };
         var action = () => {
-            _ = new RoundRobinPlayManager([new Player("X"), new Player("O")]);
+            _ = new RoundRobinPlayManager(expectedPlayers);
         };
         action.Should().Throw<ArgumentException>();
     }
