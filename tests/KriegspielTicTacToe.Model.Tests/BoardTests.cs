@@ -72,19 +72,22 @@ public class BoardTests {
 
     #region GetSpaceName
     [Fact]
-    public void GetSpaceName_TopRightCorner_ReturnsSeven() {
+    public void GetSpaceName_3x3TopRightCorner_ReturnsExpected() {
         // top-right corner (row 0, col 2) in 3x3
+        // board matches layout of numpad, 1 is bottom left.
         var board = new Board(3, 3, new MNKRuleset());
         var code = board.GetSpaceName(2, 0);
         code.Should().Be("9");
     }
 
     [Fact]
-    public void GetSpaceName_RightMiddleSquare_ReturnsPositive() {
-        // 3x3 board: (row 1, col 2)
-        var board = new Board(3, 3, new MNKRuleset());
-        var code = board.GetSpaceName(2, 1);
-        code.Should().Be("6");
+    public void GetSpaceName_4x4LeftLowerMiddleSquare_ReturnsExpected() {
+        // 4x4 board: (row 2, col 0)
+        // 01 is bottom left, goes right-then-up.
+        // because this is more than 3x3 it will > 9 spaces so 2 digit.
+        var board = new Board(4, 4, new MNKRuleset());
+        var code = board.GetSpaceName(0, 2);
+        code.Should().Be("05");
     }
     #endregion
 
