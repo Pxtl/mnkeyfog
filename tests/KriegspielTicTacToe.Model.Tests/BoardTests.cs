@@ -93,12 +93,12 @@ public class BoardTests {
 
     #region TryGetCoordinatesFromSpaceName
     [Fact]
-    public void TryGetCoordinatesFromSpaceName_Valid() {
+    public void TryGetCoordinatesFromSpaceName_AsExpected() {
         var board = new Board(3, 3, new MNKRuleset());
         var ok = board.TryGetCoordinatesFromSpaceName("1", out var col, out var row);
         ok.Should().BeTrue();
-        col.Should().BeLessThan(board.ColumnCount);
-        row.Should().BeLessThan(board.RowCount);
+        col.Should().Be(0);
+        row.Should().Be(2);
     }
 
     [Fact]
