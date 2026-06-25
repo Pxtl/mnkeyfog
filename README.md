@@ -1,6 +1,6 @@
 # kriegspiel-tictactoe
 
-A command-line implementation of kriegspiel and synchroneous [m,n,k
+A command-line implementation of kriegspiel and synchronous [m,n,k
 games](https://en.wikipedia.org/wiki/M,n,k-game) such as Zach Weinersmith's
 proposed game 'Kriegspiel Tic Tac Toe'.
 

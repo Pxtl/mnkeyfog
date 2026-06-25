@@ -11,7 +11,7 @@
     "game-tictactoe": {
       "commandName": "Project",
       "dotnetRunMessages": true,
-      "commandLineArgs": "game tictactoe"
+      "commandLineArgs": "game basic-tictactoe"
     },
     "custom": {
       "commandName": "Project",

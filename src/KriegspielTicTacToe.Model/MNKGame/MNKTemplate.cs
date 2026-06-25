@@ -15,12 +15,14 @@ public record MNKTemplate
     public MNKTemplate(
         string commandName,
         string description,
+        IEnumerable<int> legalPlayerCounts,
         IEnumerable<BoardBuilder> boardBuilders,
         bool isKriegspiel,
         bool isSynchronousMode
     ) : this(boardBuilders, isKriegspiel, isSynchronousMode) {
         CommandName = commandName;
         Description = description;
+        LegalPlayerCounts = legalPlayerCounts;
     }
 
     public MNKTemplate(
