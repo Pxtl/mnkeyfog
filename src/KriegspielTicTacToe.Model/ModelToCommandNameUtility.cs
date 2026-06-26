@@ -95,11 +95,25 @@ public static class ModelToCommandNameUtility {
         }
     }
 
-    public static OneOf<NotFound, Result<sbyte>> GetBoardIndexByName(string boardName, int boardsCount) {
+    public static bool TryGetBoardIndexByName(string boardName, int boardsCount, out sbyte boardIndex) {
         var boardNameAsSbyte = sbyte.Parse(boardName);
-        sbyte boardIndex = boardNameAsSbyte.Minus1();
-        return (boardIndex >= 0 && boardIndex < boardsCount) 
-            ? new Result<sbyte>(boardIndex)
-            : new NotFound();
+        boardIndex = boardNameAsSbyte.Minus1();
+        if (boardIndex >= 0 && boardIndex < boardsCount) {
+            return true;
+        } else {
+            boardIndex = -1;
+            return false;
+        }
+    }
+
+    public static string GetBoardNameFromIndex(int boardIndex)
+    => (boardIndex + 1).ToString();
+
+    public static OneOf<NotFound, Result<sbyte>> GetBoardIndexByName(string boardName, int boardsCount) {
+        if(TryGetBoardIndexByName(boardName, boardsCount, out var boardIndex)) {
+            return new Result<sbyte>(boardIndex);
+        } else {
+            return new NotFound();
+        }
     }
 }

@@ -4,6 +4,7 @@ using KriegspielTicTacToe.Model.Views;
 
 namespace KriegspielTicTacToe.Model;
 
+[ModelSerializable]
 public record GameState
 : IGameState {
     #region Constructors
@@ -12,6 +13,7 @@ public record GameState
         // initialized.
         PlayManager = new RoundRobinPlayManager([]);
         Boards = [];
+        GameTemplate = null!;
     }
 
     public GameState(
@@ -23,7 +25,8 @@ public record GameState
             Random.Shared.Shuffle(players);
         }
 
-        PlayManager = gameTemplate.PlayManagerFactory.Create(players);
+        GameTemplate = gameTemplate;
+        PlayManager = gameTemplate.PlayManagerFactory.Create(players);        
         Boards = gameTemplate.CreateBoards();
         Initialize();
 
@@ -47,6 +50,9 @@ public record GameState
     #endregion
 
     #region Data Properties
+    [JsonProperty(TypeNameHandling = TypeNameHandling.All)]
+    public IGameTemplate GameTemplate { get; init; }
+
     [JsonProperty(TypeNameHandling = TypeNameHandling.All)]
     public virtual PlayManager PlayManager { get; init; }
 

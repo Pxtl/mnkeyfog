@@ -6,6 +6,7 @@ using OneOf.Types;
 /// <summary>
 /// PlayManager for synchronized mode - player moves are buffered until round end.
 /// </summary>
+[ModelSerializable]
 public class SynchronizedPlayManager 
 : PlayManager {
     #region constructors
@@ -36,6 +37,7 @@ public class SynchronizedPlayManager
     #endregion
 }
 
+[ModelSerializable]
 public record SynchronizedPlayManagerFactory
 : Template.PlayManagerFactory {
     public static SynchronizedPlayManagerFactory Instance {get;} = new SynchronizedPlayManagerFactory();

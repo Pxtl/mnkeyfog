@@ -3,6 +3,7 @@ namespace KriegspielTicTacToe.Model;
 /// <summary>
 /// Represents a player in the game. Stores their marker string.
 /// </summary>
+[ModelSerializable]
 public sealed record Player {
     public Player(string mark) {
         if (mark == null) {

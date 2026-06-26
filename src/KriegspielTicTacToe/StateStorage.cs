@@ -27,6 +27,10 @@ public class StateStorage : IDisposable {
         TouchFile(GetLockFilePath(FilePath));
     }
 
+    public StateStorage(string filePath, out GameState state) : this(filePath) {
+        state = State;
+    }
+
     public void Dispose() {
         SaveState(State, FilePath);
     }
@@ -54,7 +58,7 @@ public class StateStorage : IDisposable {
             waitCount += 1;
         }
         if (withLock) {
-            TouchFile(filePath);
+            TouchFile(GetLockFilePath(filePath));
         }
 
         using var sr = new StreamReader(filePath);

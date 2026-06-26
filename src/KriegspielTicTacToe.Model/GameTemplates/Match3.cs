@@ -8,7 +8,7 @@ public static partial class GameTemplates {
         "Simple synchronous match-3 game on an 8x8 board.",
         [2,3,4,5,6], //playercount.
         [
-            new BoardBuilder(8, 8, new MNKRuleset(ScoringLength:3))
+            new BoardBuilder(8, 8, new MNKBoardRuleset(ScoringLength:3))
         ],
         
         isKriegspiel: false,

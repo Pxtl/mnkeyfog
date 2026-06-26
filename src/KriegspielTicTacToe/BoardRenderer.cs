@@ -65,7 +65,7 @@ public static class BoardRenderer {
             sb.Append(showBoardName
                 ? (board.IsDone
                     ? " ✓" //board is done so just show a checkmark.
-                    : (boardIndex + 1).ToString().PadLeft(2) //key-index to choose it
+                    : ModelToCommandNameUtility.GetBoardNameFromIndex(boardIndex).PadLeft(2) //key-index to choose it
                 ) : "  " //blank space
             );
 

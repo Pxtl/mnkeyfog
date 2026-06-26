@@ -1,12 +1,10 @@
 using System.ComponentModel.DataAnnotations;
-using OneOf;
-using OneOf.Types;
-
 namespace KriegspielTicTacToe.Model.MNKGame;
 
 /// <summary>
 /// A play action for an MNK game such as tic tac toe.  <see href="https://en.wikipedia.org/wiki/M,n,k-game">WP: MNK Game</see>
 /// </summary>
+[ModelSerializable]
 public record MNKAction
 : GameAction {
     [Obsolete("Default constructor is only used for deserialization.")]
@@ -63,7 +61,7 @@ public record MNKAction
             var spaceName = gameState.GetView(actionPlayer).GetSpaceName(BoardIndex, Col, Row);
             return new Enqueued(hasStateChanged, spaceName);
         } else if (space.IsKnownToPlayer(actionPlayer)) {
-            return new AlreadyPlayed();
+            return new AlreadyPlayed(actionPlayer);
         } else {
             space.MakeKnownToPlayer(actionPlayer);
             gameState.PlayManager.EndTurn(actionPlayer, out _);
@@ -89,14 +87,10 @@ public record MNKAction
         GameState gameState,
         string spaceName
     ) {
-        if (gameState.GetView(player: null).TryGetCoordinatesFromSpaceName(spaceName, out var boardName, out var col, out var row)) {
-            var boardIndex = ModelToCommandNameUtility.GetBoardIndexByName(boardName, gameState.Boards.Count).Match(
-                notFound => throw new InvalidOperationException("Attempted to create an Action with an invalid Space Name"),
-                result => result.Value
-            );
+        if (gameState.GetView(player: null).TryGetCoordinatesFromSpaceName(spaceName, out sbyte boardIndex, out var col, out var row)) {
             return new MNKAction(boardIndex, col, row);
         } else {
-            throw new KeyNotFoundException("That is not a valid space name for this board.");
+            throw new KeyNotFoundException("That is not a valid space name.");
         }
     }
 }

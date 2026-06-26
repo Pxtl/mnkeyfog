@@ -6,6 +6,7 @@ using OneOf.Types;
 /// <summary>
 /// Base class containing shared play management logic for retirement and turn tracking.
 /// </summary>
+[ModelSerializable]
 public abstract class PlayManager
 {
     #region constructor

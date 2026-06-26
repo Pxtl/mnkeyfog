@@ -8,9 +8,9 @@ public static partial class GameTemplates {
         "Zach Weinersmith's Kriegspiel Tic-Tac-Toe.",
         [2], //legal player-counts
         [
-            new BoardBuilder(3, 3, new MNKRuleset()),
-            new BoardBuilder(3, 3, new MNKRuleset()),
-            new BoardBuilder(3, 3, new MNKRuleset())
+            new BoardBuilder(3, 3, new MNKBoardRuleset()),
+            new BoardBuilder(3, 3, new MNKBoardRuleset()),
+            new BoardBuilder(3, 3, new MNKBoardRuleset())
         ],
         isKriegspiel: true,
         isSynchronousMode: false

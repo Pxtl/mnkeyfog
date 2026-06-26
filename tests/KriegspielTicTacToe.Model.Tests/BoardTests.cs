@@ -10,14 +10,14 @@ public class BoardTests {
 
     [Fact]
     public void Width_3x3() {
-        var board = new Board(3, 3, new MNKRuleset());
+        var board = new Board(3, 3, new MNKBoardRuleset());
         board.ColumnCount.Should().Be(3);
     }
 
     [Fact]
-    public void Width_100() {
-        var board = new Board(100, 10, new MNKRuleset());
-        board.ColumnCount.Should().Be(100);
+    public void Width_26() {
+        var board = new Board(26, 10, new MNKBoardRuleset());
+        board.ColumnCount.Should().Be(26);
     }
 
     [Fact]
@@ -28,13 +28,13 @@ public class BoardTests {
 
     [Fact]
     public void Height_3x3() {
-        var board = new Board(3, 3, new MNKRuleset());
+        var board = new Board(3, 3, new MNKBoardRuleset());
         board.RowCount.Should().Be(3);
     }
 
     [Fact]
     public void Height_10() {
-        var board = new Board(100, 10, new MNKRuleset());
+        var board = new Board(26, 10, new MNKBoardRuleset());
         board.RowCount.Should().Be(10);
     }
     #endregion
@@ -42,14 +42,14 @@ public class BoardTests {
     #region GetBoardAsEnumerable
     [Fact]
     public void BoardAsEnumerable_ReturnsAllSpaces_ExpectedCount() {
-        var board = new Board(3, 3, new MNKRuleset());
+        var board = new Board(3, 3, new MNKBoardRuleset());
         var spaces = board.AsSpaceViewEnumerable().ToList();
         spaces.Count.Should().Be(9);
     }
 
     [Fact]
     public void BoardAsEnumerable_ReturnsAllSpaces_26x10() {
-        var board = new Board(26, 10, new MNKRuleset());
+        var board = new Board(26, 10, new MNKBoardRuleset());
         var spaces = board.AsSpaceViewEnumerable().ToList();
         spaces.Count.Should().Be(260);
     }
@@ -59,7 +59,7 @@ public class BoardTests {
 
     [Fact]
     public void MakeKnownToPlayer_MarksToPlayer_IsKnown() {
-        var board = new Board(3, 3, new MNKRuleset());
+        var board = new Board(3, 3, new MNKBoardRuleset());
         board.Spaces[0, 0].Mark = "X";
         board.Spaces[0, 0].MakeKnownToPlayer("X");
 
@@ -68,7 +68,7 @@ public class BoardTests {
 
     [Fact]
     public void MakeKnownToPlayer_MarksToAnotherPlayer_IsKnown() {
-        var board = new Board(3, 3, new MNKRuleset());
+        var board = new Board(3, 3, new MNKBoardRuleset());
         board.Spaces[0, 0].Mark = "X";
         board.Spaces[0, 0].MakeKnownToPlayer("O");
 

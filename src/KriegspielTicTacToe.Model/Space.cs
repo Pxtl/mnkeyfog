@@ -3,6 +3,7 @@ namespace KriegspielTicTacToe.Model;
 /// <summary>
 /// class to represent a space on the board.
 /// </summary>
+[ModelSerializable]
 public sealed record Space {
     /// <summary>
     /// The current state of the space - null means available.

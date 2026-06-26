@@ -6,7 +6,8 @@ namespace KriegspielTicTacToe.Model.MNKGame;
 /// <summary>
 /// A board ruleset for an MNK game such as tic tac toe.  <see href="https://en.wikipedia.org/wiki/M,n,k-game">WP: MNK Game</see>
 /// </summary>
-public record MNKRuleset(sbyte? ScoringLength = null, bool IsBoardDoneWhenScored = false)
+[ModelSerializable]
+public record MNKBoardRuleset(sbyte? ScoringLength = null, bool IsBoardDoneWhenScored = false)
 : BoardRuleset() {
     public static Template.BoardBuilder CreateBoardBuilder(
         sbyte width,
@@ -24,7 +25,7 @@ public record MNKRuleset(sbyte? ScoringLength = null, bool IsBoardDoneWhenScored
         return new Template.BoardBuilder(
             width,
             height,
-            new MNKRuleset(scoringLength, isBoardDoneWhenScored)
+            new MNKBoardRuleset(scoringLength, isBoardDoneWhenScored)
         ) { };
     }
 
@@ -63,6 +64,13 @@ public record MNKRuleset(sbyte? ScoringLength = null, bool IsBoardDoneWhenScored
     
     public override bool IsDone(Board board)
     => IsBoardDoneWhenScored && board.ScoreCard.PlayerScores.Any(s => s.Score > 0);
+
+    public override string ToString()
+	=> "m,n,k game scoring, " 
+        + (ScoringLength.HasValue
+            ? $"{ScoringLength} in a row."
+            : $"full width/height/diagonal of the board."
+        );
     #endregion
 
     #region private helpers

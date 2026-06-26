@@ -6,6 +6,7 @@ using OneOf.Types;
 /// <summary>
 /// Immutable value-y collection of scores
 /// </summary>
+[ModelSerializable]
 public struct ScoreCard {
     #region constructors
     public ScoreCard() {

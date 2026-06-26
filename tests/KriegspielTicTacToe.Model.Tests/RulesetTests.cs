@@ -5,7 +5,7 @@ public class RulesetTests {
     
     [Fact]
     public void Given3x3Board_WhenVerticalFull_ThenXWins() {
-        var board = new Board(3, 3, new MNKRuleset());
+        var board = new Board(3, 3, new MNKBoardRuleset());
 
         board.Spaces[0, 0].Mark = "X";
         board.Spaces[0, 1].Mark = "X";
@@ -18,7 +18,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given3x3Board_WhenLineFullAndBoardIsDoneWhenScored_ThenBoardIsDone() {
-        var board = new Board(3, 3, new MNKRuleset(IsBoardDoneWhenScored: true));
+        var board = new Board(3, 3, new MNKBoardRuleset(IsBoardDoneWhenScored: true));
 
         board.Spaces[0, 0].Mark = "X";
         board.Spaces[0, 1].Mark = "X";
@@ -31,7 +31,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given3x3Board_WhenLineFullAndBoardIsNotDoneWhenScored_ThenBoardIsNotDone() {
-        var board = new Board(3, 3, new MNKRuleset(IsBoardDoneWhenScored: false));
+        var board = new Board(3, 3, new MNKBoardRuleset(IsBoardDoneWhenScored: false));
 
         board.Spaces[0, 0].Mark = "X";
         board.Spaces[0, 1].Mark = "X";
@@ -44,7 +44,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given3x3Board_WhenHorizontalFullWithMultipleWinningRows_ThenMajorityWins() {
-        var board = new Board(3, 3, new MNKRuleset());
+        var board = new Board(3, 3, new MNKBoardRuleset());
 
         board.Spaces[0, 0].Mark = "X";
         board.Spaces[1, 0].Mark = "X";
@@ -66,7 +66,7 @@ public class RulesetTests {
     
     [Fact]
     public void Given3x3Board_WhenIdentityDiagonal_ThenXWins() {
-        var board = new Board(3, 3, new MNKRuleset());
+        var board = new Board(3, 3, new MNKBoardRuleset());
         
         board.Spaces[0, 0].Mark = "X";
         board.Spaces[1, 1].Mark = "X";
@@ -77,7 +77,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given3x3Board_WhenInverseDiagonal_ThenXWins() {
-        var board = new Board(3, 3, new MNKRuleset());
+        var board = new Board(3, 3, new MNKBoardRuleset());
         
         board.Spaces[0, 2].Mark = "X";
         board.Spaces[1, 1].Mark = "X";
@@ -91,7 +91,7 @@ public class RulesetTests {
     
     [Fact]
     public void Given4x3Board_WhenIdentityDiagonal_ThenXWins() {
-        var board = new Board(4, 3, new MNKRuleset());
+        var board = new Board(4, 3, new MNKBoardRuleset());
         
         // Identity diagonal: starts at (0, H-diagLen) = (0, 0), ends at (diagLen-1, H-1) = (2, 2)
         board.Spaces[0, 0].Mark = "X";
@@ -103,7 +103,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given4x3Board_WhenIdentityDiagonalOffset_ThenXWins() {
-        var board = new Board(4, 3, new MNKRuleset());
+        var board = new Board(4, 3, new MNKBoardRuleset());
         
         // Identity diagonal: starts at (0, H-diagLen) = (0, 0), ends at (diagLen-1, H-1) = (2, 2)
         board.Spaces[1, 0].Mark = "X";
@@ -115,7 +115,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given4x3Board_WhenInverseDiagonal_ThenXWins() {
-        var board = new Board(4, 3, new MNKRuleset());
+        var board = new Board(4, 3, new MNKBoardRuleset());
         
         // Inverse diagonal: starts at (0, diagLen-1) = (0, 2), ends at (diagLen-1, 0) = (2, 0)
         board.Spaces[0, 2].Mark = "X";
@@ -127,7 +127,7 @@ public class RulesetTests {
 
         [Fact]
     public void Given4x3Board_WhenInverseDiagonalOffset_ThenXWins() {
-        var board = new Board(4, 3, new MNKRuleset());
+        var board = new Board(4, 3, new MNKBoardRuleset());
         
         // Inverse diagonal: starts at (0, diagLen-1) = (0, 2), ends at (diagLen-1, 0) = (2, 0)
         board.Spaces[1, 2].Mark = "X";
@@ -139,7 +139,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given4x3Board_WhenDiagonalEdgeToEdgeOnly2InLine_ThenNoScore() {
-        var board = new Board(4, 3, new MNKRuleset(IsBoardDoneWhenScored: true));
+        var board = new Board(4, 3, new MNKBoardRuleset(IsBoardDoneWhenScored: true));
         
         // Only 2 X's inline on diagonal - not a winning line
         board.Spaces[0, 1].Mark = "X";
@@ -154,7 +154,7 @@ public class RulesetTests {
     
     [Fact]
     public void Given3x4Board_WhenIdentityDiagonal_ThenXWins() {
-        var board = new Board(3, 4, new MNKRuleset());
+        var board = new Board(3, 4, new MNKBoardRuleset());
         
         // Identity diagonal: starts at (0, H-diagLen) = (0, 1), ends at (diagLen-1, H-1) = (2, 3)
         board.Spaces[0, 0].Mark = "X";
@@ -166,7 +166,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given3x4Board_WhenIdentityDiagonalOffset_ThenXWins() {
-        var board = new Board(3, 4, new MNKRuleset());
+        var board = new Board(3, 4, new MNKBoardRuleset());
         
         // Identity diagonal: starts at (0, H-diagLen) = (0, 1), ends at (diagLen-1, H-1) = (2, 3)
         board.Spaces[0, 1].Mark = "X";
@@ -178,7 +178,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given3x4Board_WhenInverseDiagonal_ThenXWins() {
-        var board = new Board(3, 4, new MNKRuleset());
+        var board = new Board(3, 4, new MNKBoardRuleset());
         
         // Inverse diagonal: starts at (0, diagLen-1) = (0, 2), ends at (diagLen-1, 0) = (2, 0)
         board.Spaces[0, 2].Mark = "X";
@@ -190,7 +190,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given3x4Board_WhenInverseDiagonalOffset_ThenXWins() {
-        var board = new Board(3, 4, new MNKRuleset());
+        var board = new Board(3, 4, new MNKBoardRuleset());
         
         // Inverse diagonal: starts at (0, diagLen-1) = (0, 2), ends at (diagLen-1, 0) = (2, 0)
         board.Spaces[0, 3].Mark = "X";
@@ -205,7 +205,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given4x6Board_WhenIdentityDiagonal_ThenXWins() {
-        var board = new Board(4, 6, new MNKRuleset());
+        var board = new Board(4, 6, new MNKBoardRuleset());
         
         // Identity diagonal: starts at (0, H-diagLen) = (0, 2), ends at (diagLen-1, H-1) = (3, 5)
         board.Spaces[0, 0].Mark = "X";
@@ -218,7 +218,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given4x6Board_WhenIdentityDiagonalOffset1_ThenXWins() {
-        var board = new Board(4, 6, new MNKRuleset());
+        var board = new Board(4, 6, new MNKBoardRuleset());
         
         // Identity diagonal: starts at (0, H-diagLen) = (0, 2), ends at (diagLen-1, H-1) = (3, 5)
         board.Spaces[0, 1].Mark = "X";
@@ -232,7 +232,7 @@ public class RulesetTests {
     
     [Fact]
     public void Given4x6Board_WhenIdentityDiagonalOffset2_ThenXWins_() {
-        var board = new Board(4, 6, new MNKRuleset());
+        var board = new Board(4, 6, new MNKBoardRuleset());
         
         // Identity diagonal: starts at (0, H-diagLen) = (0, 2), ends at (diagLen-1, H-1) = (3, 5)
         board.Spaces[0, 2].Mark = "X";
@@ -245,7 +245,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given4x6Board_WhenInverseDiagonal_ThenXWins() {
-        var board = new Board(4, 6, new MNKRuleset());
+        var board = new Board(4, 6, new MNKBoardRuleset());
         
         // Inverse diagonal: starts at (0, diagLen-1) = (0, 3), ends at (diagLen-1, 0) = (3, 0)
         board.Spaces[0, 3].Mark = "X";
@@ -260,7 +260,7 @@ public class RulesetTests {
     #region ScoreLength tests
     [Fact]
     public void Given6x6BoardScoringLength3_WhenScoringLineIsLength4_ThenXWins1Point() {
-        var board = new Board(6, 6, new MNKRuleset(ScoringLength: 3));
+        var board = new Board(6, 6, new MNKBoardRuleset(ScoringLength: 3));
         
         board.Spaces[0, 3].Mark = "X";
         board.Spaces[1, 2].Mark = "X";
@@ -272,7 +272,7 @@ public class RulesetTests {
 
     [Fact]
     public void Given6x6BoardScoringLength3_WhenScoringLineIsLength6_ThenXWins2Points() {
-        var board = new Board(6, 6, new MNKRuleset(ScoringLength: 3));
+        var board = new Board(6, 6, new MNKBoardRuleset(ScoringLength: 3));
         
         board.Spaces[0, 0].Mark = "X";
         board.Spaces[1, 1].Mark = "X";
@@ -288,14 +288,14 @@ public class RulesetTests {
     #region Empty boards
     [Fact]
     public void Given3x3Board_WhenEmptyBoard_ThenNoScore() {
-        var board = new Board(3, 3, new MNKRuleset());
+        var board = new Board(3, 3, new MNKBoardRuleset());
         
         board.ScoreCard.Highest.Should().Be(ScoreCard.Empty);
     }
     
     [Fact]
     public void Given4x6Board_WhenEmptyBoard_NoScore() {
-        var board = new Board(4, 6, new MNKRuleset());
+        var board = new Board(4, 6, new MNKBoardRuleset());
         
         board.ScoreCard.Highest.Should().Be(ScoreCard.Empty);
     }

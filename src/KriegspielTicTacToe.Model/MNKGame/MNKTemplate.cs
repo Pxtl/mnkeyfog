@@ -5,6 +5,7 @@ namespace KriegspielTicTacToe.Model.MNKGame;
 /// <summary>
 /// Represents a game type configuration including board builders and play mode settings for an MNK game such as tic tac toe.  <see href="https://en.wikipedia.org/wiki/M,n,k-game">WP: MNK Game</see>
 /// </summary>
+[ModelSerializable]
 public record MNKTemplate
 : GameTemplate {
     #region constructors
@@ -16,7 +17,7 @@ public record MNKTemplate
         string commandName,
         string description,
         IEnumerable<int> legalPlayerCounts,
-        IEnumerable<BoardBuilder> boardBuilders,
+        IReadOnlyList<BoardBuilder> boardBuilders,
         bool isKriegspiel,
         bool isSynchronousMode
     ) : this(boardBuilders, isKriegspiel, isSynchronousMode) {
@@ -26,7 +27,7 @@ public record MNKTemplate
     }
 
     public MNKTemplate(
-        IEnumerable<BoardBuilder> boardBuilders,
+        IReadOnlyList<BoardBuilder> boardBuilders,
         bool isKriegspiel,
         bool isSynchronousMode
     )
@@ -39,10 +40,12 @@ public record MNKTemplate
     }
     #endregion
 
-    [JsonProperty(TypeNameHandling = TypeNameHandling.All)]
-    public IEnumerable<BoardBuilder> BoardBuilders {get; init;}
-
+    #region data members
     public bool IsKriegspiel { get; init; }
+
+    [JsonProperty(TypeNameHandling = TypeNameHandling.Objects)]
+    public IReadOnlyList<BoardBuilder> BoardBuilders {get; init;}
+    #endregion
 
     public override IReadOnlyList<Board> CreateBoards()
     => BoardBuilders.Select(b => new Board(b)).ToList();
@@ -58,4 +61,9 @@ public record MNKTemplate
             }
         }
     }
+
+    public override IEnumerable<GameActionFactory> GetAvailableActions(GameState gameState, Player player)
+    => gameState.PlayManager.CanTakeTurn(player) 
+        ? [ new MNKActionFactory() ]
+        : [];
 }

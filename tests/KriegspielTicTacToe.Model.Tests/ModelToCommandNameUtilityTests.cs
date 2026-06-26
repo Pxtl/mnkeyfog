@@ -246,7 +246,7 @@ public class ModelToCommandNameUtilityTests {
         var players = new Player[] {new ("X"), new ("O")};
         var gameState = new GameState(
             players,
-            new MNKTemplate([MNKRuleset.CreateBoardBuilder(3, 3), MNKRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
+            new MNKTemplate([MNKBoardRuleset.CreateBoardBuilder(3, 3), MNKBoardRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
             isRandomPlayerOrder: false
         );
 
@@ -269,7 +269,7 @@ public class ModelToCommandNameUtilityTests {
         var players = new Player[] {new ("X"), new ("O")};
         var gameState = new GameState(
             players,
-            new MNKTemplate([MNKRuleset.CreateBoardBuilder(3, 3), MNKRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
+            new MNKTemplate([MNKBoardRuleset.CreateBoardBuilder(3, 3), MNKBoardRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
             isRandomPlayerOrder: false
         );
 
@@ -288,7 +288,7 @@ public class ModelToCommandNameUtilityTests {
         var players = new Player[] {new ("X"), new ("O")};
         var gameState = new GameState(
             players,
-            new MNKTemplate([MNKRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
+            new MNKTemplate([MNKBoardRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
             isRandomPlayerOrder: false
         );
         gameState.GetView(players[0]).Attempt(new MNKAction(0, 1, 1));
@@ -316,7 +316,7 @@ public class ModelToCommandNameUtilityTests {
         var playerO = players[1];
         var gameState = new GameState(
             players,
-            new MNKTemplate([MNKRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: false),
+            new MNKTemplate([MNKBoardRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: false),
             isRandomPlayerOrder: false
         );
 
@@ -341,7 +341,7 @@ public class ModelToCommandNameUtilityTests {
         var players = new Player[] {new ("X"), new ("O")};
         var gameState = new GameState(
             players,
-            new MNKTemplate([MNKRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
+            new MNKTemplate([MNKBoardRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
             isRandomPlayerOrder: false
         );
         //round 1
@@ -359,7 +359,7 @@ public class ModelToCommandNameUtilityTests {
         var players = new Player[] {new ("X"), new ("O")};
         var gameState = new GameState(
             players,
-            new MNKTemplate([MNKRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
+            new MNKTemplate([MNKBoardRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
             isRandomPlayerOrder: false
         );
         //round 1
@@ -377,7 +377,7 @@ public class ModelToCommandNameUtilityTests {
         var players = new Player[] {new ("X"), new ("O")};
         var gameState = new GameState(
             players,
-            new MNKTemplate([MNKRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
+            new MNKTemplate([MNKBoardRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
             isRandomPlayerOrder: false
         );
 
@@ -410,7 +410,7 @@ public class ModelToCommandNameUtilityTests {
         var players = new Player[] {new ("X"), new ("O")};
         var gameState = new GameState(
             players,
-            new MNKTemplate([MNKRuleset.CreateBoardBuilder(4, 4)], isSynchronousMode: false, isKriegspiel: true),
+            new MNKTemplate([MNKBoardRuleset.CreateBoardBuilder(4, 4)], isSynchronousMode: false, isKriegspiel: true),
             isRandomPlayerOrder: false
         );
 

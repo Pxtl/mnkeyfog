@@ -10,6 +10,7 @@ namespace KriegspielTicTacToe.Model;
 /// JSON-serializable model object for a single tic-tac-toe board. Columns are
 /// left-to-right, rows are top-to-bottom.
 /// </summary>
+[ModelSerializable]
 public sealed record Board {
     #region constructors
     /// <summary>

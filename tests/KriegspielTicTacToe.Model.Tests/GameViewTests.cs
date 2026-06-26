@@ -30,8 +30,8 @@ public class GameViewTests {
     #region TryGetCoordinatesFromSpaceName
     [Fact]
     public void TryGetCoordinatesFrom3x3SpaceName_AsExpected() {
-        var ok = CreateGameView(new BoardBuilder(3, 3, new MNKRuleset()))
-            .TryGetCoordinatesFromSpaceName("1", out var boardName, out var col, out var row);
+        var ok = CreateGameView(new BoardBuilder(3, 3, new MNKBoardRuleset()))
+            .TryGetCoordinatesFromSpaceName("1", out string boardName, out var col, out var row);
         ok.Should().BeTrue();
         boardName.Should().Be("1");
         col.Should().Be(0);
@@ -40,14 +40,14 @@ public class GameViewTests {
 
     [Fact]
     public void TryGetCoordinatesFrom3x3SpaceName_Invalid() {
-        var ok = CreateGameView(new BoardBuilder(3, 3, new MNKRuleset())).TryGetCoordinatesFromSpaceName("99", out _, out _, out _);
+        var ok = CreateGameView(new BoardBuilder(3, 3, new MNKBoardRuleset())).TryGetCoordinatesFromSpaceName("99", out string _, out _, out _);
         ok.Should().BeFalse();
     }
 
     [Fact]
     public void TryGetCoordinatesFrom4x4BottomLeftSpace_AsExpected() {
         // 4x4 board: (row 3, col 0), uses letter-number format, bottom left space
-        var ok = CreateGameView(new BoardBuilder(4, 4, new MNKRuleset())).TryGetCoordinatesFromSpaceName("A1", out var boardName, out var col, out var row);
+        var ok = CreateGameView(new BoardBuilder(4, 4, new MNKBoardRuleset())).TryGetCoordinatesFromSpaceName("A1", out string boardName, out var col, out var row);
         boardName.Should().Be("1");
         ok.Should().BeTrue();
         col.Should().Be(0);
@@ -58,14 +58,14 @@ public class GameViewTests {
     #region SpaceNameLength
     [Fact]
     public void SpaceNameLength_3x3Board_Returns1() {
-        var view = CreateGameView(new BoardBuilder(3, 3, new MNKRuleset()));
+        var view = CreateGameView(new BoardBuilder(3, 3, new MNKBoardRuleset()));
         var board = view.GetBoardViewByIndex(0);
         view.SpaceNameLength(board).Should().Be(1);
     }
 
     [Fact]
     public void SpaceNameLength_26x10Board_ReturnsCorrect() {
-        var view = CreateGameView(new BoardBuilder(26, 10, new MNKRuleset()));
+        var view = CreateGameView(new BoardBuilder(26, 10, new MNKBoardRuleset()));
         var board = view.GetBoardViewByIndex(0);
         var spaceCount = board.SpaceCount;
         view.SpaceNameLength(board).Should().Be(3); //2 digit s for 1-10, 1 digit for letter.

@@ -59,13 +59,13 @@ public class Program {
                             boardBuilders[i] = new BoardBuilder(
                                 size!.Value,
                                 size!.Value,
-                                new MNKRuleset(scoringLength, isBoardDoneWhenScored)
+                                new MNKBoardRuleset(scoringLength, isBoardDoneWhenScored)
                             );
                         }
 
                         GameState = new GameState(
                             players,
-                            new MNKTemplate(boardBuilders, isKriegspiel: isKriegspiel, isSynchronousMode: isSynchronousMode),
+                            new CustomMNKTemplate(boardBuilders, isKriegspiel: isKriegspiel, isSynchronousMode: isSynchronousMode),
                             isRandomPlayerOrder: isRandomPlayerOrder
                         );
                         return parseResult.Errors.Count;

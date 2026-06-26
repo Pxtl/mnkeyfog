@@ -5,6 +5,7 @@ public interface IGameTemplate {
 	string? Description { get; }
 	IEnumerable<int> LegalPlayerCounts { get; }
     PlayManagerFactory PlayManagerFactory { get;}
+    IEnumerable<GameActionFactory> GetAvailableActions(GameState gameState, Player player);
     
     IReadOnlyList<Board> CreateBoards();
 	void InitializeGame (GameState gameState);

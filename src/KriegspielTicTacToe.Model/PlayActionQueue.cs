@@ -5,6 +5,7 @@ namespace KriegspielTicTacToe.Model;
 // does not override Object.GetHashCode(). We arenot overriding GetHashCode
 // because that's for Dictionary keys and this is too mutable to be ever used
 // for that.
+[ModelSerializable]
 public class PlayActionQueue : IPlayActionQueue {
 #pragma warning restore CS0659, CS0661
 

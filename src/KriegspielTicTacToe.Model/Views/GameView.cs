@@ -1,3 +1,4 @@
+using KriegspielTicTacToe.Model.Template;
 using OneOf;
 using OneOf.Types;
 
@@ -32,22 +33,22 @@ public record GameView
     #endregion
 
     #region Player Actions
-	public Resigned ResignPlayer() {
+    public IEnumerable<GameActionFactory> GetAvailableActions() {
         if (Player == null) {
             throw new InvalidOperationException($"{nameof(Player)} is null.");
         } else {
-		    Value.PlayManager.ResignPlayer(Player);
+            return Value.GameTemplate.GetAvailableActions(Value, Player);
+        }
+    }
+
+    public Resigned ResignPlayer() {
+        if (Player == null) {
+            throw new InvalidOperationException($"{nameof(Player)} is null.");
+        } else {
+            Value.PlayManager.ResignPlayer(Player);
             return new Resigned(Player);
         }
-	}
-
-	public void EndTurn(out bool hasStateChanged) {
-        if (Player == null) {
-            throw new InvalidOperationException($"{nameof(Player)} is null.");
-        } else {
-		    Value.PlayManager.EndTurn(Player, out hasStateChanged);
-        }
-	}
+    }
 
     public IPlayActionResult Attempt(GameAction playAction) {
         if (Player == null) {
@@ -56,15 +57,14 @@ public record GameView
         return playAction.GetPlayerAction(Player).Attempt(Value);
     }
 
-    public OneOf<NotFound, BoardIsDone, Result<BoardView>> SelectBoard(string boardName)
+    public OneOf<BoardIsDone, Result<BoardView>> SelectBoard(string boardName)
         => ModelToCommandNameUtility.GetBoardIndexByName(boardName, Value.Boards.Count).Match(
-            notFound => new NotFound(),
+            notFound => throw new ArgumentException($"That is not a valid board: '{boardName}", nameof(boardName)),
             indexResult => Value.Boards[indexResult.Value].IsDone
-                ? OneOf<NotFound, BoardIsDone, Result<BoardView>>.FromT1(new BoardIsDone())
+                ? OneOf<BoardIsDone, Result<BoardView>>.FromT0(new BoardIsDone())
                 : new Result<BoardView>(GetBoardViewByIndex(indexResult.Value))
         );
     #endregion
-
 
     #region private helpers
     public IEnumerable<string> BoardNames { get {
@@ -141,6 +141,20 @@ public record GameView
         return GetSpaceName(board, col, row);
     }
 
+    public bool TryGetCoordinatesFromSpaceName(string spaceName, out sbyte boardIndex, out sbyte resultCol, out sbyte resultRow) {
+        if (TryGetCoordinatesFromSpaceName(spaceName, out string boardName, out resultCol, out resultRow)) {
+            if(ModelToCommandNameUtility.TryGetBoardIndexByName(boardName, BoardsCount, out boardIndex)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            boardIndex = -1;
+            return false;
+        }
+    }
+
+
     /// <summary>
     /// For the given space index code, find the coordinates.  Uses a "Try"
     /// signature so that it shall return false if the given spaceindex is not
@@ -180,4 +194,3 @@ public record GameView
     #endregion
 }
 
-public struct BoardIsDone;

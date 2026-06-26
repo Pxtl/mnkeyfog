@@ -29,7 +29,7 @@ internal static class InputUtility {
     /// The chosen command, in the casing listed in the `validCommands` list as
     /// a <see cref="Result{T}"/>, or <see cref="Unknown"/>.
     /// </returns>
-    public static OneOf<Result<string>, Unknown> ReadCommandInputWithAddedStandardPlayerCommands(string prompt, IEnumerable<string> validCommands)
+    public static OneOf<Result<string>, InvalidCommand> ReadCommandInputWithAddedStandardPlayerCommands(string prompt, IEnumerable<string> validCommands)
         => ReadCommandInput(prompt, validCommands.Union(["r", "q"]));
 
     /// <summary>
@@ -66,7 +66,7 @@ internal static class InputUtility {
     /// The chosen command, in the casing listed in the `validCommands` list as
     /// a <see cref="Result{T}"/>, or <see cref="Unknown"/>.
     /// </returns>
-    public static OneOf<Result<string>, Unknown> ReadCommandInput(string prompt, IEnumerable<string> validCommands) {
+    public static OneOf<Result<string>, InvalidCommand> ReadCommandInput(string prompt, IEnumerable<string> validCommands) {
         // using dictionary instead of set so we can get canonical casing for the command.
         var commandSet = validCommands.ToDictionary(s => s, StringComparer.OrdinalIgnoreCase);
         Console.Out.WriteLine(prompt);
@@ -79,8 +79,7 @@ internal static class InputUtility {
                 return new Result<string>(foundCommandStr);
             } else {
                 Console.Out.WriteLine();
-                Console.Out.WriteLine("Invalid command.");
-                return new Unknown();
+                return new InvalidCommand(inputStr);
             }
         } else {
             // if we have access to ReadKey
@@ -97,8 +96,7 @@ internal static class InputUtility {
             }
             //user has reached length of longest command, no matches.
             Console.Out.WriteLine();
-            Console.Out.WriteLine($"Invalid command: {sb}");
-            return new Unknown();   
+            return new InvalidCommand(sb.ToString());   
         }
     }
 }

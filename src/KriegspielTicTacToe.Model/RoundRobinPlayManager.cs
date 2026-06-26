@@ -6,6 +6,7 @@ using OneOf.Types;
 /// <summary>
 /// PlayManager for turn-based mode - each player's move is immediately revealed.
 /// </summary>
+[ModelSerializable]
 public class RoundRobinPlayManager
 : PlayManager {
     #region constructors
@@ -34,6 +35,7 @@ public class RoundRobinPlayManager
     #endregion
 }
 
+[ModelSerializable]
 public record RoundRobinPlayManagerFactory
 : Template.PlayManagerFactory {
     public static RoundRobinPlayManagerFactory Instance {get;} = new RoundRobinPlayManagerFactory();
