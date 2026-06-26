@@ -4,6 +4,7 @@ using OneOf;
 using KriegspielTicTacToe.Model.Template;
 using System.CommandLine.Parsing;
 using Sundew.Base.Collections;
+using KriegspielTicTacToe.Model.PlayerAIs;
 
 namespace KriegspielTicTacToe;
 
@@ -14,6 +15,7 @@ public class Program {
     static FileInfo? StateFilePath { get; set; }
     static string? JoinAsPlayer { get; set; }
     static GameState? GameState { get; set; } = null;
+    static OrderedDictionary<Player, IPlayerAI> AIPlayers = new OrderedDictionary<Player, IPlayerAI>();
 
     public static int Main(string[] args) {
         var gameCommand = new Command("game", "Start a new game using a pre-defined game template.") {
@@ -26,7 +28,8 @@ public class Program {
         var rootCommand = new RootCommand("This is a command-line game that implements kriegspiel m,n,k-games such as Zach Weinersmith's 'Kriegspiel Tic Tac Toe'") {
             Options = { //these are recursive options that will be inherited by subcommands.
                 Options.StateFileOption,
-                Options.JoinAsPlayerOption
+                Options.JoinAsPlayerOption,
+                Options.AI1PlayersOption
             }, // rootCommand has no Action.  This makes all child commands required.  Be nice if that was documented somewhere.
             Subcommands = {
                 gameCommand,
@@ -121,7 +124,8 @@ public class Program {
             ConsoleLoop.RunGame (
                 StateFilePath!,
                 GameState!,
-                joinAsPlayerUnion
+                joinAsPlayerUnion,
+                AIPlayers
             );
             return 0;
         } else {
@@ -142,6 +146,8 @@ public class Program {
 	private static void ParseRootOptions(ParseResult parseResult) {
         StateFilePath = parseResult.GetValue(Options.StateFileOption);
         JoinAsPlayer = parseResult.GetValue(Options.JoinAsPlayerOption);
+        var ai1Players = parseResult.GetValue(Options.AI1PlayersOption) ?? [];
+        AIPlayers.AddRange(ai1Players.Select(a => new KeyValuePair<Player, IPlayerAI>(new Player(a), new RandomAI())));
     }
 
     private class CommandHandler(Func<ParseResult, int> action) : SynchronousCommandLineAction {

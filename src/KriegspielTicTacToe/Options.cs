@@ -25,25 +25,17 @@ internal static class Options {
     public static Option<string[]> PlayersOption = new("--players", "-p") {
         Description = "Players mark characters.  Provide them space-separated, eg '-p A B C X Y Z' for a 6-player game.",
         DefaultValueFactory = (result) => ["X", "O"],
-        CustomParser = result => {
-            if (result.Tokens.Count <= 1) {
-                result.AddError("There must be at least 2 mark characters.");
-                return null;
-            } else if (result.Tokens.Any(t => t.Value.Length == 0 && t.Value.Length > 1)) {
-                result.AddError("Player mark characters must be 1 chars long.");
-                return null;
-            } else if(result.Tokens.Select(t => t.Value).Distinct().Count() != result.Tokens.Count) {
-                result.AddError("Player mark characters must be distinct from each other.");
-                return null;
-            } else if(result.Tokens.Any(t => short.TryParse(t.Value, out short _))) {
-                result.AddError("Player mark characters must not be numeric.");
-                return null;
-            } else {
-                return result.Tokens.Select(t => t.Value).ToArray();
-            }
-        },
+        CustomParser = ParsePlayerMarkArray,
         Recursive = true,
-        AllowMultipleArgumentsPerToken = true,
+        AllowMultipleArgumentsPerToken = true
+    };
+
+	public static Option<string[]> AI1PlayersOption = new("-ai1", "-1") {
+        Description = "Difficulty 1 AI player mark characters.  Provide them space-separated like with players.",
+        DefaultValueFactory = (result) => [],
+        CustomParser = ParsePlayerMarkArray,
+        Recursive = true,
+        AllowMultipleArgumentsPerToken = true
     };
 
     public static Option<bool> RandomOption = new("--random", "-r") {
@@ -97,4 +89,27 @@ internal static class Options {
         Description = "Moves do not execute until all players in a round have taken a turn. " 
         + "If two players move to the same square, that square becomes an impasse marker visible to all."
     };
+
+	private static string[]? ParsePlayerMarkArray(System.CommandLine.Parsing.ArgumentResult result)
+	{
+		if (result.Tokens.Count <= 1)
+		{
+			result.AddError("There must be at least 2 mark characters.");
+			return null;
+		}
+		else if (result.Tokens.Any(t => t.Value.Length == 0 && t.Value.Length > 1))
+		{
+			result.AddError("Player mark characters must be 1 chars long.");
+			return null;
+		}
+		else if (result.Tokens.Select(t => t.Value).Distinct().Count() != result.Tokens.Count)
+		{
+			result.AddError("Player mark characters must be distinct from each other.");
+			return null;
+		}
+		else
+		{
+			return result.Tokens.Select(t => t.Value).ToArray();
+		}
+	}
 }

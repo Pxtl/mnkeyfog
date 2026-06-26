@@ -8,6 +8,10 @@
     }
   },
   "profiles": {
+    "game-playerai": {
+      "commandName": "Project",
+      "commandLineArgs": "custom -p A B C --kriegspiel -1 B C"
+    },
     "game-tictactoe": {
       "commandName": "Project",
       "dotnetRunMessages": true,

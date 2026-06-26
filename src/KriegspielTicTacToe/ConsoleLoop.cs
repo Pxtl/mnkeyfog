@@ -1,8 +1,8 @@
+using KriegspielTicTacToe.Model.PlayerAIs;
 using KriegspielTicTacToe.Model.Template;
 using OneOf;
 using OneOf.Types;
 using PxtlCa.SystemCollectionsExtensions;
-using Sundew.Base;
 
 namespace KriegspielTicTacToe;
 
@@ -13,7 +13,8 @@ internal static class ConsoleLoop {
     public static void RunGame(
         FileInfo sharedStateFilePath,
         GameState state,
-        OneOf<Player, LocalHotseatGame> joinAsPlayer
+        OneOf<Player, LocalHotseatGame> joinAsPlayer,
+        OrderedDictionary<Player, IPlayerAI> aiPlayers
     ) {
         StateStorage.SaveState(state, sharedStateFilePath.FullName);
 
@@ -25,9 +26,37 @@ internal static class ConsoleLoop {
         Console.Out.WriteLine($"Players are {string.Join(", ", state.PlayManager.Players)}.");
         Console.Out.WriteLine($"Game is {state.GameTemplate.CommandName}.");
         Console.Out.WriteLine($"Description: {state.GameTemplate.Description}");
+        foreach(var aiPlayer in aiPlayers) {
+            Console.Out.WriteLine($"AI Player {aiPlayer.Key.Mark}: {aiPlayer.Value.Description}.");
+        }
 
         bool isGameOver = false;
         while (!isGameOver) {
+            // AI players take their turns.
+            var isDoneAITurns = false;
+            while(!isDoneAITurns) {
+                isDoneAITurns = true;
+                foreach (var player in state.PlayManager.PlayersAvailableForTurn) {
+                    if(aiPlayers.TryGetValue(player, out var playerAI)) {
+                        //if any AI player can take their turn, we're not done
+                        //AI turns.  Keep attempting until no AI player does a
+                        //turn.
+                        isDoneAITurns = false; 
+                        while (state.PlayManager.CanTakeTurn(player)) {
+                            using(var stateStorage = new StateStorage(sharedStateFilePath.FullName, out state)) {
+                                var gameView = state.GetView(player);
+                                playerAI.Attempt(gameView, gameView.GetAvailableActions());
+                            }
+                        }
+                        Console.Out.WriteLine($"AI Player {player} has finished their turn.");
+                        //DEBUG
+                        Console.Out.WriteLine(
+                            BoardRenderer.DrawBoards(state.GetView(null), maxRenderWidth: Console.BufferWidth)
+                        );
+                    }
+                }
+            }
+
             var currentPlayerChosen = joinAsPlayer.Match(
                 player => {
                     if (!state.PlayManager.Players.Contains(player)) {
@@ -51,7 +80,7 @@ internal static class ConsoleLoop {
                     }
                     Console.Out.WriteLine();
                     return state.IsGameOver
-                        ? OneOf<Result<Player>, GameIsOver>.FromT1(new GameIsOver())
+                        ? OneOf<Result<Player>, RoundIsOver, GameIsOver>.FromT2(new GameIsOver())
                         : new Result<Player>(player);
                 },
                 localHotseatGame => DoPlayerChooserLoop(state.PlayManager)
@@ -60,49 +89,48 @@ internal static class ConsoleLoop {
             currentPlayerChosen.Switch(
                 playerResult => {
                     var currentPlayer = playerResult.Value;
-                    DoPlayerTurnLoop(ref state, currentPlayer, sharedStateFilePath.FullName, out bool currentPlayerIsDoneTurn);
-
-                    if (currentPlayerIsDoneTurn) {
-
-                        //execute round-end stuff.
-                        if (state.PlayManager.IsRoundOver) {
-                            var hasRoundStateChanged = false;
-                            using (var stateStorage = new StateStorage(sharedStateFilePath.FullName, out state)) {
-                                state.PlayManager.EndRound(out hasRoundStateChanged);
-                            }
-                            if (hasRoundStateChanged) {
-                                InputUtility.PauseAndPressAnyKey("Round over.");
-                                Console.Clear();
-                                Console.Out.WriteLine(state.GameStateText);
-                                Console.Out.WriteLine("Executing synchronous moves.");
-                            }
-                        }
-                        if (!state.IsGameOver) {
-                            joinAsPlayer.Switch(
-                                player => { },
-                                localHotseatGame => {
-                                    InputUtility.PauseAndPressAnyKey();
-                                    Console.Clear();
-                                }
-                            );
-                        } else {
-                            Console.Out.WriteLine(state.GameStateText);
-                            Console.Out.WriteLine(BoardRenderer.DrawBoards(state.GetView(null), maxRenderWidth: Console.BufferWidth));
-                            isGameOver = true;
-                        }
-                    }
+                    DoPlayerTurnLoop(ref state, currentPlayer, sharedStateFilePath.FullName);
+                },
+                roundIsOver => {
+                    //no-op.
                 },
                 gameIsOver => {
                     isGameOver = true;
                 }
-            );                        
+            );
+            //execute round-end stuff.
+            if (state.PlayManager.IsRoundOver) {
+                var hasRoundStateChanged = false;
+                using (var stateStorage = new StateStorage(sharedStateFilePath.FullName, out state)) {
+                    state.PlayManager.EndRound(out hasRoundStateChanged);
+                }
+                if (hasRoundStateChanged) {
+                    InputUtility.PauseAndPressAnyKey("Round over.");
+                    Console.Clear();
+                    Console.Out.WriteLine(state.GameStateText);
+                    Console.Out.WriteLine("Executing synchronous moves.");
+                }
+            }
+            if (!state.IsGameOver) {
+                joinAsPlayer.Switch(
+                    player => { },
+                    localHotseatGame => {
+                        InputUtility.PauseAndPressAnyKey();
+                        Console.Clear();
+                    }
+                );
+            } else {
+                Console.Out.WriteLine(state.GameStateText);
+                Console.Out.WriteLine(BoardRenderer.DrawBoards(state.GetView(null), maxRenderWidth: Console.BufferWidth));
+                isGameOver = true;
+            }              
         }
 
         Thread.Sleep(1000);
         sharedStateFilePath.Delete();
     }
 
-    private static void DoPlayerTurnLoop(ref GameState state, Player currentPlayer, string sharedStateFilePath, out bool currentPlayerIsDoneTurn) {
+    private static void DoPlayerTurnLoop(ref GameState state, Player currentPlayer, string sharedStateFilePath) {
         IPlayActionResult? playActionResult = null;
         while (playActionResult == null || !playActionResult.IsTurnDone) {
             Console.Out.WriteLine(state.GameStateText);
@@ -120,7 +148,6 @@ internal static class ConsoleLoop {
                 BoardRenderer.DrawBoards(state.GetView(currentPlayer), maxRenderWidth: Console.BufferWidth)
             );
         }
-        currentPlayerIsDoneTurn = playActionResult.IsTurnDone;
     }
 
     private static IPlayActionResult DoPlayerAction(ref GameState state, Player currentPlayer, string sharedStateFilePath) {
@@ -176,7 +203,7 @@ internal static class ConsoleLoop {
         }
     }
 
-    internal static OneOf<Result<Player>, GameIsOver> DoPlayerChooserLoop(PlayManager playManager) {
+    internal static OneOf<Result<Player>, RoundIsOver, GameIsOver> DoPlayerChooserLoop(PlayManager playManager) {
         // Use ModelToKeyUtility for clean, testable key mapping
         var playerToCommand = CommandNameTool.BuildPlayerToCommandNameMap(playManager.PlayersAvailableForTurn);
 
@@ -194,8 +221,8 @@ internal static class ConsoleLoop {
                 Console.WriteLine();
                 return new Result<Player>(currentPlayer);
             }
-            if (!playManager.PlayersAvailableForTurn.Any()) {
-                throw new InvalidOperationException("No players are available to take a turn.");
+            if (playManager.IsRoundOver) {
+                return new RoundIsOver();
             }
 
             Console.Out.WriteLine(playManager.GameStateText);
@@ -276,3 +303,5 @@ internal static class ConsoleLoop {
 public struct LocalHotseatGame { }
 
 public struct GameIsOver { }
+
+public struct RoundIsOver { }
