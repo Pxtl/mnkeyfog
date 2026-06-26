@@ -57,13 +57,15 @@ public record GameView
         return playAction.GetPlayerAction(Player).Attempt(Value);
     }
 
-    public OneOf<BoardIsDone, Result<BoardView>> SelectBoard(string boardName)
+    public OneOf<BoardIsDone, Result<BoardView>> AttemptBoard(string boardName)
         => CommandNameTool.GetBoardIndexByName(boardName, Value.Boards.Count).Match(
             notFound => throw new ArgumentException($"That is not a valid board: '{boardName}", nameof(boardName)),
             indexResult => Value.Boards[indexResult.Value].IsDone
                 ? OneOf<BoardIsDone, Result<BoardView>>.FromT0(new BoardIsDone())
                 : new Result<BoardView>(GetBoardViewByIndex(indexResult.Value))
         );
+    
+    //TODO: Row and Column attempt functions.
     #endregion
 
     #region private helpers
@@ -103,10 +105,13 @@ public record GameView
     ); //zero-pad.
         
     /// <summary>
-    /// For the given space on the board, generate the space's name.
+    /// For the given space on the board, generate the space's name. Only used
+    /// on small (3x3 or less) boards.
     /// </summary>
     private int GetSpaceNameAsInt(BoardView board, sbyte col, sbyte row) {
-        //aims for basic 3x3, but larger if needed
+        //up to basic 3x3. Supports larger but this function does not get
+        //called for those.
+
         //7 8 9
         //4 5 6
         //1 2 3
@@ -118,6 +123,9 @@ public record GameView
 
     private bool IsSpaceNamingNumpadLayout(BoardView board) => board.SpaceCount < 10;
 
+    /// <summary>
+    /// For the given space on the given board, generate the space's name.
+    /// </summary>
     public string GetSpaceName(BoardView board, sbyte col, sbyte row)
     => (BoardsCount > 1 ? board.BoardName : "") //board name component
         + 
@@ -131,11 +139,17 @@ public record GameView
             )
         );
 
+    /// <summary>
+    /// For the given space on the given board, generate the space's name.
+    /// </summary>
     public string GetSpaceName(sbyte boardIndex, sbyte col, sbyte row) {
         var board = GetBoardViewByIndex(boardIndex);
         return GetSpaceName(board, col, row);
     }
 
+    /// <summary>
+    /// For the given space on the given board, generate the space's name.
+    /// </summary>
     public string GetSpaceName(string boardName, sbyte col, sbyte row) {
         var board = GetBoardViewByName(boardName);
         return GetSpaceName(board, col, row);
@@ -153,7 +167,6 @@ public record GameView
             return false;
         }
     }
-
 
     /// <summary>
     /// For the given space index code, find the coordinates.  Uses a "Try"
@@ -182,6 +195,7 @@ public record GameView
         resultCol = resultRow = -1;
         return false;
     }
+
     /// <summary>
     /// Get how many chars the users will have to type in to type in a
     /// space-name.

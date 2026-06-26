@@ -248,7 +248,7 @@ internal static class ConsoleLoop {
                             Quit();
                             return new Quitting();
                         } else {
-                            return gameView.SelectBoard(result.Value).Match(
+                            return gameView.AttemptBoard(result.Value).Match(
                                 boardIsDone => {
                                     return boardIsDone;
                                 },
