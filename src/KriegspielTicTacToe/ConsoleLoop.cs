@@ -178,7 +178,7 @@ internal static class ConsoleLoop {
 
     internal static OneOf<Result<Player>, GameIsOver> DoPlayerChooserLoop(PlayManager playManager) {
         // Use ModelToKeyUtility for clean, testable key mapping
-        var playerToCommand = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(playManager.PlayersAvailableForTurn);
+        var playerToCommand = CommandNameTool.BuildPlayerToCommandNameMap(playManager.PlayersAvailableForTurn);
 
         var commandToPlayer = playerToCommand
             .ToOrderedDictionary(

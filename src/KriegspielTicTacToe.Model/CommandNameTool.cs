@@ -11,7 +11,7 @@ using OneOf.Types;
 /// <remarks>
 /// Because these are functional, they are testable.
 /// </remarks>
-public static class ModelToCommandNameUtility {
+public static class CommandNameTool {
     public static OrderedDictionary<Player, string> BuildPlayerToCommandNameMap(IEnumerable<Player> availablePlayers) {
         // Build alternate key mapping for ALL players before entering loop
         // Keys are uppercase only (A-Z, 0-9)
@@ -74,7 +74,7 @@ public static class ModelToCommandNameUtility {
     /// they have created or discovered.  If the player is the
     /// current-turn-player, then the space index codes will be displayed.
     /// </summary>
-    public static string GetSpaceCommandName(GameView gameView, sbyte boardIndex, sbyte col, sbyte row) {
+    public static string SpaceCommandName(GameView gameView, sbyte boardIndex, sbyte col, sbyte row) {
         ArgumentNullException.ThrowIfNull(gameView);
         var player = gameView.Player;
         player = gameView.IsGameOver //show for all players if the game is over.
@@ -106,7 +106,7 @@ public static class ModelToCommandNameUtility {
         }
     }
 
-    public static string GetBoardNameFromIndex(int boardIndex)
+    public static string BoardNameFromIndex(int boardIndex)
     => (boardIndex + 1).ToString();
 
     public static OneOf<NotFound, Result<sbyte>> GetBoardIndexByName(string boardName, int boardsCount) {

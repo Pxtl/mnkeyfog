@@ -65,7 +65,7 @@ public static class BoardRenderer {
             sb.Append(showBoardName
                 ? (board.IsDone
                     ? " ✓" //board is done so just show a checkmark.
-                    : ModelToCommandNameUtility.GetBoardNameFromIndex(boardIndex).PadLeft(2) //key-index to choose it
+                    : CommandNameTool.BoardNameFromIndex(boardIndex).PadLeft(2) //key-index to choose it
                 ) : "  " //blank space
             );
 
@@ -108,7 +108,7 @@ public static class BoardRenderer {
             sb.Append("  ");
 
             for(sbyte col = 0; col < board.ColumnCount; col += 1) {
-                var body = ModelToCommandNameUtility.GetSpaceCommandName(gameView, boardIndex, col, rowIndex);
+                var body = CommandNameTool.SpaceCommandName(gameView, boardIndex, col, rowIndex);
                 DrawSpaceBody(body, borderBarString, sb);
             }
             sb.Append(borderBarString);

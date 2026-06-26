@@ -8,7 +8,7 @@ public record BoardView
     }
     #region data properties
     public sbyte BoardIndex { get; init; }
-    public string BoardName => ModelToCommandNameUtility.GetBoardNameFromIndex(BoardIndex);
+    public string BoardName => CommandNameTool.BoardNameFromIndex(BoardIndex);
     #endregion
 
     #region calculated properties

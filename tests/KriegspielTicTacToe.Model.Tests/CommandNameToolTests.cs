@@ -2,11 +2,11 @@ namespace KriegspielTicTacToe.Model.Tests;
 
 using Xunit;
 
-public class ModelToCommandNameUtilityTests {
+public class CommandNameToolTests {
     #region BuildPlayerToCommandNameMap
     [Fact]
     public void BuildPlayerToCommandNameMap_SingleTypeableMark() {
-        var map = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(
+        var map = CommandNameTool.BuildPlayerToCommandNameMap(
             new[] { new Player("A") }
         );
         
@@ -23,7 +23,7 @@ public class ModelToCommandNameUtilityTests {
             players.Add(new Player(mark));
         }
 
-        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
+        var result = CommandNameTool.BuildPlayerToCommandNameMap(players);
 
         Assert.Equal(4, result.Count);
         foreach (var player in players) {
@@ -40,7 +40,7 @@ public class ModelToCommandNameUtilityTests {
             players.Add(new Player(mark));
         }
 
-        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
+        var result = CommandNameTool.BuildPlayerToCommandNameMap(players);
 
         foreach (var player in players) {
             Assert.Equal(player.Mark, result[player]);
@@ -56,7 +56,7 @@ public class ModelToCommandNameUtilityTests {
             players.Add(new Player(mark));
         }
 
-        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
+        var result = CommandNameTool.BuildPlayerToCommandNameMap(players);
 
         foreach (var player in players) {
             Assert.Equal(player.Mark, result[player]);
@@ -79,7 +79,7 @@ public class ModelToCommandNameUtilityTests {
             [new Player(":")] = "4",
             [new Player(";")] = "5"
         };
-        var actual = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
+        var actual = CommandNameTool.BuildPlayerToCommandNameMap(players);
         actual.Should().BeEquivalentTo(expected);
     }
 
@@ -98,7 +98,7 @@ public class ModelToCommandNameUtilityTests {
             [new Player("!")] = "3",
             [new Player("1")] = "1"
         };
-        var actual = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
+        var actual = CommandNameTool.BuildPlayerToCommandNameMap(players);
         actual.Should().BeEquivalentTo(expected);
     }
 
@@ -124,7 +124,7 @@ public class ModelToCommandNameUtilityTests {
             [new Player(";")] = "A",
             [new Player("/")] = "B",
         };
-        var actual = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
+        var actual = CommandNameTool.BuildPlayerToCommandNameMap(players);
         actual.Should().BeEquivalentTo(expected);
     }
 
@@ -140,7 +140,7 @@ public class ModelToCommandNameUtilityTests {
             new Player(typeablePlayer.Mark),
         };
         
-        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
+        var result = CommandNameTool.BuildPlayerToCommandNameMap(players);
         
         // Single-char typeable mark returns identity
         Assert.Equal(typeableMark, result[typeablePlayer]);
@@ -154,7 +154,7 @@ public class ModelToCommandNameUtilityTests {
             new Player("O")
         };
 
-        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
+        var result = CommandNameTool.BuildPlayerToCommandNameMap(players);
 
         var originalX = players.First(p => p.Mark == "X");
         Assert.True(result.ContainsKey(originalX));
@@ -165,7 +165,7 @@ public class ModelToCommandNameUtilityTests {
     public void BuildPlayerToCommandNameMap_ReturnsCorrectCountForEmptyInput()
     {
         var emptyPlayers = new List<Player>();
-        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(emptyPlayers);
+        var result = CommandNameTool.BuildPlayerToCommandNameMap(emptyPlayers);
         Assert.Empty(result);
     }
 
@@ -178,7 +178,7 @@ public class ModelToCommandNameUtilityTests {
             players.Add(new Player(mark));
         }
 
-        var result = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
+        var result = CommandNameTool.BuildPlayerToCommandNameMap(players);
 
         foreach (var player in players) {
             Assert.Equal(player.Mark, result[player]);
@@ -204,7 +204,7 @@ public class ModelToCommandNameUtilityTests {
             [new Player(".")] = "1",
             [new Player("!")] = "2"
         };
-        var actual = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(players);
+        var actual = CommandNameTool.BuildPlayerToCommandNameMap(players);
 
         actual.Should().BeEquivalentTo(expected);
     }
@@ -213,7 +213,7 @@ public class ModelToCommandNameUtilityTests {
     public void BuildPlayerToCommandNameMap_TwoSpecialChars_ReturnMap1and2() {
         var player1 = new Player("☃"); //unicode snowman
         var player2 = new Player("☂"); //unicode umbrella
-        var map = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(
+        var map = CommandNameTool.BuildPlayerToCommandNameMap(
             new[] { player1, player2 }
         );
         
@@ -226,7 +226,7 @@ public class ModelToCommandNameUtilityTests {
     
     [Fact]
     public void BuildPlayerToCommandNameMap_EmptyArray() {
-        var map = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(Array.Empty<Player>());
+        var map = CommandNameTool.BuildPlayerToCommandNameMap(Array.Empty<Player>());
         
         map.Count.Should().Be(0);
     }
@@ -234,7 +234,7 @@ public class ModelToCommandNameUtilityTests {
     [Fact]
     public void BuildPlayerToCommandNameMap_NullValueThrows() {
         var action = () => {
-            _ = ModelToCommandNameUtility.BuildPlayerToCommandNameMap(null!);
+            _ = CommandNameTool.BuildPlayerToCommandNameMap(null!);
         };
         action.Should().Throw<ArgumentNullException>();
     }
@@ -258,7 +258,7 @@ public class ModelToCommandNameUtilityTests {
 
         for(sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for(sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = ModelToCommandNameUtility.GetSpaceCommandName(new GameView(gameState, players[0]), 0, col, row);
+                var actual = CommandNameTool.SpaceCommandName(new GameView(gameState, players[0]), 0, col, row);
                 actual.Should().Be(expected[row, col]);
             }
         }
@@ -277,7 +277,7 @@ public class ModelToCommandNameUtilityTests {
 
         for(sbyte row = 0; row < gameState.Boards[0].RowCount; row += 1) {
             for(sbyte col = 0; col < gameState.Boards[0].RowCount; col += 1) {
-                var actual = ModelToCommandNameUtility.GetSpaceCommandName(new GameView(gameState, players[1]), 0, col, row);
+                var actual = CommandNameTool.SpaceCommandName(new GameView(gameState, players[1]), 0, col, row);
                 actual.Should().Be(expected);
             }
         }
@@ -303,7 +303,7 @@ public class ModelToCommandNameUtilityTests {
 
         for(sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for(sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = ModelToCommandNameUtility.GetSpaceCommandName(new GameView(gameState, players[0]), 0, col, row);
+                var actual = CommandNameTool.SpaceCommandName(new GameView(gameState, players[0]), 0, col, row);
                 actual.Should().Be(expected[row, col]);
             }
         }
@@ -330,7 +330,7 @@ public class ModelToCommandNameUtilityTests {
 
         for(sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for(sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = ModelToCommandNameUtility.GetSpaceCommandName(new GameView(gameState, playerO), 0, col, row);
+                var actual = CommandNameTool.SpaceCommandName(new GameView(gameState, playerO), 0, col, row);
                 actual.Should().Be(expected[row, col]);
             }
         }
@@ -350,7 +350,7 @@ public class ModelToCommandNameUtilityTests {
         gameState.PlayManager.EndRound(out _);
 
         var expected = players[0].Mark;
-        var actual = ModelToCommandNameUtility.GetSpaceCommandName(new GameView(gameState, players[1]), 0, col: 1, row: 1);
+        var actual = CommandNameTool.SpaceCommandName(new GameView(gameState, players[1]), 0, col: 1, row: 1);
         actual.Should().Be(expected);
     }
 
@@ -368,7 +368,7 @@ public class ModelToCommandNameUtilityTests {
         gameState.PlayManager.EndRound(out _);
 
         var expected = "";
-        var actual = ModelToCommandNameUtility.GetSpaceCommandName(new GameView(gameState, players[1]), 0, col: 1, row: 1);
+        var actual = CommandNameTool.SpaceCommandName(new GameView(gameState, players[1]), 0, col: 1, row: 1);
         actual.Should().Be(expected);
     }
 
@@ -399,7 +399,7 @@ public class ModelToCommandNameUtilityTests {
 
         for(sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for(sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = ModelToCommandNameUtility.GetSpaceCommandName(new GameView(gameState, null), 0, col, row);
+                var actual = CommandNameTool.SpaceCommandName(new GameView(gameState, null), 0, col, row);
                 actual.Should().Be(expected[row, col].Trim());
             }
         }
@@ -423,7 +423,7 @@ public class ModelToCommandNameUtilityTests {
 
         for(sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for(sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = ModelToCommandNameUtility.GetSpaceCommandName(new GameView(gameState, players[0]), 0, col, row);
+                var actual = CommandNameTool.SpaceCommandName(new GameView(gameState, players[0]), 0, col, row);
                 actual.Should().Be(expected[row, col]);
             }
         }

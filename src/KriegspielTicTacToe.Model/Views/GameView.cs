@@ -58,7 +58,7 @@ public record GameView
     }
 
     public OneOf<BoardIsDone, Result<BoardView>> SelectBoard(string boardName)
-        => ModelToCommandNameUtility.GetBoardIndexByName(boardName, Value.Boards.Count).Match(
+        => CommandNameTool.GetBoardIndexByName(boardName, Value.Boards.Count).Match(
             notFound => throw new ArgumentException($"That is not a valid board: '{boardName}", nameof(boardName)),
             indexResult => Value.Boards[indexResult.Value].IsDone
                 ? OneOf<BoardIsDone, Result<BoardView>>.FromT0(new BoardIsDone())
@@ -85,7 +85,7 @@ public record GameView
         if (BoardsCount == 1) {
             return Boards.Single();
         }
-        var boardIndex = ModelToCommandNameUtility.GetBoardIndexByName(boardName, BoardsCount).Match(
+        var boardIndex = CommandNameTool.GetBoardIndexByName(boardName, BoardsCount).Match(
             notFound => throw new ArgumentException($"That is not a valid board: '{boardName}", nameof(boardName)),
             result => result.Value
         );
@@ -143,7 +143,7 @@ public record GameView
 
     public bool TryGetCoordinatesFromSpaceName(string spaceName, out sbyte boardIndex, out sbyte resultCol, out sbyte resultRow) {
         if (TryGetCoordinatesFromSpaceName(spaceName, out string boardName, out resultCol, out resultRow)) {
-            if(ModelToCommandNameUtility.TryGetBoardIndexByName(boardName, BoardsCount, out boardIndex)) {
+            if(CommandNameTool.TryGetBoardIndexByName(boardName, BoardsCount, out boardIndex)) {
                 return true;
             } else {
                 return false;
