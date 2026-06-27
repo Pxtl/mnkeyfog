@@ -44,6 +44,8 @@ public struct ScoreCard {
     => _scores.Count == 0 
         ? Empty
         : new ScoreCard(_scores.AllMaxBy(s => s.Score));
+
+    public readonly IEnumerable<Player> Players => _scores.Select(s => s.Player);
 	#endregion
 
 	#region object overrides (equality and tostring)

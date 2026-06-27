@@ -102,7 +102,7 @@ public record GameState
             return PlayManager.ActivePlayers;
         }
         else {
-            return ScoreCard.Highest.PlayerScores.Select(s => s.Player);
+            return ScoreCard.Highest.Players;
         }
     }}
 
