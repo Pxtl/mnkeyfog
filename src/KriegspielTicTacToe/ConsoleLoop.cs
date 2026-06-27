@@ -284,12 +284,10 @@ internal static class ConsoleLoop {
                             return new Quitting();
                         } else {
                             return gameView.AttemptBoard(result.Value).Match(
-                                boardIsDone => {
-                                    return boardIsDone;
-                                },
-                                boardViewResult => {
-                                    return actionFactory.Create(boardViewResult.Value.BoardIndex).Attempt(stateStorage.State, currentPlayer);
-                                }
+                                boardViewResult 
+                                => actionFactory.Create(boardViewResult.Value.BoardIndex).Attempt(stateStorage.State, currentPlayer),
+                                boardIsDone => boardIsDone,
+                                invalidCommand => invalidCommand
                             );
                         }
                     },

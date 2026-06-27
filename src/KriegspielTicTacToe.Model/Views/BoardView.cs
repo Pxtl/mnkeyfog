@@ -26,4 +26,7 @@ public record BoardView
 
     public IEnumerable<SpaceView> AsSpaceViewEnumerable()
     => Value.AsSpaceViewEnumerable();
+
+    public bool IsSpaceInsideOfBoard((sbyte Col, sbyte Row) pos, (sbyte Col, sbyte Row) boardSize)
+    => Value.IsSpaceInsideOfBoard(pos, boardSize);
 }

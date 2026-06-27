@@ -57,13 +57,20 @@ public record GameView
         return playAction.GetPlayerAction(Player).Attempt(Value);
     }
 
-    public OneOf<BoardIsDone, Result<BoardView>> AttemptBoard(string boardName)
+    public OneOf<Result<BoardView>, InvalidCommand, BoardIsDone> AttemptBoard(string boardName)
         => CommandNameTool.GetBoardIndexByName(boardName, Value.Boards.Count).Match(
-            notFound => throw new ArgumentException($"That is not a valid board: '{boardName}", nameof(boardName)),
-            indexResult => Value.Boards[indexResult.Value].IsDone
-                ? OneOf<BoardIsDone, Result<BoardView>>.FromT0(new BoardIsDone())
-                : new Result<BoardView>(GetBoardViewByIndex(indexResult.Value))
+            notFound => new InvalidCommand(boardName),
+            indexResult => AttemptBoard(indexResult.Value)
         );
+    
+    public OneOf<Result<BoardView>, InvalidCommand, BoardIsDone> AttemptBoard(sbyte boardIndex)
+        => (boardIndex >= 0 && boardIndex < BoardsCount)
+            ? (
+                Value.Boards[boardIndex].IsDone
+                    ? OneOf<Result<BoardView>, InvalidCommand, BoardIsDone>.FromT2(new BoardIsDone())
+                    : new Result<BoardView>(GetBoardViewByIndex(boardIndex))
+                )
+            : new InvalidCommand(CommandNameTool.BoardNameFromIndex(boardIndex));
     
     //TODO: Row and Column attempt functions.
     #endregion

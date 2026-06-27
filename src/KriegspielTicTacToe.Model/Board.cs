@@ -51,6 +51,7 @@ public sealed record Board {
     #endregion
 
     #region Methods
+    //TODO: AttemptSpace command needed... maybe 
 
     /// <summary>
     /// Get all of the spaces on the board as a big enumerable that you can

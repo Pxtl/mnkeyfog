@@ -53,7 +53,15 @@ public record MNKAction
         : throw new InvalidOperationException("Cannot compare different action types.");
 
 	public override IPlayActionResult Attempt(GameState gameState, Player actionPlayer) {
-        var space = gameState.Boards[BoardIndex].Spaces[Col, Row];
+        if(BoardIndex < 0 || BoardIndex >= gameState.Boards.Count) {
+            return new InvalidCommand(BoardIndex.ToString());
+        }
+        var board = gameState.Boards[BoardIndex];
+        if(!board.IsSpaceInsideOfBoard((Col, Row), (board.ColumnCount, board.RowCount))) {
+            return new InvalidCommand($"{Col}, {Row}");
+        }
+
+        var space = board.Spaces[Col, Row];
         if (space.Mark == null) {
             space.MakeKnownToPlayer(actionPlayer);
             gameState.ActionQueue.Add(GetPlayerAction(actionPlayer));
