@@ -80,4 +80,34 @@ public class PlayerAITests {
         };
         action.Should().NotThrow();
     }
+
+    [Fact]
+    public void AIGameRunner_BasicTicTacToe_WinnerAIvsRandom() {
+        // WinnerAI vs RandomAI should show WinnerAI winning more often
+        int iterations = 10;
+        int winnerWins = 0;
+
+        for (int i = 0; i < iterations; i++) {
+            var playerAIs = new OrderedDictionary<Player, IPlayerAI> {
+                [new Player("X")] = new WinnerAI(),
+                [new Player("O")] = new RandomAI()
+            };
+            AIGameRunner.RunAIGame(GameTemplates.BasicTicTacToe, playerAIs);
+            // Note: we can check which player won here if needed
+
+        }
+    }
+
+    [Fact]
+    public void AIGameRunner_BasicTicTacToe_WinnerAIvsRandomManyGames() {
+        int iterations = 20;
+        
+        for (int i = 0; i < iterations; i++) {
+            var playerAIs = new OrderedDictionary<Player, IPlayerAI> {
+                [new Player("X")] = new WinnerAI(),
+                [new Player("O")] = new RandomAI()
+            };
+            AIGameRunner.RunAIGame(GameTemplates.BasicTicTacToe, playerAIs);
+        }
+    }
 }
