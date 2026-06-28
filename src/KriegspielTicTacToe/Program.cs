@@ -150,7 +150,7 @@ public class Program {
         var ai1Players = parseResult.GetValue(Options.AI1PlayersOption) ?? [];
         var ai2Players = parseResult.GetValue(Options.AI2PlayersOption) ?? [];
         AIPlayers.AddRange(ai1Players.Select(a => new KeyValuePair<Player, IPlayerAI>(new Player(a), new RandomAI())));
-        AIPlayers.AddRange(ai2Players.Select(a => new KeyValuePair<Player, IPlayerAI>(new Player(a), new WinnerAI())));
+        AIPlayers.AddRange(ai2Players.Select(a => new KeyValuePair<Player, IPlayerAI>(new Player(a), new ClodAI())));
     }
 
     private class CommandHandler(Func<ParseResult, int> action) : SynchronousCommandLineAction {

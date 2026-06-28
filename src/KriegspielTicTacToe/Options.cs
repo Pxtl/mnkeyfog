@@ -39,7 +39,7 @@ internal static class Options {
     };
 
     public static Option<string[]> AI2PlayersOption = new("-ai2", "-2") {
-        Description = "Difficulty 2 'Winner' AI (created by llm, weak) player mark characters.  Provide them space-separated like with players.",
+        Description = "Difficulty 2 'Clod' AI (created by llm, weak) player mark characters.  Provide them space-separated like with players.",
         DefaultValueFactory = (result) => [],
         CustomParser = ParsePlayerMarkArray,
         Recursive = true,

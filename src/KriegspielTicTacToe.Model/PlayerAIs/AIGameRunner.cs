@@ -6,8 +6,12 @@ namespace KriegspielTicTacToe.Model.PlayerAIs;
 
 public static class AIGameRunner {
 	public const int MaxPlayerAIAttemptCount = 100;
-	public static ScoreCard RunAIGame(GameTemplate gameTemplate, OrderedDictionary<Player, IPlayerAI> aiPlayers) {
-		var gameState = new GameState(aiPlayers.Keys.ToArray(), gameTemplate, true);
+
+	/// <summary>
+	/// Variant of RunGame that outputs the gamestate for examination.
+	/// </summary>
+	public static ScoreCard RunAIGame(GameTemplate gameTemplate, OrderedDictionary<Player, IPlayerAI> aiPlayers, out GameState gameState) {
+		gameState = new GameState(aiPlayers.Keys.ToArray(), gameTemplate, true);
 		while(!gameState.IsGameOver) {
 			var playerAttemptCounts = new AutoConstructingDictionary<Player, int>(); //defaults all keys to zero.
 			while(!gameState.PlayManager.IsRoundOver && !gameState.IsGameOver) {
@@ -27,5 +31,9 @@ public static class AIGameRunner {
 			gameState.PlayManager.EndRound(out _);
 		}
 		return gameState.ScoreCard;
+	}
+
+	public static ScoreCard RunAIGame(GameTemplate gameTemplate, OrderedDictionary<Player, IPlayerAI> aiPlayers) {
+		return RunAIGame(gameTemplate, aiPlayers, out _);
 	}
 }

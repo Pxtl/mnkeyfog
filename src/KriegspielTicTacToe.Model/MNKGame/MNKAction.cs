@@ -53,6 +53,9 @@ public record MNKAction
         : throw new InvalidOperationException("Cannot compare different action types.");
 
 	public override IPlayActionResult Attempt(GameState gameState, Player actionPlayer) {
+        if(!gameState.PlayManager.CanTakeTurn(actionPlayer)) {
+            return new InvalidCommand(actionPlayer.Mark);
+        }
         if(BoardIndex < 0 || BoardIndex >= gameState.Boards.Count) {
             return new InvalidCommand(BoardIndex.ToString());
         }
