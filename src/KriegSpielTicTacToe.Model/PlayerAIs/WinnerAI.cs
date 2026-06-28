@@ -5,18 +5,21 @@ namespace KriegSpielTicTacToe.Model.PlayerAIs {
         public string Description => "Winner, Difficulty 3";
 
         public void Attempt(GameView gameView, IEnumerable<GameActionFactory> actionFactories) {
+            // Check if already a winner before attempting additional moves
+            var scoreCard = gameView.ScoreCard;
+            foreach (var winner in scoreCard.Highest.Players) {
+                if (winner.Mark == gameView.Player!.Mark) return;  // Already won, don't play more
+            }
+
             var factorySpaceActions = new List<GameActionFactoryForSpace>();
             foreach (var sa in actionFactories.OfType<GameActionFactoryForSpace>()) {
                 if (!factorySpaceActions.Contains(sa)) factorySpaceActions.Add(sa);
             }
-            var simpleFactory = actionFactories.OfType<GameActionFactoryForSimple>().FirstOrDefault();
 
-            if (simpleFactory != null) { try { gameView.Attempt(simpleFactory.Create()); return; } catch { } }
-
-            if (!factorySpaceActions.Any()) return;
+            if (factorySpaceActions.Count == 0) return;
 
             foreach (var board in gameView.Boards) {
-                sbyte rc = (sbyte)board.RowCount;  
+                sbyte rc = (sbyte)board.RowCount;
                 sbyte cc = (sbyte)board.ColumnCount;
                 
                 if (rc <= 0 || cc <= 0) continue;
