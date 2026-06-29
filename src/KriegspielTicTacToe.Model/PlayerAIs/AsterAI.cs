@@ -13,7 +13,7 @@ namespace KriegspielTicTacToe.Model.PlayerAIs {
         // persist these across executions so we'll keep our order of plan from
         // one turn to next.
         List<BoardView>? Boards { get; set; } = null;
-        List<List<(sbyte Col, sbyte Row)>> Lines { get; set; } = null;
+        List<List<(sbyte Col, sbyte Row)>>? Lines { get; set; } = null;
 
         public void Attempt(GameView gameView, IEnumerable<GameActionFactory> actionFactories) {
             var factorySpaceActions = new List<GameActionFactoryForSpace>(actionFactories.OfType<GameActionFactoryForSpace>());
@@ -98,7 +98,7 @@ namespace KriegspielTicTacToe.Model.PlayerAIs {
 
                     //all slices are added.  Now clean-up.
                     foreach(var line in Lines) {
-                        line.RemoveAll(pos => !board.IsSpaceInsideOfBoard(pos, (board.ColumnCount, board.RowCount)));
+                        line.RemoveAll(pos => !board.IsSpaceInsideOfBoard(pos));
                     }
                     Lines = Lines.Shuffle().ToList();
                 }

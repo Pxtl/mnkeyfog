@@ -51,30 +51,28 @@ public sealed record Board {
     #endregion
 
     #region Methods
-    //TODO: AttemptSpace command needed... maybe 
+    public IEnumerable<SpaceEnumerator> AsSpaceEnumerable() {
+        for (sbyte col = 0; col < Spaces.GetLength(0); col += 1) {
+            for (sbyte row = 0; row < Spaces.GetLength(1); row += 1) {
+                yield return new SpaceEnumerator(Spaces[col, row], col, row);
+            }
+        }
+    }
 
     /// <summary>
-    /// Get all of the spaces on the board as a big enumerable that you can
-    /// foreach across.
+    /// Returns true if space pos is within this board.
     /// </summary>
-    public IEnumerable<SpaceView> AsSpaceViewEnumerable(Player? player) {
-        for (sbyte col = 0; col < Spaces.GetLength(0); col += 1) {
-            for (sbyte row = 0; row < Spaces.GetLength(1); row += 1) {
-                yield return new SpaceView(Spaces[col, row], player, col, row);
-            }
-        }
-    }
-
-    public IEnumerable<Space> AsSpaceEnumerable() {
-        for (sbyte col = 0; col < Spaces.GetLength(0); col += 1) {
-            for (sbyte row = 0; row < Spaces.GetLength(1); row += 1) {
-                yield return Spaces[col, row];
-            }
-        }
-    }
-
-    public IEnumerable<SpaceView> AsSpaceViewEnumerable()
-    => AsSpaceViewEnumerable(player: null);
+    public bool IsSpaceInsideOfBoard((sbyte Col, sbyte Row) pos)
+    => IsSpaceInsideOfBoard(pos, (ColumnCount, RowCount));
+    
+    /// <summary>
+    /// Returns true if a space is within an arbitrarily-sized board.
+    /// </summary>
+    public static bool IsSpaceInsideOfBoard((sbyte Col, sbyte Row) pos, (sbyte Col, sbyte Row) boardSize)
+    => (pos.Col < boardSize.Col)
+        && (pos.Row < boardSize.Row)
+        && (pos.Col >= 0)
+        && (pos.Row >= 0);
     #endregion
 
     #region abstract and virtual properties
@@ -103,7 +101,7 @@ public sealed record Board {
     /// </summary>
     [JsonIgnore()]
     public bool IsFull
-    => AsSpaceEnumerable().All(s => s.Mark != null);
+    => AsSpaceEnumerable().All(s => s.Space.Mark != null);
 
     /// <summary>
     /// Returns true if the board is done and locked from further play.
@@ -112,13 +110,4 @@ public sealed record Board {
     public bool IsDone
     => IsFull || Ruleset.IsDone(this);
     #endregion
-
-    /// <summary>
-    /// Returns true if a space is within an arbitrarily-sized board.
-    /// </summary>
-    public bool IsSpaceInsideOfBoard((sbyte Col, sbyte Row) pos, (sbyte Col, sbyte Row) boardSize)
-    => (pos.Col < boardSize.Col)
-        && (pos.Row < boardSize.Row)
-        && (pos.Col >= 0)
-        && (pos.Row >= 0);
 }

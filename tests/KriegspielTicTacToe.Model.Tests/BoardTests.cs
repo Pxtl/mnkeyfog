@@ -43,14 +43,14 @@ public class BoardTests {
     [Fact]
     public void BoardAsEnumerable_ReturnsAllSpaces_ExpectedCount() {
         var board = new Board(3, 3, new MNKBoardRuleset());
-        var spaces = board.AsSpaceViewEnumerable().ToList();
+        var spaces = board.AsSpaceEnumerable().ToList();
         spaces.Count.Should().Be(9);
     }
 
     [Fact]
     public void BoardAsEnumerable_ReturnsAllSpaces_26x10() {
         var board = new Board(26, 10, new MNKBoardRuleset());
-        var spaces = board.AsSpaceViewEnumerable().ToList();
+        var spaces = board.AsSpaceEnumerable().ToList();
         spaces.Count.Should().Be(260);
     }
     #endregion

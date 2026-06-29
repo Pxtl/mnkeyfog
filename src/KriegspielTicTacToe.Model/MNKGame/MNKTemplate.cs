@@ -53,9 +53,9 @@ public record MNKTemplate
     public override void InitializeGame(GameState gameState) {
         if (!IsKriegspiel) {
             foreach (var board in gameState.Boards) {
-                foreach (var space in board.AsSpaceEnumerable()) {
+                foreach (var spaceEnum in board.AsSpaceEnumerable()) {
                     foreach(var player in gameState.PlayManager.Players) {
-                        space.MakeKnownToPlayer(player.Mark);
+                        spaceEnum.Space.MakeKnownToPlayer(player.Mark);
                     }
                 }
             }

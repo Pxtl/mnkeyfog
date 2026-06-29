@@ -45,8 +45,8 @@ public record MNKBoardRuleset(sbyte? ScoringLength = null, bool IsBoardDoneWhenS
             diagonalScoringLength = ScoringLength.Value;
         }
             
-        foreach (var spaceEnumerator in board.AsSpaceViewEnumerable()) {
-            string? lineOwnerMark = spaceEnumerator.Mark;
+        foreach (var spaceEnumerator in board.AsSpaceEnumerable()) {
+            string? lineOwnerMark = spaceEnumerator.Space.Mark;
             if(lineOwnerMark != null) {
                 var lineOwnerPlayer = new Player(lineOwnerMark);
                 result += ScoreSpace(
@@ -105,17 +105,16 @@ public record MNKBoardRuleset(sbyte? ScoringLength = null, bool IsBoardDoneWhenS
         (sbyte Col, sbyte Row) delta,
         int scoreLen
     ) {
-        var boardSize = ((sbyte)board.Spaces.GetLength(0), (sbyte)board.Spaces.GetLength(1));
         (sbyte Col, sbyte Row) endPos = ExtrapolatePos(lineStartPos, delta, scoreLen - 1);
 
         //end point is outside of board.
-        if (!board.IsSpaceInsideOfBoard(endPos, boardSize)) {
+        if (!board.IsSpaceInsideOfBoard(endPos)) {
             return ScoreCard.Empty;
         }
 
         (sbyte Col, sbyte Row) beforeStartPos = ExtrapolatePos(lineStartPos, delta, -1);
         if (
-            board.IsSpaceInsideOfBoard(beforeStartPos, boardSize)
+            board.IsSpaceInsideOfBoard(beforeStartPos)
             && board.Spaces[beforeStartPos.Col, beforeStartPos.Row].Mark == lineOwnerPlayer.Mark
         ) {
             // line already started before this space, return false to prevent double-counting.
@@ -123,7 +122,7 @@ public record MNKBoardRuleset(sbyte? ScoringLength = null, bool IsBoardDoneWhenS
         }
 
         var lineLength = 0;
-        for (sbyte i = 0; board.IsSpaceInsideOfBoard(ExtrapolatePos(lineStartPos, delta, i), boardSize); i += 1) {
+        for (sbyte i = 0; board.IsSpaceInsideOfBoard(ExtrapolatePos(lineStartPos, delta, i)); i += 1) {
             (sbyte Col, sbyte Row) curPos = ExtrapolatePos(lineStartPos, delta, i);
 
             if (lineOwnerPlayer.Mark != board.Spaces[curPos.Col, curPos.Row].Mark) {

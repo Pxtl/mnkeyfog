@@ -9,43 +9,42 @@ namespace KriegspielTicTacToe.Model.Views;
 /// that a player can do and see.
 /// </summary>
 public record GameView
-: GameObjectView<GameState> {
+: GameObjectView {
     #region Constructors
     public GameView(GameState gameState, Player? player)
-    : base(gameState, player) { }
+    : base(player) {
+        GameStateServer = gameState;
+        IsGameOver = gameState.IsGameOver;
+        AvailableActions = (Player == null)
+            ? new List<GameActionFactory>()
+            : gameState.GameTemplate.GetAvailableActions(gameState, Player).ToList();
+
+        var boardViewsArray = new BoardView[gameState.Boards.Count];
+        for(sbyte i = 0; i < gameState.Boards.Count; i+=1) {
+            boardViewsArray[i] = new BoardView(gameState.Boards[i], Player, i);
+        }
+        Boards = boardViewsArray;
+        CanTakeTurn = gameState.PlayManager.CanTakeTurn(Player);
+    }
     #endregion
 
-    #region Calculated Members
-    public bool CanTakeTurn => Value.PlayManager.CanTakeTurn(Player);
-    public IEnumerable<BoardView> Boards { get {
-        for(sbyte i = 0; i < BoardsCount; i+=1) {
-            yield return new BoardView(Value.Boards[i], Player, i);
-        }
-    } }
-    
+    #region Data Members
+    public IGameStateServer GameStateServer { get; init; }
+    public IReadOnlyList<BoardView> Boards { get; init; }
+    #endregion
 
-    [JsonIgnore()]
-    public bool IsGameOver => Value.IsGameOver;
-
-    [JsonIgnore()]
-    public IEnumerable<Player> Winners => Value.Winners;
-    
+    #region Copied Calculated Members
+    public bool CanTakeTurn { get; init; }
+    public bool IsGameOver { get; set; }
     #endregion
 
     #region Player Actions
-    public IEnumerable<GameActionFactory> GetAvailableActions() {
-        if (Player == null) {
-            throw new InvalidOperationException($"{nameof(Player)} is null.");
-        } else {
-            return Value.GameTemplate.GetAvailableActions(Value, Player);
-        }
-    }
-
+    public IReadOnlyList<GameActionFactory> AvailableActions { get; init; }
     public Resigned ResignPlayer() {
         if (Player == null) {
             throw new InvalidOperationException($"{nameof(Player)} is null.");
         } else {
-            Value.PlayManager.ResignPlayer(Player);
+            GameStateServer.ResignPlayer(Player);
             return new Resigned(Player);
         }
     }
@@ -54,11 +53,11 @@ public record GameView
         if (Player == null) {
             throw new InvalidOperationException($"{nameof(Player)} is null.");
         }
-        return playAction.GetPlayerAction(Player).Attempt(Value);
+        return GameStateServer.Attempt(playAction.GetPlayerAction(Player));
     }
 
     public OneOf<Result<BoardView>, InvalidCommand, BoardIsDone> AttemptBoard(string boardName)
-        => CommandNameTool.GetBoardIndexByName(boardName, Value.Boards.Count).Match(
+        => CommandNameTool.GetBoardIndexByName(boardName, Boards.Count).Match(
             notFound => new InvalidCommand(boardName),
             indexResult => AttemptBoard(indexResult.Value)
         );
@@ -66,7 +65,7 @@ public record GameView
     public OneOf<Result<BoardView>, InvalidCommand, BoardIsDone> AttemptBoard(sbyte boardIndex)
         => (boardIndex >= 0 && boardIndex < BoardsCount)
             ? (
-                Value.Boards[boardIndex].IsDone
+                Boards[boardIndex].IsDone
                     ? OneOf<Result<BoardView>, InvalidCommand, BoardIsDone>.FromT2(new BoardIsDone())
                     : new Result<BoardView>(GetBoardViewByIndex(boardIndex))
                 )
@@ -77,7 +76,7 @@ public record GameView
 
     #region private helpers
     public IEnumerable<string> BoardNames { get {
-        for(var i = 1; i <= Value.Boards.Count; i += 1) {
+        for(var i = 1; i <= Boards.Count; i += 1) {
             yield return i.ToString();
         }
     }}
@@ -85,10 +84,10 @@ public record GameView
 
     #region board management
     [JsonIgnore()]
-    public sbyte BoardsCount => (sbyte)Value.Boards.Count;
+    public sbyte BoardsCount => (sbyte)Boards.Count;
 
     public BoardView GetBoardViewByIndex(sbyte boardIndex)
-    => new BoardView(Value.Boards[boardIndex], Player, boardIndex);
+    => Boards[boardIndex];
 
     public BoardView GetBoardViewByName(string boardName) {
         if (BoardsCount == 1) {

@@ -60,7 +60,7 @@ public record MNKAction
             return new InvalidCommand(BoardIndex.ToString());
         }
         var board = gameState.Boards[BoardIndex];
-        if(!board.IsSpaceInsideOfBoard((Col, Row), (board.ColumnCount, board.RowCount))) {
+        if(!board.IsSpaceInsideOfBoard((Col, Row))) {
             return new InvalidCommand($"{Col}, {Row}");
         }
 

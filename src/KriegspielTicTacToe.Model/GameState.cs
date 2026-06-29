@@ -6,7 +6,7 @@ namespace KriegspielTicTacToe.Model;
 
 [ModelSerializable]
 public record GameState
-: IGameState {
+: IGameState, IGameStateServer {
     #region Constructors
     public GameState() { 
         // unusable default values will probably get removed when members are
@@ -64,6 +64,11 @@ public record GameState
     #endregion
 
     #region Initializer
+
+    #region IGameStateServer
+    public IPlayActionResult Attempt(PlayerAction action) => action.Attempt(this);
+    public void ResignPlayer(Player player) => PlayManager.ResignPlayer(player);
+    #endregion
     public virtual void Initialize() {
         ActionQueue.GameState = this;
         PlayManager.ActionQueue = ActionQueue;
@@ -78,7 +83,7 @@ public record GameState
     public GameView GetView(Player? player)
     => new(this, player);
 
-    #region GameState
+    #region Players and Scores
     /// <summary>
     /// Scorecard for all active (non-resigned) players
     /// </summary>

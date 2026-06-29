@@ -24,7 +24,7 @@ public static class AIGameRunner {
 					gameView.ResignPlayer();
 				} else {
 					var ai = aiPlayers[player];
-					ai.Attempt(gameView, gameView.GetAvailableActions());
+					ai.Attempt(gameView, gameView.AvailableActions);
 					playerAttemptCounts[player] = playerAttemptsCount + 1;
 				}
 			}

@@ -51,7 +51,7 @@ internal static class ConsoleLoop {
                                     gameView.ResignPlayer();
                                 } else {
                                     attemptCount += 1;
-                                    playerAI.Attempt(gameView, gameView.GetAvailableActions());
+                                    playerAI.Attempt(gameView, gameView.AvailableActions);
                                 }
                             }
                             
@@ -160,7 +160,7 @@ internal static class ConsoleLoop {
 
     private static IPlayActionResult DoPlayerAction(ref GameState state, Player currentPlayer, string sharedStateFilePath) {
         var gameView = state.GetView(currentPlayer);
-        var actionFactories = gameView.GetAvailableActions();
+        var actionFactories = gameView.AvailableActions;;
 
         if (actionFactories.Count() == 1) {
             var actionFactory = actionFactories.Single();
