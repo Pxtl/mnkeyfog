@@ -1,9 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/KriegspielMNK.CommandLine/KriegspielMNK.CommandLine.csproj" />
-    <Project Path="src/KriegspielMNK.Model/KriegspielMNK.Model.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/KriegspielMNK.Model.Tests/KriegspielMNK.Model.Tests.csproj" />
-  </Folder>
-</Solution>

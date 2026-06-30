@@ -13,16 +13,16 @@ have taken their turn.
 
 ```bash
 # Using the synchronous flag
-kriegspiel-mnk custom --synchronous -p X O --kriegspiel
+mnkeyfog custom --synchronous -p X O --kriegspiel
 
 # Or using shorthand
-kriegspiel-mnk custom -y -p X O -k
+mnkeyfog custom -y -p X O -k
 ```
 
 ### Starting an Asynchronous (Default) Game
 
 ```bash
-kriegspiel-mnk custom -p X O -k
+mnkeyfog custom -p X O -k
 ```
 
 ## Behavior

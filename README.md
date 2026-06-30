@@ -1,4 +1,4 @@
-# kriegspiel-mnk
+# mnkeyfog
 
 A command-line implementation of kriegspiel and/or synchronous [m,n,k
 games](https://en.wikipedia.org/wiki/M,n,k-game) such as Zach Weinersmith's
@@ -31,30 +31,30 @@ but possibly dotnet runtime 10 will be sufficient.
 to run it in basic gameplay from source (Weinersmith's Kriegspiel Tic-Tac-Toe, hotseat
 mode).
 
-> `dotnet run --project ./kriegspiel-mnk/src/KriegspielMNK -- game kriegspiel-mnk`
+> `dotnet run --project ./mnkeyfog/src/MnkeyFog -- game mnkeyfog`
 
 ```
 Description:
   Start a new game using a pre-defined game template.
 
 Usage:
-  KriegspielMNK game [command] [options]
+  MnkeyFog game [command] [options]
 
 Options:
   -p, --players <players>  Players mark characters.  Provide them space-separated, eg '-p A B C X Y Z' for a 6-player game. [default: X|O]
   -r, --random             Randomize player order.
   -?, -h, --help           Show help and usage information
-  -f, --file <file>        Path to the json file where gamestate is stored.  Will be resumed automatically if you kill the game (ctrl-C). Use a fileshare for network multiplayer. [default: /home/pxtl/.config/KriegspielMNK.json]
+  -f, --file <file>        Path to the json file where gamestate is stored.  Will be resumed automatically if you kill the game (ctrl-C). Use a fileshare for network multiplayer. [default: /home/pxtl/.config/MnkeyFog.json]
   -j, --join <join>        Join as given player char mark. Must match a mark in players list. Hotseat mode if not provided.
 
 Commands:
-  kriegspiel-mnk  Zach Weinersmith's Kriegspiel Tic-Tac-Toe.
+  mnkeyfog  Zach Weinersmith's Kriegspiel Tic-Tac-Toe.
   tictactoe             Basic simple tic-tac-toe.
 ```
 
 to see the other commands to launch the game for play, run
 
-> `dotnet run --project ./kriegspiel-mnk/src/KriegspielMNK -- -?`
+> `dotnet run --project ./mnkeyfog/src/MnkeyFog -- -?`
 
 Command `game` is for predefined gametypes, `custom` for custom game, and `load`
 to load a previous game.  Each command can be called with a `-?` parameter to
@@ -67,17 +67,17 @@ directly.
 So, to start a simple 3-player hotseat game between Alice, Bob, and Carol on a
 4x4 screen, the command would be
 
-> `kriegspiel-mnk custom -p A B C --boards 1 --size 4 --kriegspiel`
+> `mnkeyfog custom -p A B C --boards 1 --size 4 --kriegspiel`
 
 Conversely, to start a multiplayer game with the default rules (2 players X and
 O on a 3x3 board) on a fileshare named `\\kosmos\storage` with random
 start-player, the command would be 
 
-> `kriegspiel-mnk -f \\kosmos\storage\temp\ksttt.json -j X -r`
+> `mnkeyfog -f \\kosmos\storage\temp\ksttt.json -j X -r`
 
 And then your friend (on another computer with similar access to `\\kosmos\storage\`) can join with 
 
-> `kriegspiel-mnk -f \\kosmos\storage\temp\ksttt.json -j O`
+> `mnkeyfog -f \\kosmos\storage\temp\ksttt.json -j O`
 
 any game-rule options you pass in when joining an existing game like size,
 players, or randomization will be ignored.

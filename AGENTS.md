@@ -11,13 +11,13 @@ own branch from main.
 Codebase is using dotnet 10.0.  Use `dotnet build` to compile, and 
 
 ```sh
-dotnet run --project kriegspiel-mnk/tests/KriegspielMNK.Model.Tests
+dotnet run --project mnkeyfog/tests/MnkeyFog.Model.Tests
 ```
 to run unit test suite.
 
 # Testing
 
-Unit tests are in `tests/KriegspielMNK.Model.Tests`.
+Unit tests are in `tests/MnkeyFog.Model.Tests`.
 
 Do not attempt automated testing on the command-line tool. Test improvement can
 be achieved by codifying more logic into model.
