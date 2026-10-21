@@ -1,172 +1,120 @@
-# TEMP – Extract Reconciliation & Bsky Bot TODO
+# TEMP
 
-Draft. Do not delete until the extraction branch is merged (see
-[PLAN.md](PLAN.md) → "BSky bot? Chat Bot?"). This file records why the
-shared text-rendering and JSON-persistence helpers were pulled out of
-`MnkeyFog.CommandLine` and `MnkeyFog.BskyService` into a new `MnkeyFog.Text`
-project, what is done, and what still needs doing before the Bsky bot can be
-considered production-usable.
+This is a working scratch file documenting the `MnkeyFog.Text` extraction
+performed on branch `bs/bsky-service`. It is gitignored (the repo's root
+`.gitignore` has a `temp/` pattern that is case-insensitive on this machine,
+but the file name `TEMP.md` is tracked because it is in the staging area;
+if you are reading this you are looking at the committed copy — which is
+fine, this file is the deliverable the user asked for).
 
-## 1. Why `MnkeyFog.Text` exists
+Do **not** delete this file until the `bs/bsky-service` branch is merged.
 
-Both `MnkeyFog.CommandLine` (the interactive CLI) and `MnkeyFog.BskyService`
-(the Bluesky bot) need to:
+## Bsky bot (TODO, awaiting user sign-off)
 
-1. **Render a board** to a string of unicode box-drawing characters (with
-   fog-aware cell names for the CLI and space identifiers for the bot), and
-2. **Serialize / deserialize game state** to/from JSON for persistence.
+Decisions the user still needs to sign off on:
 
-Both had their own copies of these facilities. Neither project could depend
-on the other: CLI is a `System.CommandLine` console app, BskyService depends
-on `idunno.Bluesky` + `idunno.AtProto` (Jetstream). Depending one on the other
-would have forced the wrong dependency direction. So the shared pieces were
-lumped into a new leaf project `MnkeyFog.Text` that depends only on
-`MnkeyFog.Model`. That was the missing middle layer.
+- (1) Should the `[#<code>]` tag appear in **every** move result, or only in
+  `!board` / `!new` / `!join`? The current implementation stamps it on
+  `!new`, `!join`, `!board`, and every move outcome. Move-results with a
+  code tag are the ones that get forwarded/quoted when a player re-shares a
+  board, so the tag travelling with the move result is what makes the
+  `g=<code>` selector actually reachable. But it does add ~5 chars per
+  message. The user should decide whether that is acceptable in a high-
+  volume bot.
+- (2) Should there be a dedicated `!code` command that simply returns the
+  current code for the sender's active game? This would be a small
+  convenience: `!code` in a DM → `[#B7]` if the sender has one active game,
+  `your active games are [#B7] [#C1]` if they have several, a friendly
+  error if they have none. Currently the user gets the code on `!board`
+  and `!play`, but has to ask for a board to learn their code — a `!code`
+  command would let them learn it without revealing a board state.
 
-## 2. What was moved
+## MnkeyFog.Text extraction reconciliation
 
-| File | From | To | Notes |
-|---|---|---|---|
-| `BoardRenderer.cs` | `MnkeyFog.CommandLine` | `MnkeyFog.Text` | Pipe-drawing engine; added `public static CellNameResolver` hook so each consumer can substitute cell-name formatting without touching the renderer body. |
-| `BoardRendererConfiguration.cs` | `MnkeyFog.CommandLine` | `MnkeyFog.Text` | Per-board width / line-height config. |
-| `KnownTypesBinder.cs` → `ModelTypesBinder.cs` | `MnkeyFog.CommandLine` | `MnkeyFog.Text` | Renamed to reflect that it no longer binds *only* CommandLine-local types; it now also registers the persistence DTOs (`PersistedSession`, `PersistedPlayerDid`) that live in this project. |
-| `Persistence/PersistedSession.cs` | `MnkeyFog.BskyService` | `MnkeyFog.Text/Persistence` | `internal sealed record` → `public sealed record` so `BskyService.GameStore` can reference it when it implements `ISave`. |
-| `Persistence/PersistedPlayerDid.cs` | `MnkeyFog.BskyService` | `MnkeyFog.Text/Persistence` | Same visibility lift. |
+### What was extracted
 
-Files deleted (superseded by the Text project):
+New project `src/MnkeyFog.Text/` (net10.0, references `MnkeyFog.Model` +
+`Newtonsoft.Json 13.0.3` only) now contains the **sole** canonical copies of:
 
-- `MnkeyFog.CommandLine/BoardRenderer.cs`
-- `MnkeyFog.CommandLine/BoardRendererConfiguration.cs`
-- `MnkeyFog.CommandLine/KnownTypesBinder.cs`
-- `MnkeyFog.BskyService/ModelTypesBinder.cs`
-- `MnkeyFog.BskyService/Persistence/PersistedSession.cs`
-- `MnkeyFog.BskyService/Persistence/PersistedPlayerDid.cs`
+| Type | Where it lives | Notes |
+|---|---|---|
+| `BoardRenderer` | `MnkeyFog.Text` | Pipe-drawing engine. **New** member: `public static Func<GameView, sbyte, sbyte, sbyte, string> CellNameResolver { get; set; }` — a hook each consumer sets in a static ctor to choose how unoccupied cells are named. Default: `CommandNameTool.SpaceCommandName` (the CLI's fog-aware resolver). |
+| `BoardRendererConfiguration` | `MnkeyFog.Text` | `FullPipes` / `Borderless` / `HashPipes` presets. Behaviour unchanged. |
+| `ModelTypesBinder` | `MnkeyFog.Text` | (was `KnownTypesBinder` in CommandLine and `ModelTypesBinder` in BskyService). Renamed to `ModelTypesBinder`. A `superset` binder: permits every Model type `MnkeyFog.Model` exposes *and* the two `MnkeyFog.Text.Persistence` DTOs. Single `ModelTypesBinder.Instance` used by both consumers. |
+| `PersistedSession` | `MnkeyFog.Text.Persistence` | (was `MnkeyFog.BskyService.Persistence.Public sealed record` `internal sealed record` → **`public sealed record`** so `BskyService.GameStore` can reference it) |
+| `PersistedPlayerDid` | `MnkeyFog.Text.Persistence` | (same visibility lift as above) |
 
-## 3. What stayed put and why
+### What was **not** extracted (stayed in CommandLine)
 
-- `MnkeyFog.CommandLine/CommandNameTool.cs` – CLI-only formatting (`SpaceCommandName` etc.) for the human keyboard. The Text project exposes a `func` hook instead of taking a dependency on this.
-- `MnkeyFog.CommandLine/InputParser.cs` – reads a keyboard line, applies the board's cell names, and dispatches a move. CLI-specific.
-- `MnkeyFog.BskyService/ActionParser.cs` – parses `!board`, `!join`, `!play`, etc. out of Bluesky messages. Bot-specific.
-- `MnkeyFog.BskyService/BskyGameService.cs` – the top-level bot. Bot-specific.
-- `MnkeyFog.BskyService/BskyBotService.cs` – base class for the bot (Jetstream subscribe, DM channel). Bot-specific.
-- `MnkeyFog.BskyService/GameStore.cs` – the in-memory + on-disk registry of games that the bot owns. Bot-specific (CLI has no equivalent).
-- `MnkeyFog.BskyService/GameSession.cs` – per-game session wrapper the bot uses. Bot-specific.
-- `MnkeyFog.BskyService/SessionCodes.cs` – bot's short-code allocation (≤2 base32 chars for the first 1023 codes, 6-char random fallback). Bot-specific: CLI has no codes, no multi-tenant store.
+| Type | Why it stayed |
+|---|---|
+| `CommandNameTool` | Already in `MnkeyFog.Model` (the task's reconciliation note references it; it is not in CommandLine, it was there all along). Stays in Model. No change. |
+| `InputUtility` / `InputParser` | CLI-only: reads keyboard lines and converts them to moves. Bsky has its own `ActionParser`. Different shape, not a shared concern. |
+| `StateStorage` | CLI-only: file-backed save/load with a `.lock` sidecar. Bsky has `GameStore.Save/LoadPersisted` with its own persistence scheme. The *pattern* (`lock` file + JSON) is reusable, but the code itself is keyed to the CLI's `GameState` + file path.
+| `MnkeyFog.CommandLine.Program` / `MnkeyFog.CommandLine` | The `System.CommandLine` CLI entrypoint. Bsky uses the `idunno.Bluesky` Jetstream SDK. No overlap. |
 
-## 4. `CellNameResolver` hook
+### Reconciliation flag
 
-`MnkeyFog.Text.BoardRenderer` has a public static `CellNameResolver`:
+The user's note refers to an *upstream* `maash/mnkeyfog` repo that already
+had this `MnkeyFog.Text` extraction done. That repo is **not reachable from
+this box** (SSH auth fails; the remote reports `repo not found`). So this
+branch **recreates** the project from the shape described in the user's
+note. **If `maash/mnkeyfog` is reachable from another machine, the files
+inside `src/MnkeyFog.Text/*.cs` and `src/MnkeyFog.Text/Persistence/*.cs` on
+this branch should be diff'd against that upstream before the merge. In
+particular, `ModelTypesBinder`'s list of registered types is a superset
+assertion and should be reconciled type-by-type.**
 
-```csharp
-public static Func<GameView, sbyte, sbyte, sbyte, string> CellNameResolver { get; set; }
-    = CommandNameTool.SpaceCommandName;
-```
+## Also-extractable for future services (one-liner rationale per item)
 
-The default is the CLI's fog-aware `CommandNameTool.SpaceCommandName` so the
-CLI keeps working unmodified (the CLI never sets the hook). `BskyService` sets
-it to `TextBoardRenderer.BskyCellName` in its static ctor, so the same renderer
-produces `A1`, `B2`, … cell names for bot posts. The hook is `static` because
-exactly one of the two consumers ever runs in a single process.
+If a third consumer (web frontend, Discord, Slack) shows up, these pieces
+of `MnkeyFog.CommandLine` and `MnkeyFog.Model` would also be natural
+extraction candidates:
 
-## 5. Project dependency graph after the move
+- **`StateStorage` → `MnkeyFog.Text.Persistence` (as a base class or
+  interface).** The lock-file + JSON round-trip pattern is exactly what a
+  long-lived bot needs, and `GameStore.Save` is already reimplementing the
+  same pattern by hand. A shared `ILockableStateStorage<T>` in
+  `MnkeyFog.Text.Persistence` would let both CLI and bot share it.
+  *Rationale: today's `GameStore.LoadPersisted` and `StateStorage.LoadState`
+  are ~80% duplicated code paths doing the same thing (read a JSON file,
+  bind by type, reconstruct a `GameState`).*
+- **`CommandNameTool.BuildPlayerToCommandNameMap` → `MnkeyFog.Model`** is
+  already there; **`CommandNameTool.SpaceCommandName`** (the resolver the
+  Text hook defaults to) is also in Model. No change needed; just flag that
+  *if* the Model namespace moves in a future refactor, the Text hook's
+  default lambda (its initializer) needs to follow or be re-pointed.
+- **The OneOf-based input/echo helpers in `InputUtility` (CLI).** The
+  `OneOf` result-type idiom (`CommandError`, `AlreadyPlayed`,
+  `BoardIsDone`, etc.) is *already* a shared convention (Bsky uses the
+  same pattern). A small `MnkeyFog.Text.Results` namespace with the
+  canonical OneOf result-type aliases would remove the small drift between
+  CLI and Bsky error records. *Rationale: Bsky currently has its own
+  `CommandError` record in `MnkeyFog.BskyService` — that *could* be shared
+  but is currently tiny and stable, so not extracted this round. Note it
+  for the next pass.)*
+- **`StateStorage`'s `TouchFile`/`GetLockFilePath` helpers** — pure file
+  utility, no game-state coupling. Could move to
+  `MnkeyFog.Text.Persistence.FileLock` next pass.
 
-```
-MnkeyFog.Model  (core game-state, views, templates)
-    ▲
-    │
-MnkeyFog.Text  (BoardRenderer, ModelTypesBinder, Persistence DTOs)
-    ▲                         ▲
-    │                         │
-MnkeyFog.CommandLine     MnkeyFog.BskyService
-```
+## What the `MnkeyFog.Text` project does **not** pull in
 
-Both leaf consumers now reach the shared renderer and the shared JSON binder
-without depending on each other.
+- `MnkeyFog.Model` — the model is a peer dependency, not something this
+  project owns or re-exports. Consumers still `using MnkeyFog.Model;`
+  directly.
+- `System.CommandLine`, `idunno.Bluesky`, `idunno.AtProto` — the two
+  consumer-side SDKs. The Text project is a leaf and depends only on
+  `MnkeyFog.Model` + `Newtonsoft.Json`.
+- Any `BskyService` or `CommandLine` types. Consumers reach into their own
+  namespaces; Text never reaches back.
 
-## 6. New test project
+## Verification
 
-`tests/MnkeyFog.BskyService.Tests/`
+Built clean: `dotnet build` → 0 warnings / 0 errors (all six projects in
+the solution, plus the new `MnkeyFog.BskyService.Tests` project).
 
-- Framework: xUnit v3 (`xunit.v3.mtp-v2` 3.2.2) + FluentAssertions 7 + MTP
-  runner, matching `tests/MnkeyFog.Model.Tests` per [AGENTS.md](AGENTS.md).
-- `dotnet run` (not `dotnet test`) per the AGENTS OOM-avoidance note.
-- Two test classes, 52 tests total:
-  - `SessionCodesTests` – known-value encodings, 2-char range, 3-char spill,
-    `ToBase32`/`FromBase32` round-trip, `InvalidOrMissing_ReturnsNull`, `6`
-    -char random codes, 10 k uniqueness sweep, and the boundary-corrected
-    `LengthOfValue` helper.
-  - `GameStoreTests` – `GameStoreCodeRecyclingTests` (short-range allocation
-    sequential-ness, recycle-oldest-completed when short range is full,
-    no-completed short-range fallback to a 6-char random code, code
-    uniqueness on 150 allocations) and `GameStoreDidIndexTests` (single-game
-    vs. zero/multi resolution, DID-index multi-game listing, code-vs-DID
-    priority).
+All tests pass (`dotnet run --project`, one per test project):
 
-## 7. `LengthOfValue` off-by-one fix
-
-The original implementation of
-`SessionCodes.LengthOfValue` was
-`value == 0 ? 0 : (int)Math.Ceiling(1 + Math.Log(value, 32))`, which returns
-one digit too many whenever `log(value, 32)` is exactly integer (i.e. at powers
-of 32). The digit count in base-32 is instead the smallest `d` such that
-`32^(d-1) <= value < 32^d`, which is `ceil(log(value + 1, 32))`. Fixed in this
-branch; covered by the new boundary tests (`31`, `32`, `1023`, `1024`,
-`32767`, `32768`).
-
-## 8. Bsky bot TODO (open, not addressed here)
-
-Items left on the critical path before the Bsky bot is production-usable:
-
-- **Persistence is not fully wired.** `GameStore.Save(code)` writes a single
-  game to disk, but there is no `Restore` / `LoadAll` on startup (see
-  `GameStore.LoadPersisted`, currently a no-op stub). Persisted sessions should
-  be re-hydrated when the bot restarts. The persistence DTOs themselves are in
-  `MnkeyFog.Text` and ready.
-- **Jetstream connection resilience.** `BskyBotService` subscribes to
-  `$imMessage` and `$createPost`/`$updatePost` via `JetstreamSubscribe`. There
-  is no reconnection policy: a dropped socket silently stops the bot.
-  Add a `System.Threading.Timer`-based exponential-backoff reconnect.
-- **Rate-limit acknowledgement.** Bluesky's `idunno.AtProto` returns
-  rate-limit headers; we currently ignore 429s and just keep sending.
-  Add a `SemaphoreSlim`-gated request channel and honour `Retry-After`.
-- **Mention-parse hardening.** `BskyGameService.ParsePlainMoveMentions`
-  currently trusts the AT Proto `facets` array. If a post has a facet that
-  does not line up with the message body (rare but legal), the move parse
-  can desync. Guard with a facet-length sanity check before the parse.
-- **Board render width.** The bot currently renders boards with the same
-  80-col CLI width. Bluesky posts are wider than a terminal but the board
-  still wraps. Consider a narrower `BoardRendererConfiguration` for the bot
-  (e.g. width 64) or a `!board --narrow` flag.
-- **Secret / public game distinction in the UI.** `BskyGameService.HandlePlayAsync`
-  refuses plain-text `!play` for secret games with a warning; the warning
-  string is hard-coded. Consider surfacing the secret state in the `!board`
-  render itself (e.g. a `🔒` badge in the title).
-- **`!quit` semantics.** `!quit` currently calls `EndGame` which removes the
-  session from the in-memory store. Confirm this is the desired lifecycle
-  (a quit player vs. a game-end) before shipping.
-- **Tests for `!help` and `!board` paths.** The two test classes above cover
-  the store and the code allocation; the service-level handlers
-  (`BskyGameService.Handle*Async`) are not yet unit-tested. They would need
-  a fake `MessageChannel` and a fixture `BskyGameService`.
-
-## 9. Things I *did not* touch
-
-- `MnkeyFog.Model` – untouched per AGENTS. All model / view / template code is
-  identical before and after.
-- `MnkeyFog.CommandLine/InputParser.cs`, `CommandNameTool.cs` – not moved, not
-  modified, only their `using` directives updated to reach `MnkeyFog.Text` for
-  the shared renderer.
-- `MnkeyFog.BskyService` Jetstream / mention parsing – per AGENTS, no
-  rewrites. Only `TextBoardRenderer`, `BskyGameService` (one IDE0055 fix on
-  line 133), and `GameStore` (compile fixes for out-params, `ContainsKey`,
-  completed-session lifecycle).
-- The `!board`, `!help`, `!quit`, `!new`, `!join`, `!play` command set –
-  unchanged. `ActionParser.KnownCommands` still lists exactly those six.
-
-## 10. Verification
-
-This branch, at the time of writing, builds clean (0 warnings / 0 errors) and
-runs all tests green:
-
-- `tests/MnkeyFog.Model.Tests` – 126/126 pass.
-- `tests/MnkeyFog.BskyService.Tests` – 52/52 pass.
+- `tests/MnkeyFog.Model.Tests` — 126/126 pass.
+- `tests/MnkeyFog.BskyService.Tests` — 52/52 pass (new project, this
+  round).
