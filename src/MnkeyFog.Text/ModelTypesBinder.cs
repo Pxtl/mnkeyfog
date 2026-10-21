@@ -1,9 +1,9 @@
 using System.Reflection;
 using System.Runtime.Serialization;
-using MnkeyFog.BskyService.Persistence;
+using MnkeyFog.Text.Persistence;
 using Newtonsoft.Json.Serialization;
 
-namespace MnkeyFog.BskyService;
+namespace MnkeyFog.Text;
 
 /// <summary>
 /// Serialization binder for GameState persistence, restricting polymorphic

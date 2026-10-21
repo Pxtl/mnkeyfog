@@ -1,283 +1,293 @@
+using System.Text.RegularExpressions;
 using idunno.AtProto;
+using idunno.Bluesky;
 using Microsoft.Extensions.Logging;
-using MnkeyFog.Model;
-using MnkeyFog.Model.Template;
-using OneOf;
-using OneOf.Types;
 
 namespace MnkeyFog.BskyService;
 
-/// <summary>
-/// Concrete bot that hosts mnkeyfog games over Bluesky DMs and @mentions.
-///
-/// DM protocol (per conversation thread):
-///   !new [template] [players] — start a game (default: tictactoe, 2 players)
-///   !join                     — claim a player slot
-///   !play <space> [<space>]   — play a move, e.g. !play 5 or !play 1A 2B
-///   !board                    — re-render your view of the board
-///   !help                     — show help
-///   !quit                     — end the game in this thread
-///
-/// In DMs the '!' prefix is optional ("join", "play 5" and a bare space name
-/// like "5" all work). In public chats the '!' prefix is required and other
-/// plain text is ignored — the bot never infers a command from it.
-///
-/// Secret games (Kriegspiel or synchronous play) refuse !play in public
-/// threads, warning the player to move via DM instead.
-///
-/// Public threads: @mention the bot with "!play space=NN" to play a move on the
-/// game keyed to the mention thread's root post; the bot posts the spectator
-/// board (no fog leak) mentioning all active players (up to 10 handles).
-/// </summary>
 public sealed class BskyGameService : BskyBotService {
-    /// <summary>Bluesky limits a post to mentioning at most 10 users.</summary>
     private const int MaxMentionsPerPost = 10;
+    private static readonly Regex GameCodeAssignmentRegex =
+        new(@"^g(?:a(m?e)?code)?\s*=\s*[A-Za-z0-9]+$", RegexOptions.IgnoreCase);
+
+    private const string HelpText =
+        "Commands:\n"
+        + "  !new [game] [players]  — start a new game (public threads only)\n"
+        + "  !join                  — join the game in this thread (public threads)\n"
+        + "  !play <space> <space>  — play a move (DMs)\n"
+        + "  !board                 — show the board\n"
+        + "  !help                  — show this help\n"
+        + "  !quit                  — end the game\n"
+        + "Use g=<code> on any command to target a specific game (DMs): !play 5 g=5F\n"
+        + "In DMs the ! prefix is optional — just send '5' to play space 5 (your only game).";
 
     public BskyGameService(ILogger logger) : base(logger) { }
 
-    protected internal override Task OnDirectMessageAsync(string conversationId, string senderDid, string message, CancellationToken cancellationToken) {
+    #region overrides
+    protected internal override Task OnDirectMessageAsync(
+        string conversationId,
+        string senderDid,
+        string message,
+        CancellationToken cancellationToken
+    ) {
         var channel = new MessageChannel(
             RespondAsync: text => SendDirectMessageAsync(conversationId, text, cancellationToken),
-            RenderBoardForAsync: (session, _) => Task.FromResult(
-                TextBoardRenderer.Render(session.GetViewFor(senderDid))
-            ),
+            RenderBoardForAsync: (session, ct) => RenderBoardForDmAsync(senderDid, session, ct),
             IsPublic: false
         );
-        return HandleMessageAsync($"dm:{conversationId}", senderDid, message, channel, cancellationToken, isPrefixOptional: true);
+        return HandleMessageAsync(senderDid, message, channel, cancellationToken, isPrefixOptional: true);
     }
 
-    protected internal override Task OnMentionAsync(AtUri postUri, string authorDid, string message, CancellationToken cancellationToken) {
+    protected internal override Task OnMentionAsync(
+        AtUri postUri,
+        string authorDid,
+        string message,
+        CancellationToken cancellationToken
+    ) {
         var channel = new MessageChannel(
             RespondAsync: text => PostAsync(text, cancellationToken),
-            RenderBoardForAsync: RenderPublicBoardAsync,
+            RenderBoardForAsync: (session, ct) => RenderPublicBoardAsync(session, cancellationToken),
             IsPublic: true
         );
-        return HandleMessageAsync($"mention:{postUri}", authorDid, message, channel, cancellationToken, isPrefixOptional: false);
+        return HandleMessageAsync(authorDid, message, channel, cancellationToken, isPrefixOptional: false, uriKey: postUri.ToString());
+    }
+    #endregion
+
+    #region rendering
+    private Task<string> RenderBoardForDmAsync(string senderDid, GameSession session, CancellationToken _) {
+        var view = session.GetPlayerIndex(senderDid) is int idx
+            ? session.GetViewFor(senderDid)
+            : session.GetSpectatorView();
+        return Task.FromResult(TextBoardRenderer.Render(view));
     }
 
-    private async Task<string> RenderPublicBoardAsync(GameSession session, CancellationToken cancellationToken) {
+    private Task<string> RenderPublicBoardAsync(GameSession session, CancellationToken _) {
         var board = TextBoardRenderer.Render(session.GetSpectatorView());
-
-        // Append @mentions of active players so everyone in the thread sees the call-out.
-        var mentions = await GetActivePlayerHandlesAsync(session, cancellationToken);
-        return mentions.Count == 0 ? board : $"{board}\n{string.Join(" ", mentions.Select(h => $"@{h}"))}";
+        var dids = session.PlayerDids.Keys.Take(MaxMentionsPerPost).ToList();
+        var mentions = string.Join(" ", dids.Select(did => $"@{did}"));
+        return Task.FromResult(mentions.Length == 0 ? board : $"{board}\n{mentions}");
     }
+    #endregion
 
-    /// <summary>Resolve handles for the DIDs of players who have joined the session.</summary>
-    private async Task<IReadOnlyList<string>> GetActivePlayerHandlesAsync(GameSession session, CancellationToken cancellationToken) {
-        if (session.PlayerDids.Count == 0) {
-            return [];
-        }
-
-        var profiles = await Agent.GetProfiles(
-            session.PlayerDids.Keys.Select(did => (AtIdentifier)(Did)did).ToList(),
-            cancellationToken: cancellationToken
-        );
-
-        return profiles.Succeeded && profiles.Result is not null
-            ? [.. profiles.Result
-                .Where(p => p.Handle is not null)
-                .Take(MaxMentionsPerPost)
-                .Select(p => (string)p.Handle!)]
-            : [];
-    }
-
-    /// <summary>
-    /// Dispatch a single inbound message (DM or @mention) to its handler.
-    /// </summary>
-    /// <param name="chatKey">
-    /// Identifier of the chat thread the message arrived in, used to key the
-    /// game session: one game per DM conversation ("dm:{conversationId}") or
-    /// per public mention thread ("mention:{root post URI}").
-    /// </param>
-    /// <param name="senderDid">The Bluesky DID of the message's author.</param>
-    /// <param name="message">The raw text of the message.</param>
-    /// <param name="channel">How to respond to the sender (DM vs public post).</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <param name="isPrefixOptional">
-    /// True for DMs, where the '!' command prefix is optional and plain text
-    /// that names spaces is treated as moves. False for public chats, where the
-    /// prefix is required and plain text is ignored.
-    /// </param>
+    #region dispatch
     private Task HandleMessageAsync(
-        string chatKey,
         string senderDid,
         string message,
         MessageChannel channel,
         CancellationToken cancellationToken,
-        bool isPrefixOptional
-    )
-    => ActionParser.ParseCommand(message, isPrefixOptional).Match(
-        command => HandleCommandAsync(chatKey, senderDid, command, channel, cancellationToken),
-        // Not a command. In DMs plain text may still be moves; in public chats
-        // it is ignored.
+        bool isPrefixOptional,
+        string? uriKey = null
+    ) => ActionParser.ParseCommand(message, isPrefixOptional).Match(
+        command => HandleCommandAsync(senderDid, command, channel, cancellationToken, uriKey),
         _ => isPrefixOptional
-            ? PlayPlainMovesAsync(chatKey, senderDid, message, channel, cancellationToken)
-            : Task.CompletedTask);
+            ? PlayPlainMovesAsync(senderDid, message, channel, cancellationToken)
+            : Task.CompletedTask
+    );
 
-    private async Task HandleCommandAsync(string chatKey, string senderDid, CommandToken command, MessageChannel channel, CancellationToken cancellationToken) {
+    private async Task HandleCommandAsync(
+        string senderDid,
+        CommandToken command,
+        MessageChannel channel,
+        CancellationToken cancellationToken,
+        string? uriKey
+    ) {
+        var (explicitCode, remaining) = ExtractGameCode(command.Arg);
+
         switch (command.Command) {
             case "new":
-                await HandleNewAsync(chatKey, senderDid, command.Arg, channel, cancellationToken);
+                await HandleNewAsync(senderDid, remaining, channel, cancellationToken, uriKey);
                 break;
             case "join":
-                await HandleJoinAsync(chatKey, senderDid, channel, cancellationToken);
+                await HandleJoinAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
                 break;
             case "play":
-                await HandlePlayAsync(chatKey, senderDid, command.Arg, channel, cancellationToken);
+                await HandlePlayAsync(senderDid, remaining, explicitCode, channel, cancellationToken, uriKey);
                 break;
             case "board":
-                await HandleBoardAsync(chatKey, senderDid, channel, cancellationToken);
+                await HandleBoardAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
                 break;
             case "help":
                 await channel.RespondAsync(HelpText);
                 break;
             case "quit":
-                GameStore.RemoveGame(chatKey);
-                await channel.RespondAsync("Game ended.");
+                await HandleQuitAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
                 break;
             default:
-                await channel.RespondAsync($"Unknown command '!{command.Command}'. " + HelpText);
+                await channel.RespondAsync($"Unknown command '!{command.Command}'. See !help.");
                 break;
         }
     }
+    #endregion
 
-    #region command handlers
-    private async Task HandleNewAsync(string chatKey, string creatorDid, IReadOnlyList<string> commandArgs, MessageChannel channel, CancellationToken cancellationToken) {
+    #region commands
+    private async Task HandleNewAsync(
+        string senderDid,
+        IReadOnlyList<string> commandArgs,
+        MessageChannel channel,
+        CancellationToken cancellationToken,
+        string? uriKey
+    ) {
+        if (uriKey is null) {
+            await channel.RespondAsync(
+                "!new works only in *public* threads (reply to the post where you mentioned me). " +
+                "You cannot start a game in a DM.");
+            return;
+        }
+
         var templateName = commandArgs.Count > 0 ? commandArgs[0].ToLowerInvariant() : "tictactoe";
         var template = GameTemplates.GetBuiltInGameTemplates()
             .FirstOrDefault(t => string.Equals(t.CommandName, templateName, StringComparison.OrdinalIgnoreCase));
 
         if (template is null) {
             var known = string.Join(", ", GameTemplates.GetBuiltInGameTemplates().Select(t => t.CommandName));
-            await channel.RespondAsync($"Unknown game '{templateName}'. Known games: {known}");
+            await channel.RespondAsync($"Unknown game '{templateName}'. Known: {known}");
             return;
         }
 
         var playerCount = 2;
-        if (commandArgs.Count > 1 && int.TryParse(commandArgs[1], out var requestedCount)) {
-            playerCount = requestedCount;
+        if (commandArgs.Count > 1 && int.TryParse(commandArgs[1], out var count) && count is >= 2 and <= 4) {
+            playerCount = count;
         }
 
-        var result = GameStore.CreateGame(chatKey, creatorDid, playerCount, template);
+        var result = GameStore.CreateGame(uriKey, senderDid, playerCount, template);
         await result.Match(
-            async session => await channel.RespondAsync(
-                $"New game of {template.CommandName} ({playerCount} players) started.\n"
-                + await channel.RenderBoardForAsync(session, cancellationToken)
-                + "\nOther players: !join to claim a slot."
-            ),
+            async created => await channel.RespondAsync(
+                $"Started {template.CommandName} ({playerCount}p) — code: **[{created.Code}]**\n"
+                + await channel.RenderBoardForAsync(created.Session, cancellationToken)
+                + "\nJoin in this thread with **!join**, then play in DMs: **!play <space>** (use g=[code] if you have several games)."),
             error => channel.RespondAsync(error.Message)
         );
     }
 
-    private async Task HandleJoinAsync(string chatKey, string did, MessageChannel channel, CancellationToken cancellationToken) {
-        if (!GameStore.TryGetGame(chatKey, out var session)) {
-            await channel.RespondAsync("No game in this thread. Start one with !new [game] [players].");
+    private async Task HandleJoinAsync(
+        string senderDid,
+        string? explicitCode,
+        MessageChannel channel,
+        CancellationToken cancellationToken,
+        string? uriKey
+    ) {
+        var session = await ResolveSessionAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
+        if (session is null) {
             return;
         }
 
-        var result = session.Join(did);
+        var result = session.Join(senderDid);
         await result.Match(
             async player => {
-                GameStore.Save(session);
+                GameStore.JoinWithIndex(session.Code, senderDid);
+                GameStore.Save(session.Code);
                 await channel.RespondAsync(
-                    $"You joined as '{player.Value.Mark}'.\n"
+                    $"You joined **[{session.Code}]** as **'{player.Value.Mark}'**\n"
                     + await channel.RenderBoardForAsync(session, cancellationToken)
-                );
+                    + "\nPlay in DMs: **!play <space>** (bare space tokens also work if this is your only game).");
             },
             error => channel.RespondAsync(error.Message)
         );
     }
 
-    private async Task HandleBoardAsync(string chatKey, string did, MessageChannel channel, CancellationToken cancellationToken) {
-        if (!GameStore.TryGetGame(chatKey, out var session)) {
-            await channel.RespondAsync("No game in this thread. Start one with !new [game] [players].");
-            return;
-        }
-
-        await channel.RespondAsync(await channel.RenderBoardForAsync(session, cancellationToken));
-    }
-
-    /// <summary>Handle the <c>!play</c> command: play the moves named by its arguments.</summary>
     private async Task HandlePlayAsync(
-        string chatKey,
         string senderDid,
         IReadOnlyList<string> commandArgs,
+        string? explicitCode,
         MessageChannel channel,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        string? uriKey
     ) {
-        if (!GameStore.TryGetGame(chatKey, out var session)) {
-            await channel.RespondAsync("No game in this thread. Start one with !new [game] [players].");
+        var session = await ResolveSessionAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
+        if (session is null) {
             return;
         }
 
-        // Secret games must not be played in public threads — the attempt and
-        // its result would reveal fogged information to everyone reading.
-        if (channel.IsPublic && session.IsSecret) {
+        if (channel.IsPublic) {
             await channel.RespondAsync(
-                "WARNING: this game is secret (Kriegspiel or synchronous play) — do not make these "
-                + "moves publicly! DM me and play there instead.");
+                $"WARNING: game **[{session.Code}]** is played in DMs to keep moves private. "
+                + "Do **not** play in this public thread — post to the bot in a DM instead (include g=[code] if you have several games).");
             return;
         }
 
         var playerIndex = session.GetPlayerIndex(senderDid);
         if (playerIndex is null) {
-            await channel.RespondAsync("You're not in this game yet. Send !join to claim a slot.");
+            await channel.RespondAsync($"You are not in game **[{session.Code}]**. Join it in the thread where it was started with **!join**.");
             return;
         }
 
-        var playerView = session.GetViewFor(senderDid);
-        var moves = ActionParser.ParsePlay(playerView, commandArgs);
-        if (moves.Count == 0) {
-            await channel.RespondAsync("No valid spaces in !play. Usage: !play <space> — e.g. '!play 5' or '!play 1A'.");
-            return;
-        }
-
-        await ExecuteMovesAsync(chatKey, session, playerIndex.Value, moves, channel, cancellationToken);
+        await ExecuteMovesAsync(senderDid, commandArgs, session, playerIndex.Value, channel, cancellationToken);
     }
 
-    /// <summary>
-    /// DM fallback for the optional '!' prefix: plain text that names spaces is
-    /// played as moves. Stays quiet unless the text actually contains moves, so
-    /// ordinary chat is not nagged.
-    /// </summary>
+    private async Task HandleBoardAsync(
+        string senderDid,
+        string? explicitCode,
+        MessageChannel channel,
+        CancellationToken cancellationToken,
+        string? uriKey
+    ) {
+        var session = await ResolveSessionAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
+        if (session is null) {
+            await channel.RespondAsync(
+                "No game to show. In DMs: **!board g=<code>** (or just **!board** if you have one game). "
+                + "In public threads use **!board** in the thread where the game was started.");
+            return;
+        }
+        await channel.RespondAsync(await channel.RenderBoardForAsync(session, cancellationToken));
+    }
+
+    private async Task HandleQuitAsync(
+        string senderDid,
+        string? explicitCode,
+        MessageChannel channel,
+        CancellationToken cancellationToken,
+        string? uriKey
+    ) {
+        var session = await ResolveSessionAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
+        if (session is null) {
+            await channel.RespondAsync("No game to quit. Use **!quit** in the thread where the game was started, or in a DM with **g=<code>**.");
+            return;
+        }
+        GameStore.EndGame(session.Code);
+        await channel.RespondAsync($"Game **[{session.Code}]** ended.");
+    }
+
     private async Task PlayPlainMovesAsync(
-        string chatKey,
         string senderDid,
         string message,
         MessageChannel channel,
         CancellationToken cancellationToken
     ) {
-        if (!GameStore.TryGetGame(chatKey, out var session)) {
-            return; // no game; stay quiet to avoid replying to every random DM
-        }
-
-        var moves = ActionParser.ParsePlay(session.GetViewFor(senderDid), ActionParser.Tokenize(message));
-        if (moves.Count == 0) {
-            return; // not move-like text; stay quiet
+        var session = GameStore.GetSingleSessionForDid(senderDid);
+        if (session is null) {
+            return;
         }
 
         var playerIndex = session.GetPlayerIndex(senderDid);
         if (playerIndex is null) {
-            await channel.RespondAsync("You're not in this game yet. Send !join to claim a slot.");
             return;
         }
 
-        await ExecuteMovesAsync(chatKey, session, playerIndex.Value, moves, channel, cancellationToken);
+        var playerView = session.GetViewFor(senderDid);
+        var moves = ActionParser.ParsePlay(playerView, ActionParser.Tokenize(message));
+        if (moves.Count == 0) {
+            return;
+        }
+
+        await ExecuteMovesAsync(senderDid, ActionParser.Tokenize(message), session, playerIndex.Value, channel, cancellationToken);
     }
 
-    /// <summary>
-    /// Attempt the given moves, advance the round if it is over, report the
-    /// results with the board, and persist or clean up the game.
-    /// </summary>
     private async Task ExecuteMovesAsync(
-        string chatKey,
+        string senderDid,
+        IReadOnlyList<string> tokens,
         GameSession session,
         int playerIndex,
-        IReadOnlyList<GameAction> moves,
         MessageChannel channel,
         CancellationToken cancellationToken
     ) {
+        var playerView = session.GetViewFor(senderDid);
+        var moves = ActionParser.ParsePlay(playerView, tokens);
+        if (moves.Count == 0) {
+            await channel.RespondAsync(
+                $"No valid spaces in game **[{session.Code}]**. Usage: **!play <space>** — e.g. **!play 5** or **!play 1A**.");
+            return;
+        }
+
         var resultTexts = new List<string>();
         foreach (var move in moves) {
             var result = session.Attempt(playerIndex, move);
@@ -285,29 +295,67 @@ public sealed class BskyGameService : BskyBotService {
             session.GameState.ExecutePendingActions();
         }
 
-        // Advance to the next round once every player has taken their turn.
         if (session.GameState.PlayersState.IsRoundOver) {
             session.GameState.EndRound(out _);
         }
 
-        await channel.RespondAsync(string.Join("\n", resultTexts) + "\n" + await channel.RenderBoardForAsync(session, cancellationToken));
+        await channel.RespondAsync(
+            $"Game **[{session.Code}]**\n"
+            + string.Join("\n", resultTexts)
+            + "\n"
+            + await channel.RenderBoardForAsync(session, cancellationToken));
 
         if (session.GameState.IsGameOver) {
-            GameStore.RemoveGame(chatKey);
+            GameStore.CompleteGame(session.Code);
         } else {
-            GameStore.Save(session);
+            GameStore.Save(session.Code);
         }
     }
     #endregion
 
-    private const string HelpText =
-        "Commands:\n"
-        + "!new [game] [players] — start a game (games: tictactoe, fog-tictactoe, kriegspiel-tictactoe, gomoku...)\n"
-        + "!join — claim a player slot\n"
-        + "!play <space> [<space>] — play a move, e.g. '!play 5' or '!play 1A'\n"
-        + "!board — show the board\n"
-        + "!quit — end the game\n"
-        + "In DMs the '!' is optional (plain text naming spaces also plays moves). "
-        + "In public chats '!' is required. Secret games (Kriegspiel/synchronous) "
-        + "must be played in DMs only.";
+    #region helpers
+    private async Task<GameSession?> ResolveSessionAsync(
+        string senderDid,
+        string? explicitCode,
+        MessageChannel channel,
+        CancellationToken cancellationToken,
+        string? uriKey
+    ) {
+        if (explicitCode is not null) {
+            if (GameStore.TryGetByCode(explicitCode, out var fromCode)) {
+                return fromCode;
+            }
+            await channel.RespondAsync($"No game with code **{explicitCode}**. Check the code in the post where it was started.");
+            return null;
+        }
+
+        if (uriKey is not null && GameStore.TryGetByUri(uriKey, out var fromUri)) {
+            return fromUri;
+        }
+
+        var single = GameStore.GetSingleSessionForDid(senderDid);
+        if (single is not null) {
+            return single;
+        }
+
+        var all = GameStore.GetSessionsForDid(senderDid);
+        if (all.Count > 1) {
+            var listing = string.Join("\n", all.Select(s => $"  [{s.Code}] — {s.GameState.GameTemplate.CommandName}"));
+            await channel.RespondAsync(
+                $"You are in {all.Count} games. Which one?\n{listing}\n" +
+                $"Re-send with the code, e.g. **!play 5 g=5F**.");
+        }
+        return null;
+    }
+
+    private static (string? Code, IReadOnlyList<string> RemainingArgs) ExtractGameCode(IReadOnlyList<string> tokens) {
+        for (var i = 0; i < tokens.Count; i++) {
+            if (GameCodeAssignmentRegex.IsMatch(tokens[i])) {
+                var code = tokens[i].Split('=', 2)[1].ToUpperInvariant();
+                return (code, tokens.Where((_, index) => index != i).ToList());
+            }
+        }
+        return (null, tokens);
+    }
+    #endregion
 }

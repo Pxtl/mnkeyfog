@@ -30,6 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\MnkeyFog.CommandLine\MnkeyFog.CommandLine.csproj" />
     <ProjectReference Include="..\..\src\MnkeyFog.Model\MnkeyFog.Model.csproj" />
+    <ProjectReference Include="..\..\src\MnkeyFog.Text\MnkeyFog.Text.csproj" />
   </ItemGroup>
 
 </Project>

@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../MnkeyFog.Model/MnkeyFog.Model.csproj" />
+    <ProjectReference Include="../MnkeyFog.Text/MnkeyFog.Text.csproj" />
   </ItemGroup>
 
   <ItemGroup>

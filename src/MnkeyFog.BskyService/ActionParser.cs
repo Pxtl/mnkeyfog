@@ -11,6 +11,9 @@ namespace MnkeyFog.BskyService;
 /// public chats (where the prefix is required). In DMs the prefix is optional.
 /// Remaining tokens are the command's arguments; tokens naming a valid space
 /// (e.g. "5", "1A", "2B") are moves.
+///
+/// A "g=<code>" (or "game=" / "gamecode=") argument on any command names the
+/// session code it applies to — used when a player is in more than one game.
 /// </summary>
 public static partial class ActionParser {
     /// <summary>Command names the bot recognizes (without the '!' prefix).</summary>
@@ -18,6 +21,9 @@ public static partial class ActionParser {
 
     [GeneratedRegex(@"^space\s*[=:]\s*", RegexOptions.IgnoreCase)]
     private static partial Regex SpaceAssignmentPrefixRegex();
+
+    [GeneratedRegex(@"^g(?:a(m?e)?code)?\s*=\s*[A-Za-z0-9]+$", RegexOptions.IgnoreCase)]
+    private static partial Regex GameCodeAssignmentPrefixRegex();
 
     /// <summary>
     /// Parse a command token. Returns a <see cref="CommandToken"/> with the
@@ -52,6 +58,24 @@ public static partial class ActionParser {
     /// <summary>Whitespace-tokenize a message into argument/move tokens.</summary>
     public static IReadOnlyList<string> Tokenize(string text)
         => [.. text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)];
+
+    /// <summary>
+    /// Extract the game selector from a command's arguments, if present. A
+    /// "g=<code>" (or "game=" / "gamecode=") argument names the game code for
+    /// this command; it is case-insensitive and is removed from the argument
+    /// list. Returns (null, tokens) if no game-code argument appears.
+    /// </summary>
+    public static (string? Code, IReadOnlyList<string> RemainingArgs) ExtractGameCode(IReadOnlyList<string> tokens) {
+        var codeRegex = GameCodeAssignmentPrefixRegex();
+        for (var i = 0; i < tokens.Count; i++) {
+            if (codeRegex.IsMatch(tokens[i])) {
+                var code = tokens[i].Split('=', 2)[1].ToUpperInvariant();
+                var remaining = tokens.Where((_, index) => index != i).ToList();
+                return (code, remaining);
+            }
+        }
+        return (null, tokens);
+    }
 
     /// <summary>
     /// Parse move tokens (as accepted by the <c>!play</c> command, e.g. "5",

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 using MnkeyFog.Model;
 using MnkeyFog.Model.MNKGame;
 using MnkeyFog.Model.Template;
@@ -5,27 +7,40 @@ using MnkeyFog.Model.Template;
 namespace MnkeyFog.BskyService;
 
 /// <summary>
-/// Wraps a <see cref="GameState"/> with Bluesky metadata: which chat the game runs in,
-/// who created it, and a mapping from player DIDs to player indices.
+/// Wraps a <see cref="GameState"/> with Bluesky metadata: the session's unique
+/// code, the public thread where it was started, who created it, and a mapping
+/// from player DIDs to player indices.
 /// </summary>
 public sealed class GameSession {
     #region data members
-    public string ChatId { get; }
+    /// <summary>The session's unique (short base32) code, e.g. "5F".</summary>
+    public string Code { get; }
+
+    /// <summary>
+    /// The public-thread key (root post URI) where this game was started. Used
+    /// to resolve "!join" / plain public mentions back to the game without
+    /// requiring the player to know the code.
+    /// </summary>
+    public string UriKey { get; }
+
     public GameState GameState { get; }
     public string CreatorDid { get; }
-    public DateTimeOffset CreatedAt { get; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset StartedAt { get; }
 
     /// <summary>Maps Bluesky DIDs to player indices in the game.</summary>
     public IReadOnlyDictionary<string, int> PlayerDids => _playerByDid;
     private readonly ConcurrentDictionary<string, int> _playerByDid = new();
     #endregion
 
-    public GameSession(string chatId, string creatorDid, IReadOnlyList<PlayerInfo> playerMarks, IGameTemplate template) {
-        ArgumentException.ThrowIfNullOrWhiteSpace(chatId);
+    public GameSession(string code, string uriKey, string creatorDid, IReadOnlyList<PlayerInfo> playerMarks, IGameTemplate template) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
+        ArgumentException.ThrowIfNullOrWhiteSpace(uriKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(creatorDid);
 
-        ChatId = chatId;
+        Code = code;
+        UriKey = uriKey;
         CreatorDid = creatorDid;
+        StartedAt = DateTimeOffset.UtcNow;
         GameState = new GameState(playerMarks.ToArray(), template, isRandomPlayerOrder: false);
 
         // Creator claims the first player slot.
@@ -33,15 +48,17 @@ public sealed class GameSession {
     }
 
     /// <summary>Restore a session from persisted state (crash recovery).</summary>
-    internal GameSession(string chatId, string creatorDid, DateTimeOffset createdAt, IReadOnlyDictionary<string, int> playerDids, GameState gameState) {
-        ArgumentException.ThrowIfNullOrWhiteSpace(chatId);
+    internal GameSession(string code, string uriKey, string creatorDid, DateTimeOffset startedAt, IReadOnlyDictionary<string, int> playerDids, GameState gameState) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
+        ArgumentException.ThrowIfNullOrWhiteSpace(uriKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(creatorDid);
         ArgumentNullException.ThrowIfNull(playerDids);
         ArgumentNullException.ThrowIfNull(gameState);
 
-        ChatId = chatId;
+        Code = code;
+        UriKey = uriKey;
         CreatorDid = creatorDid;
-        CreatedAt = createdAt;
+        StartedAt = startedAt;
         GameState = gameState;
 
         foreach (var (did, index) in playerDids) {
@@ -69,7 +86,7 @@ public sealed class GameSession {
                 }
             }
 
-            return new CommandError($"Game in this thread is full ({GameState.PlayersState.PlayerInfos.Count} players).");
+            return new CommandError($"Game {Code} is full ({GameState.PlayersState.PlayerInfos.Count} players).");
         }
     }
 
