@@ -2,7 +2,7 @@ using MnkeyFog.Model.Template;
 using System.Reflection;
 using System.Runtime.Serialization;
 
-namespace MnkeyFog.CommandLine;
+namespace MnkeyFog.Text;
 
 /// <summary>
 /// Serialization binder ensuring that unexpected complex types are not deserialized.

@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace MnkeyFog.CommandLine;
+namespace MnkeyFog.Text;
 
 /// <summary>
 /// Draws the full board based on the given gamestate, from the perspective of

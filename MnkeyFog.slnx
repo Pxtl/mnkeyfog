@@ -1,9 +1,12 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/MnkeyFog.CommandLine/MnkeyFog.CommandLine.csproj" />
+    <Project Path="src/MnkeyFog.Text/MnkeyFog.Text.csproj" />
     <Project Path="src/MnkeyFog.Model/MnkeyFog.Model.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/MnkeyFog.CommandLine.Tests/MnkeyFog.CommandLine.Tests.csproj" />
     <Project Path="tests/MnkeyFog.Model.Tests/MnkeyFog.Model.Tests.csproj" />
+    <Project Path="tests/MnkeyFog.TestLib/MnkeyFog.TestLib.csproj" />
   </Folder>
 </Solution>

@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace MnkeyFog.CommandLine;
+namespace MnkeyFog.Text;
 
 public record class BoardRendererConfiguration {
     #region constructors
