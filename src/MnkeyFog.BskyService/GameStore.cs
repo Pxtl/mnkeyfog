@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
 using MnkeyFog.Model.Template;
-using MnkeyFog.Text.Persistence;
+using MnkeyFog.Model.Server;
 using Newtonsoft.Json;
 
 namespace MnkeyFog.BskyService;
@@ -261,9 +261,9 @@ public sealed class GameStore {
         }
 
         foreach (var file in Directory.GetFiles(directory, "*.json")) {
-            PersistedSession? persisted;
+            PersistedGameSession? persisted;
             try {
-                persisted = JsonConvert.DeserializeObject<PersistedSession>(File.ReadAllText(file), _persistenceSettings);
+                persisted = JsonConvert.DeserializeObject<PersistedGameSession>(File.ReadAllText(file), _persistenceSettings);
             } catch (Exception ex) when (ex is Newtonsoft.Json.JsonException or IOException) {
                 continue; // corrupted file: skip it rather than fail startup
             }
@@ -273,11 +273,11 @@ public sealed class GameStore {
 
             try {
                 var session = new GameSession(
-                    persisted.GameCode,
-                    persisted.UriKey,
-                    persisted.CreatorDid,
+                    persisted.Code,
+                    persisted.ThreadKey,
+                    persisted.CreatorId,
                     persisted.StartedAt,
-                    persisted.PlayerDids.ToDictionary(p => p.Did, p => p.PlayerIndex, StringComparer.OrdinalIgnoreCase),
+                    persisted.Players.ToDictionary(p => p.Id, p => p.PlayerIndex, StringComparer.OrdinalIgnoreCase),
                     persisted.GameState
                 );
                 if (!_sessions.TryAdd(session.Code, new ActiveSession(session.Code, session, null))) {
@@ -286,7 +286,7 @@ public sealed class GameStore {
                 foreach (var playerDid in session.PlayerDids.Keys) {
                     IndexDid(playerDid, session.Code);
                 }
-                _byUri[persisted.UriKey] = session.Code;
+                _byUri[persisted.ThreadKey] = session.Code;
             } catch (Exception) {
                 continue; // undecodable session: skip; the file stays for manual inspection
             }
@@ -294,7 +294,7 @@ public sealed class GameStore {
             // A persisted code may outrun the stored counter (e.g. the counter
             // file failed to write last run) - never let the counter fall below a
             // decodable code that exists on disk.
-            if (SessionCodes.FromBase32(persisted.GameCode) is { } codeValue && codeValue > _counter) {
+            if (SessionCodes.FromBase32(persisted.Code) is { } codeValue && codeValue > _counter) {
                 _counter = codeValue;
             }
         }
@@ -307,12 +307,12 @@ public sealed class GameStore {
 
         try {
             Directory.CreateDirectory(_persistDirectory);
-            var persisted = new PersistedSession(
+            var persisted = new PersistedGameSession(
                 session.Code,
                 session.UriKey,
                 session.CreatorDid,
                 session.StartedAt,
-                [.. session.PlayerDids.Select(kvp => new PersistedPlayerDid(kvp.Key, kvp.Value))],
+                [.. session.PlayerDids.Select(kvp => new PersistedPlayer(kvp.Key, kvp.Value))],
                 session.GameState
             );
             var json = JsonConvert.SerializeObject(persisted, _persistenceSettings);
