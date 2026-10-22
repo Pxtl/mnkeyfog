@@ -19,8 +19,8 @@ file static class GameStoreTestHelper {
 public class GameStoreCodeRecyclingTests {
     /// <summary>
     /// The natural short-code path: while the counter is at or below
-    /// MaxShortCodeValue (1023), each new game gets the counter's base32 code in
-    /// order - 1-char codes (1..31) then 2-char codes (32..1023).
+    /// MaxShortCodeValue (1024), each new game gets the counter's base32 code in
+    /// order - 1-char codes (1..32) then 2-char codes (33..1024).
     /// </summary>
     [Fact]
     public void CreateGame_WithinShortRange_CodesAreSequentialBase32() {
@@ -31,9 +31,9 @@ public class GameStoreCodeRecyclingTests {
             codes.Add(GameStoreTestHelper.Created(store, $"did:plc:creator{i}").Code);
         }
 
-        // 1..31 are one char, 32..40 are two chars.
-        codes.Take(31).Should().AllSatisfy(c => c.Length.Should().Be(1));
-        codes.Skip(31).Should().AllSatisfy(c => c.Length.Should().Be(2));
+        // 1..32 are one char, 33..40 are two chars.
+        codes.Take(32).Should().AllSatisfy(c => c.Length.Should().Be(1));
+        codes.Skip(32).Should().AllSatisfy(c => c.Length.Should().Be(2));
         codes[0].Should().Be(SessionCodes.ToBase32(1));
         codes[31].Should().Be(SessionCodes.ToBase32(32));
         codes[39].Should().Be(SessionCodes.ToBase32(40));

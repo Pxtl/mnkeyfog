@@ -3,44 +3,54 @@
 namespace MnkeyFog.BskyService;
 
 /// <summary>
-/// Short session-code generation. Codes are an unpadded RFC 4648 base32
-/// encoding of a sequence number (A-Z2-7).
+/// Short session-code generation. Codes are an *offset-by-1* unpadded RFC 4648
+/// base32 encoding: the code for value <c>n</c> is the standard big-endian
+/// base32 digit string of <c>n - 1</c>, with the special case that value 1
+/// (i.e. <c>n - 1 = 0</c>) encodes to the single character "A".
 ///
-/// Counting starts at 1 (not 0), so values 1-1023 encode to at most two
-/// base32 characters (1..31 are one char, 32..1023 are two chars). Beyond
-/// <see cref="MaxShortCodeValue"/> the caller recycles codes from completed
-/// sessions rather than growing to three characters immediately, or falls
-/// back to longer random codes when nothing recyclable is available.
+/// Because the digit count is based on <c>n - 1</c>, one character covers
+/// values 1–32 and two characters cover values 33–1024, giving a
+/// <see cref="MaxShortCodeValue" /> of 1024 (the last value still expressible
+/// in two characters).
 /// </summary>
 public static class SessionCodes {
     /// <summary>RFC 4648 base32 alphabet (A-Z, 2-7), no '=' padding character.</summary>
     public static readonly char[] Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".ToCharArray();
 
     /// <summary>
-    /// Largest sequence value that still encodes to exactly two base32
-    /// characters. One-char codes cover 1-31, two-char codes cover 32-1023, so
-    /// three characters begin at 1024 (32*32-1 = 1023).
+    /// Largest sequence value that still encodes to two or fewer base32
+    /// characters. One char covers 1–32, two chars cover 33–1024, so three
+    /// characters begin at 1025.
     /// </summary>
-    public const int MaxShortCodeValue = 1023;
+    public const int MaxShortCodeValue = 1024;
 
     /// <summary>Default length of the longer fallback codes.</summary>
     public const int LongCodeLength = 6;
 
     /// <summary>
-    /// Encode a non-negative integer as an unpadded base32 string.
+    /// Encode a positive sequence value (counting from 1) as an unpadded base32
+    /// string using the offset-by-1 convention: value 1 → "A", value 2 → "B",
+    /// …, value 32 → "7", value 33 → "BA", value 1024 → "77",
+    /// value 1025 → "BAA".
     /// </summary>
-    /// <param name="value">0 encodes to the empty string.</param>
+    /// <param name="value">Sequence value, at least 1.</param>
+    /// <exception cref="ArgumentOutOfRangeException">If <paramref name="value" /> is less than 1.</exception>
     public static string ToBase32(int value) {
-        ThrowIfNegative(value);
-        if (value == 0) {
-            return string.Empty;
+        ThrowIfNotPositive(value);
+
+        // The code is the standard big-endian base32 of (value - 1).
+        // When value == 1, (value - 1) == 0 and the digit string is the single
+        // character "A" (alphabet index 0).
+        int n = value - 1;
+        if (n == 0) {
+            return "A";
         }
 
         var chars = new char[32];
         var length = 0;
-        while (value > 0) {
-            chars[length] = Alphabet[value & 0x1F];
-            value >>= 5;
+        while (n > 0) {
+            chars[length] = Alphabet[n & 0x1F];
+            n >>= 5;
             length++;
         }
         // Least-significant character was written first; flip for output.
@@ -49,33 +59,51 @@ public static class SessionCodes {
     }
 
     /// <summary>
-    /// Decode an unpadded base32 string back to its value, or null if it is not
-    /// valid base32 (empty, or contains a character outside
-    /// <see cref="Alphabet"/>, ignoring case).
+    /// Decode an unpadded base32 string (emitted by <see cref="ToBase32"/>) back
+    /// to its sequence value, or null if it is not valid base32 (empty, or
+    /// contains a character outside <see cref="Alphabet"/>, ignoring case).
     /// </summary>
+    /// <remarks>
+    /// The decoded value is one greater than the standard base32 numeric value
+    /// of the digit string, matching the offset-by-1 convention used by
+    /// <see cref="ToBase32"/>.
+    /// </remarks>
     public static int? FromBase32(string? code) {
         if (string.IsNullOrEmpty(code)) {
             return null;
         }
 
-        int value = 0;
+        int valueMinusOne = 0;
         foreach (var raw in code.ToUpperInvariant()) {
             var index = Array.IndexOf(Alphabet, raw);
             if (index < 0) {
                 return null;
             }
-            value = (value << 5) | index;
+            valueMinusOne = (valueMinusOne << 5) | index;
         }
-        return value;
+        return valueMinusOne + 1;
     }
 
     /// <summary>
-    /// Number of base32 characters a value needs (0 encodes to the empty string).
-    /// This is the integer digit-count, i.e. the length of the result of
-    /// <see cref="ToBase32"/>. One character carries values 1-31, two characters
-    /// carry 32-1023, three carry 1024-32767, and so on.
+    /// Number of base32 characters a value needs under the offset-by-1 convention.
+    /// Value 0 and negatives return 0. One character carries values 1–32, two
+    /// characters carry 33–1024, three carry 1025–32768, and so on.
     /// </summary>
-    public static int LengthOfValue(int value) => value == 0 ? 0 : (int)Math.Ceiling(Math.Log(value + 1, 32));
+    public static int LengthOfValue(int value) {
+        if (value < 1) {
+            return 0;
+        }
+        int n = value - 1;
+        if (n == 0) {
+            return 1;
+        }
+        var length = 0;
+        while (n > 0) {
+            length++;
+            n >>= 5;
+        }
+        return length;
+    }
 
     /// <summary>Cryptographically random code of the given length, from the base32 alphabet.</summary>
     public static string RandomLongCode(int length = LongCodeLength) {
@@ -87,9 +115,9 @@ public static class SessionCodes {
         return new string(chars);
     }
 
-    private static void ThrowIfNegative(int value) {
-        if (value < 0) {
-            throw new ArgumentOutOfRangeException("", "Value must be non-negative.", nameof(value));
+    private static void ThrowIfNotPositive(int value) {
+        if (value < 1) {
+            throw new ArgumentOutOfRangeException(nameof(value), value, "Value must be at least 1.");
         }
     }
 }
