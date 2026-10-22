@@ -70,7 +70,38 @@ is 1024.
 | `!join <code>` | Join an existing game by its short code. |
 | `!board` | Show the current board (with `[#<code>]` tag). |
 | `!play <x> <y>` | Play a move; result includes the code tag. |
-| `!complete` | Mark the game complete; release the code. |
+| `!quit` | End the game early (player-initiated). The code is not recycled until a new game session is created. |
 | `!code` *(proposed, not yet implemented)* | Return only the code(s) for the sender's active game(s), without revealing board state. |
 
 ## Chatbot could be stateless if there's bidirectional serialization of gamestate.
+
+## Spectator mode rework
+
+The Model's `GameState.GetSpectatorView()` (= `GetView(null)`) is a fully
+***de-fogged*** view, modeled after RTS/strategy-game spectators. That is fine
+for a *synchronous* game (post the revealed board at the end of every
+round/turn) but is **wrong** for a kriegspiel game in a public thread: it
+reveals every space to every observer. The bsky bot currently calls
+`GetSpectatorView()` for its public `!board`/post, which leaks the entire
+board for kriegspiel games started in public threads.
+
+Longer-term directions (any of them):
+
+- **Merged-fog view** — a view that shows only data known to *every* player
+  simultaneously. Useful for a public kriegspiel thread where players play
+  in DMs but spectators (and the anchor post) can see the shared-known
+  subset. This is a Model-level feature.
+- **OneOf-typed view parameter** — change the view constructor to use
+  `OneOf<int, SpectatorMode>` (or similar) so `DeFogged` and `MergedFog`
+  (and any future mode) are first-class, replacing the current
+  `Nullable<int> playerIndex` convention where `null` *means* de-fogged.
+  This is the structural fix that makes merged-fog expressible without
+  special-casing.
+- **Post the revealed board at the right time.** For synchronous games the
+  bot should post the de-fogged spectator board at the end of every round.
+  For kriegspiel games, the bot must **not** post the spectator board until
+  the game is complete; instead it DMs each player their private
+  fogged view after any `IsViewChanged` result.
+
+*Short-term fix (see bs/bsky-service branch):* the bot must stop posting
+the de-fogged spectator view to a public thread for kriegspiel games.

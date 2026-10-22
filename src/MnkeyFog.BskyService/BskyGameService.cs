@@ -24,7 +24,7 @@ namespace MnkeyFog.BskyService;
 /// and asks which one. Public <c>!play</c> attempts on a secret game are
 /// refused with a warning pointing the player to DMs.
 ///</remarks>
-public sealed class BskyGameService : BskyBotService {
+public class BskyGameService : BskyBotService {
     private const int MaxMentionsPerPost = 10;
     private static readonly Regex GameCodeAssignmentRegex =
         new(@"^g(?:a(m?e)?code)?\s*=\s*[A-Za-z0-9]+$", RegexOptions.IgnoreCase);
@@ -39,6 +39,9 @@ public sealed class BskyGameService : BskyBotService {
         + "  !quit                  — end the game\n"
         + "Use g=<code> on any command to target a specific game (DMs): !play 5 g=5F\n"
         + "In DMs the ! prefix is optional — just send '5' to play space 5 (your only game).";
+
+    private const string SecretGamePlaceholder =
+        "This game is played in DMs to keep moves private. Check your DMs for the board.";
 
     public BskyGameService(ILogger logger) : base(logger) { }
 
@@ -73,18 +76,24 @@ public sealed class BskyGameService : BskyBotService {
     #endregion
 
     #region rendering
-    private Task<string> RenderBoardForDmAsync(string senderDid, GameSession session, CancellationToken _) {
+    private Task<OneOf<BoardView, BoardHidden>> RenderBoardForDmAsync(string senderDid, GameSession session, CancellationToken _) {
+        if (session.IsSecret && session.GetPlayerIndex(senderDid) is null) {
+            return Task.FromResult<OneOf<BoardView, BoardHidden>>(new BoardHidden());
+        }
         var view = session.GetPlayerIndex(senderDid) is int idx
             ? session.GetViewFor(senderDid)
             : session.GetSpectatorView();
-        return Task.FromResult(TextBoardRenderer.Render(view));
+        return Task.FromResult<OneOf<BoardView, BoardHidden>>(new BoardView(TextBoardRenderer.Render(view)));
     }
 
-    private Task<string> RenderPublicBoardAsync(GameSession session, CancellationToken _) {
+    private Task<OneOf<BoardView, BoardHidden>> RenderPublicBoardAsync(GameSession session, CancellationToken _) {
+        if (session.IsSecret) {
+            return Task.FromResult<OneOf<BoardView, BoardHidden>>(new BoardHidden());
+        }
         var board = TextBoardRenderer.Render(session.GetSpectatorView());
         var dids = session.PlayerDids.Keys.Take(MaxMentionsPerPost).ToList();
         var mentions = string.Join(" ", dids.Select(did => $"@{did}"));
-        return Task.FromResult(mentions.Length == 0 ? board : $"{board}\n{mentions}");
+        return Task.FromResult<OneOf<BoardView, BoardHidden>>(new BoardView(mentions.Length == 0 ? board : $"{board}\n{mentions}"));
     }
     #endregion
 
@@ -170,10 +179,14 @@ public sealed class BskyGameService : BskyBotService {
 
         var result = GameStore.CreateGame(uriKey, senderDid, playerCount, template);
         await result.Match(
-            async created => await channel.RespondAsync(
-                $"Started {template.CommandName} ({playerCount}p) — code: **[{created.Code}]**\n"
-                + await channel.RenderBoardForAsync(created.Session, cancellationToken)
-                + "\nJoin in this thread with **!join**, then play in DMs: **!play <space>** (use g=[code] if you have several games)."),
+            async created => {
+                await channel.RespondAsync(
+                    $"Started {template.CommandName} ({playerCount}p) — code: **[{created.Code}]**\n"
+                    + ((await channel.RenderBoardForAsync(created.Session, cancellationToken)).Match(
+                        b => b.Text, _ => SecretGamePlaceholder))
+                    + "\nJoin in this thread with **!join**, then play in DMs: **!play <space>** (use g=[code] if you have several games)."
+                );
+            },
             error => channel.RespondAsync(error.Message)
         );
     }
@@ -247,7 +260,12 @@ public sealed class BskyGameService : BskyBotService {
                 + "In public threads use **!board** in the thread where the game was started.");
             return;
         }
-        await channel.RespondAsync(await channel.RenderBoardForAsync(session, cancellationToken));
+        var boardResult = await channel.RenderBoardForAsync(session, cancellationToken);
+        if (boardResult.TryPickT0(out var board, out _)) {
+            await channel.RespondAsync(board.Text);
+        } else {
+            await channel.RespondAsync(SecretGamePlaceholder);
+        }
     }
 
     private async Task HandleQuitAsync(
@@ -308,21 +326,39 @@ public sealed class BskyGameService : BskyBotService {
         }
 
         var resultTexts = new List<string>();
+        var anyViewChanged = false;
         foreach (var move in moves) {
             var result = session.Attempt(playerIndex, move);
             resultTexts.Add(result.GetResultText(session.GameState.PlayersState));
             session.GameState.ExecutePendingActions();
+            if (result.IsViewChanged) {
+                anyViewChanged = true;
+            }
         }
 
         if (session.GameState.PlayersState.IsRoundOver) {
             session.GameState.EndRound(out _);
         }
 
+        // Public/DM channel response — for secret games this posts the
+        // SecretGamePlaceholder instead of a render.
         await channel.RespondAsync(
             $"Game **[{session.Code}]**\n"
             + string.Join("\n", resultTexts)
             + "\n"
-            + await channel.RenderBoardForAsync(session, cancellationToken));
+            + (await channel.RenderBoardForAsync(session, cancellationToken)).Match(
+                b => b.Text, _ => SecretGamePlaceholder));
+
+        // Secret game: DM each player their own fogged view whenever the
+        // board state has changed, so every player sees the updated fog.
+        if (anyViewChanged && session.IsSecret) {
+            foreach (var (playerDid, _) in session.PlayerDids) {
+                var view = session.GetViewFor(playerDid);
+                var boardText = TextBoardRenderer.Render(view, maxChars: 500);
+                await SendDmToPlayerAsync(
+                    playerDid, $"**Game [{session.Code}]** board update:\n{boardText}", cancellationToken);
+            }
+        }
 
         if (session.GameState.IsGameOver) {
             GameStore.CompleteGame(session.Code);

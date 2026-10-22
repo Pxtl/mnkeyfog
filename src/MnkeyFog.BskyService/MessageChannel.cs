@@ -7,6 +7,6 @@ namespace MnkeyFog.BskyService;
 /// </summary>
 internal sealed record MessageChannel(
     Func<string, Task> RespondAsync,
-    Func<GameSession, CancellationToken, Task<string>> RenderBoardForAsync,
+    Func<GameSession, CancellationToken, Task<OneOf<BoardView, BoardHidden>>> RenderBoardForAsync,
     bool IsPublic
 );

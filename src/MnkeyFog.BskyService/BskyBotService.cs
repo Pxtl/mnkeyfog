@@ -13,7 +13,7 @@ namespace MnkeyFog.BskyService;
 /// WebSocket for @mentions, polls DM conversation logs for direct messages, and
 /// dispatches both to virtual handlers.
 /// </summary>
-public abstract class BskyBotService : IAsyncDisposable {
+public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
     private const string FeedPostCollection = "app.bsky.feed.post";
     private static readonly Uri DefaultService = new("https://bsky.social");
     private static readonly Uri DefaultJetstream = new("wss://jetstream1.us-west.bsky.network");
@@ -27,6 +27,7 @@ public abstract class BskyBotService : IAsyncDisposable {
     private Task? _pollingTask;
     private string? _dmCursor;
     private Did _botDid = null!;
+    private readonly Dictionary<string, string> _conversationCache = new(StringComparer.OrdinalIgnoreCase);
 
     protected BskyBotService(ILogger logger) {
         ArgumentNullException.ThrowIfNull(logger);
@@ -126,6 +127,25 @@ public abstract class BskyBotService : IAsyncDisposable {
         if (!result.Succeeded) {
             Logger.LogWarning("Failed to post: {error}", result.StatusCode);
         }
+    }
+
+    /// <inheritdoc/>
+    public virtual async Task SendDmToPlayerAsync(string playerDid, string text, CancellationToken cancellationToken = default) {
+        ArgumentNullException.ThrowIfNull(playerDid);
+        ArgumentNullException.ThrowIfNull(text);
+
+        if (!_conversationCache.TryGetValue(playerDid, out var conversationId)) {
+            var result = await Agent.GetConversationForMembers([playerDid], cancellationToken: cancellationToken);
+            if (!result.Succeeded || result.Result is null) {
+                Logger.LogWarning("No DM conversation exists for {playerDid}; dropping message.", playerDid);
+                return;
+            }
+
+            conversationId = (string)result.Result.Id;
+            _conversationCache[playerDid] = conversationId;
+        }
+
+        await SendDirectMessageAsync(conversationId, text, cancellationToken);
     }
     #endregion
 
