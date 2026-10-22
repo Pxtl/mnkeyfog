@@ -71,7 +71,7 @@ is 1024.
 | `!board` | Show the current board (with `[#<code>]` tag). |
 | `!play <x> <y>` | Play a move; result includes the code tag. |
 | `!quit` | End the game early (player-initiated). The code is not recycled until a new game session is created. |
-| `!code` *(proposed, not yet implemented)* | Return only the code(s) for the sender's active game(s), without revealing board state. |
+| `!list` *(proposed, in TODO)* | List the sender's active games: code, template, turn state. See `TODO.md`. |
 
 ## Chatbot could be stateless if there's bidirectional serialization of gamestate.
 
@@ -103,5 +103,7 @@ Longer-term directions (any of them):
   the game is complete; instead it DMs each player their private
   fogged view after any `IsViewChanged` result.
 
-*Short-term fix (see bs/bsky-service branch):* the bot must stop posting
-the de-fogged spectator view to a public thread for kriegspiel games.
+*Short-term fix (implemented, commit `8d9af7c`):* `BskyGameService`
+returns `BoardHidden` (no post) for kriegspiel games; `ExecuteMovesAsync`
+DMs each player their own fogged view on `IsViewChanged` via
+`BskyBotService.SendDmToPlayerAsync`.
