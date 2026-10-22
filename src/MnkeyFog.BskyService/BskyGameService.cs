@@ -5,6 +5,25 @@ using Microsoft.Extensions.Logging;
 
 namespace MnkeyFog.BskyService;
 
+/// <summary>
+/// Hosts MnkeyFog games on Bluesky with a strict public/DM split.
+///</summary>
+/// <remarks>
+/// A game is <i>started</i> in a public thread (an @mention of the bot with
+/// <c>!new</c>); this is the only place a session is created, and the public
+/// post carries the short <see cref="SessionCodes"/> code and a spectator
+/// board. Players then <i>join</i> in that same public thread with <c>!join</c>.
+/// All actual <i>moves</i> happen in a private DM to the bot so that fogged
+/// (hidden) information is never leaked to other players.
+///
+/// A DM thread cannot carry a code distinct from the list of participants, so
+/// the bot resolves a session two ways: (a) an explicit <c>g=<code></c> (or
+/// <c>game=</c> / <c>gamecode=</c>) argument selects a specific session by its
+/// short code, or (b) if the sender is in exactly one active session it is
+/// used implicitly. If the sender is in several, the bot DMs the list of codes
+/// and asks which one. Public <c>!play</c> attempts on a secret game are
+/// refused with a warning pointing the player to DMs.
+///</remarks>
 public sealed class BskyGameService : BskyBotService {
     private const int MaxMentionsPerPost = 10;
     private static readonly Regex GameCodeAssignmentRegex =
@@ -314,6 +333,13 @@ public sealed class BskyGameService : BskyBotService {
     #endregion
 
     #region helpers
+    /// <summary>
+    /// Resolve the session for <paramref name="senderDid"/> — an explicit <c>g=<code></c>
+    /// argument first, then the public-thread key (mentions), then the DID index
+    /// (exactly one active game). When the DID index has several games the sender
+    /// is told which game to re-target with <c>g=<code></c>. Returns null when
+    /// the sender has no resolvable session.
+    /// </summary>
     private async Task<GameSession?> ResolveSessionAsync(
         string senderDid,
         string? explicitCode,
