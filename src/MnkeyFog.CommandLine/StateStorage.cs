@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using MnkeyFog.Text;
 
 namespace MnkeyFog.CommandLine;
 

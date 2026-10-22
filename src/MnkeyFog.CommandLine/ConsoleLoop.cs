@@ -1,5 +1,6 @@
 using MnkeyFog.Model.PlayerAIs;
 using MnkeyFog.Model.Template;
+using MnkeyFog.Text;
 using OneOf;
 using OneOf.Types;
 using PxtlCa.SystemCollectionsExtensions;

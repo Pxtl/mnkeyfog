@@ -49,7 +49,7 @@ public sealed class GameStore {
 
     private static readonly JsonSerializerSettings _persistenceSettings = new() {
         TypeNameHandling = TypeNameHandling.Objects,
-        SerializationBinder = ModelTypesBinder.Instance,
+        SerializationBinder = KnownTypesBinder.Instance,
     };
 
     /// <summary>A successfully created game: its code and the session.</summary>
