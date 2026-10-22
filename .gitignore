@@ -30,3 +30,6 @@ temp/
 # Trace files
 *.nettrace
 *.speedscope.json
+# Agent notes (per MEMORY.md convention)
+MEMORY.md
+TODO.md
