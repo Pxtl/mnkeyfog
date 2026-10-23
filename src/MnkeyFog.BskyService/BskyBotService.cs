@@ -1,31 +1,31 @@
-using System.Text.Json;
 using idunno.AtProto;
-using idunno.AtProto.Jetstream;
-using idunno.AtProto.Jetstream.Events;
 using idunno.Bluesky;
 using idunno.Bluesky.Chat;
+using idunno.Bluesky.Notifications;
 using Microsoft.Extensions.Logging;
 
 namespace MnkeyFog.BskyService;
 
 /// <summary>
-/// Abstract base service for a Bluesky bot: authenticates, connects a Jetstream
-/// WebSocket for @mentions, polls DM conversation logs for direct messages, and
-/// dispatches both to virtual handlers.
+/// Abstract base service for a Bluesky bot: authenticates and polls the server
+/// for @mentions (via <c>app.bsky.notification.listNotifications</c> filtered
+/// client-side to reason=Mention — server-side returns only notifications for
+/// this account) and DM conversation logs (via
+/// <c>app.bsky.chat.messages.getConversationLog</c>), dispatching both to
+/// virtual handlers.
 /// </summary>
 public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
-    private const string FeedPostCollection = "app.bsky.feed.post";
+    private const int NotificationPageLimit = 50;
     private static readonly Uri DefaultService = new("https://bsky.social");
-    private static readonly Uri DefaultJetstream = new("wss://jetstream1.us-west.bsky.network");
 
     protected ILogger Logger { get; }
     protected BlueskyAgent Agent { get; private set; } = null!;
     protected GameStore GameStore { get; private set; } = new();
 
-    private AtProtoJetstream? _jetstream;
     private CancellationTokenSource? _pollingCts;
     private Task? _pollingTask;
     private string? _dmCursor;
+    private string? _mentionCursor;
     private Did _botDid = null!;
     private readonly Dictionary<string, string> _conversationCache = new(StringComparer.OrdinalIgnoreCase);
 
@@ -36,7 +36,8 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
 
     #region lifecycle
     /// <summary>
-    /// Login and start listening for mentions (Jetstream) and DMs (conversation-log polling).
+    /// Login and start polling for mentions (notification list, server-side
+    /// filtered to this account) and DMs (conversation log).
     /// </summary>
     public virtual async Task StartAsync(BskyBotOptions options, CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(options);
@@ -59,26 +60,17 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
 
         _botDid = Agent.Did!;
 
-        var jetstreamUri = options.JetstreamUri ?? DefaultJetstream;
-        _jetstream = AtProtoJetstreamBuilder.Create()
-            .ConnectTo(jetstreamUri)
-            .FilterTo([new Nsid(FeedPostCollection)])
-            .FilterTo(new[] { _botDid })
-            .Build();
-        _jetstream.RecordReceived += OnJetstreamRecordReceived;
-        _jetstream.FaultRaised += OnJetstreamFaultRaised;
-        await _jetstream.ConnectAsync(cancellationToken);
-
         _pollingCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _pollingTask = PollDirectMessagesAsync(
+        _pollingTask = Task.Run(() => RunPollersAsync(
+            options.MentionPollInterval ?? options.DirectMessagePollInterval ?? TimeSpan.FromSeconds(10),
             options.DirectMessagePollInterval ?? TimeSpan.FromSeconds(10),
             _pollingCts.Token
-        );
+        ));
 
         Logger.LogInformation("Bot {handle} started.", options.Handle);
     }
 
-    /// <summary>Stop listening and disconnect.</summary>
+    /// <summary>Stop polling and disconnect.</summary>
     public virtual async Task StopAsync() {
         _pollingCts?.Cancel();
         if (_pollingTask is not null) {
@@ -87,14 +79,6 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
             } catch (OperationCanceledException) {
                 // expected on stop
             }
-        }
-
-        if (_jetstream is not null) {
-            if (_jetstream.IsConnected) {
-                await _jetstream.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "bot shutting down", CancellationToken.None);
-            }
-            _jetstream.Dispose();
-            _jetstream = null!;
         }
     }
 
@@ -150,66 +134,69 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
     #endregion
 
     #region internals
-    private void OnJetstreamRecordReceived(object? sender, RecordReceivedEventArgs e) {
-        _ = Task.Run(async () => {
+    private async Task RunPollersAsync(
+        TimeSpan mentionInterval,
+        TimeSpan dmInterval,
+        CancellationToken cancellationToken
+    ) {
+        // Run both pollers concurrently; the loop stays alive until cancellation.
+        var mentionPoller = PollMentionsAsync(mentionInterval, cancellationToken);
+        var dmPoller = PollDirectMessagesAsync(dmInterval, cancellationToken);
+        await Task.WhenAll(mentionPoller, dmPoller);
+    }
+
+    private static async Task WaitForIntervalAsync(TimeSpan interval, CancellationToken cancellationToken) {
+        try {
+            await Task.Delay(interval, cancellationToken);
+        } catch (OperationCanceledException) {
+            // expected on stop
+        }
+    }
+
+    private async Task PollMentionsAsync(TimeSpan interval, CancellationToken cancellationToken) {
+        while (!cancellationToken.IsCancellationRequested) {
             try {
-                if (e.ParsedEvent is not AtJetstreamCommitEvent commitEvent
-                    || commitEvent.Commit.Collection != FeedPostCollection) {
-                    return;
-                }
+                var result = await Agent.ListNotifications(
+                    limit: NotificationPageLimit,
+                    cursor: _mentionCursor,
+                    cancellationToken: cancellationToken
+                );
+                if (result.Succeeded && result.Result is not null) {
+                    var notifications = result.Result;
+                    for (var i = 0; i < notifications.Count; i++) {
+                        var n = notifications[i];
+                        if (n.Reason != NotificationReason.Mention) {
+                            continue;
+                        }
 
-                var post = commitEvent.Commit.Record?.RootElement;
-                if (post is null) {
-                    return;
-                }
+                        var authorDid = n.Author?.Did is null ? null : (string)n.Author.Did;
+                        if (authorDid is null || authorDid == (string)_botDid) {
+                            continue;
+                        }
 
-                // Only dispatch posts that mention the bot.
-                if (!MentionsBot(post.Value, _botDid)) {
-                    return;
-                }
+                        var postUri = n.ReasonSubject;
+                        if (postUri is null) {
+                            continue;
+                        }
+                        var text = n.Record?.ExtensionData is not null
+                            && n.Record.ExtensionData.TryGetValue("text", out var textEl)
+                            && textEl.ValueKind == System.Text.Json.JsonValueKind.String
+                            ? textEl.GetString() ?? ""
+                            : "";
 
-                if (post.Value.TryGetProperty("text", out var textElement)
-                    && textElement.ValueKind == JsonValueKind.String) {
-                    var postUri = new AtUri($"at://{commitEvent.Did}/{FeedPostCollection}/{commitEvent.Commit.RKey}");
-                    await OnMentionAsync(
-                        postUri,
-                        commitEvent.Did,
-                        textElement.GetString() ?? "",
-                        CancellationToken.None
-                    );
+                        await OnMentionAsync(postUri, authorDid, text, cancellationToken);
+                    }
+
+                    _mentionCursor = notifications.Cursor;
                 }
+            } catch (OperationCanceledException) {
+                throw;
             } catch (Exception ex) {
-                Logger.LogError(ex, "Error handling Jetstream record.");
+                Logger.LogWarning(ex, "Mention polling failed; will retry.");
             }
-        });
-    }
 
-    private void OnJetstreamFaultRaised(object? sender, FaultRaisedEventArgs e) {
-        Logger.LogWarning("Jetstream fault: {fault}", e.Fault);
-    }
-
-    private static bool MentionsBot(JsonElement post, Did botDid) {
-        if (!post.TryGetProperty("facets", out var facets) || facets.ValueKind != JsonValueKind.Array) {
-            return false;
+            await WaitForIntervalAsync(interval, cancellationToken);
         }
-
-        foreach (var facet in facets.EnumerateArray()) {
-            if (!facet.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array) {
-                continue;
-            }
-
-            foreach (var feature in features.EnumerateArray()) {
-                if (feature.ValueKind == JsonValueKind.Object
-                    && feature.TryGetProperty("$type", out var type)
-                    && type.GetString() == "app.bsky.richtext.facet#mention"
-                    && feature.TryGetProperty("did", out var did)
-                    && did.GetString() == (string)botDid) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     private async Task PollDirectMessagesAsync(TimeSpan interval, CancellationToken cancellationToken) {
@@ -238,11 +225,7 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
                 Logger.LogWarning(ex, "DM polling failed; will retry.");
             }
 
-            try {
-                await Task.Delay(interval, cancellationToken);
-            } catch (OperationCanceledException) {
-                return;
-            }
+            await WaitForIntervalAsync(interval, cancellationToken);
         }
     }
     #endregion

@@ -13,11 +13,14 @@ public record BskyBotOptions {
     /// <summary>Bluesky PDS service URI. Defaults to https://bsky.social.</summary>
     public Uri? Service { get; init; }
 
-    /// <summary>Jetstream endpoint. Defaults to wss://jetstream1.us-west.bsky.network.</summary>
-    public Uri? JetstreamUri { get; init; }
-
     /// <summary>How often to poll DM conversation logs. Defaults to 10 seconds.</summary>
     public TimeSpan? DirectMessagePollInterval { get; init; }
+
+    /// <summary>
+    /// How often to poll the notification list for @mentions. Defaults to the
+    /// value of <see cref="DirectMessagePollInterval"/> when both are unset.
+    /// </summary>
+    public TimeSpan? MentionPollInterval { get; init; }
 
     /// <summary>
     /// Optional directory for game-state persistence. When set, active games are
