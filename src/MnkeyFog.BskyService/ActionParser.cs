@@ -17,7 +17,7 @@ namespace MnkeyFog.BskyService;
 /// </summary>
 public static partial class ActionParser {
     /// <summary>Command names the bot recognizes (without the '!' prefix).</summary>
-    public static readonly IReadOnlyList<string> KnownCommands = ["new", "join", "play", "board", "help", "quit"];
+    public static readonly IReadOnlyList<string> KnownCommands = ["new", "join", "play", "board", "list", "help", "quit"];
 
     [GeneratedRegex(@"^space\s*[=:]\s*", RegexOptions.IgnoreCase)]
     private static partial Regex SpaceAssignmentPrefixRegex();

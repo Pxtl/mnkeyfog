@@ -35,6 +35,7 @@ public class BskyGameService : BskyBotService {
         + "  !join                  — join the game in this thread (public threads)\n"
         + "  !play <space> <space>  — play a move (DMs)\n"
         + "  !board                 — show the board\n"
+        + "  !list                  — list the games you are in (DMs)\n"
         + "  !help                  — show this help\n"
         + "  !quit                  — end the game\n"
         + "Use g=<code> on any command to target a specific game (DMs): !play 5 g=5F\n"
@@ -86,7 +87,7 @@ public class BskyGameService : BskyBotService {
         return Task.FromResult<OneOf<BoardView, BoardHidden>>(new BoardView(TextBoardRenderer.Render(view)));
     }
 
-    private Task<OneOf<BoardView, BoardHidden>> RenderPublicBoardAsync(GameSession session, CancellationToken _) {
+    internal Task<OneOf<BoardView, BoardHidden>> RenderPublicBoardAsync(GameSession session, CancellationToken _) {
         if (session.IsSecret) {
             return Task.FromResult<OneOf<BoardView, BoardHidden>>(new BoardHidden());
         }
@@ -98,6 +99,39 @@ public class BskyGameService : BskyBotService {
     #endregion
 
     #region dispatch
+    /// <summary>
+    /// Test-only entry point: parses <paramref name="message"/> as a bot command
+    /// (DM semantics: '!' prefix optional) and dispatches it, capturing
+    /// responses into <see cref="TestedResponses"/>.
+    /// </summary>
+    protected internal Task TestHandleMessageAsync(
+        string senderDid,
+        string message,
+        CancellationToken cancellationToken
+    ) => HandleMessageAsync(senderDid, message, new MessageChannel(
+        RespondAsync: text => { TestedResponses.Add(text); return Task.CompletedTask; },
+        RenderBoardForAsync: default!,
+        IsPublic: false
+    ), cancellationToken, isPrefixOptional: true);
+
+    /// <summary>
+    /// Test-only entry point: simulates a public-thread mention, capturing
+    /// responses into <see cref="TestedResponses"/>.
+    /// </summary>
+    protected internal Task TestHandleMentionAsync(
+        string postUri,
+        string authorDid,
+        string message,
+        CancellationToken cancellationToken
+    ) => HandleMessageAsync(authorDid, message, new MessageChannel(
+        RespondAsync: text => { TestedResponses.Add(text); return Task.CompletedTask; },
+        RenderBoardForAsync: default!,
+        IsPublic: true
+    ), cancellationToken, isPrefixOptional: false, uriKey: postUri);
+
+    /// <summary>Responses captured by the test-only channels.</summary>
+    internal List<string> TestedResponses { get; } = new();
+
     private Task HandleMessageAsync(
         string senderDid,
         string message,
@@ -133,6 +167,9 @@ public class BskyGameService : BskyBotService {
                 break;
             case "board":
                 await HandleBoardAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
+                break;
+            case "list":
+                await HandleListAsync(senderDid, channel, cancellationToken);
                 break;
             case "help":
                 await channel.RespondAsync(HelpText);
@@ -266,6 +303,27 @@ public class BskyGameService : BskyBotService {
         } else {
             await channel.RespondAsync(SecretGamePlaceholder);
         }
+    }
+
+    private async Task HandleListAsync(
+        string senderDid,
+        MessageChannel channel,
+        CancellationToken cancellationToken
+    ) {
+        if (channel.IsPublic) {
+            await channel.RespondAsync("!list is a DM-only command. Send me a direct message with **!list**.");
+            return;
+        }
+
+        var sessions = GameStore.GetSessionsForDid(senderDid);
+        if (sessions.Count == 0) {
+            await channel.RespondAsync(
+                "You are not in any games. See me in a public thread to start one: **!new [game] [players]**");
+            return;
+        }
+
+        var lines = sessions.Select(s => FormatGameLine(s, senderDid));
+        await channel.RespondAsync(string.Join("\n", lines));
     }
 
     private async Task HandleQuitAsync(
@@ -418,6 +476,37 @@ public class BskyGameService : BskyBotService {
             }
         }
         return (null, tokens);
+    }
+
+    internal static string FormatGameLine(GameSession session, string did) {
+        var players = session.GameState.PlayersState;
+        var playerIndex = session.GetPlayerIndex(did);
+        var playerMark = playerIndex is not null
+            ? $" player {players.PlayerInfos[playerIndex.Value].Mark}"
+            : "";
+        var stateText = session.GameState.IsGameOver
+            ? "ended"
+            : playerIndex is not null && players.CanTakeTurn(playerIndex)
+                ? $"your turn (round {players.RoundIndex + 1}, move {playerIndex.Value + 1})"
+                : "in progress";
+        var elapsed = FormatElapsed(DateTimeOffset.UtcNow - session.StartedAt);
+        return $"**[{session.Code}] {session.GameState.GameTemplate.CommandName}** — {stateText}{playerMark}, started {elapsed}";
+    }
+
+    private static string FormatElapsed(TimeSpan span) {
+        if (span.TotalDays >= 30) {
+            return $"{(int)(span.TotalDays / 30)}mo ago";
+        }
+        if (span.TotalDays >= 1) {
+            return $"{(int)span.TotalDays}d ago";
+        }
+        if (span.TotalHours >= 1) {
+            return $"{(int)span.TotalHours}h {span.Minutes}m ago";
+        }
+        if (span.TotalMinutes >= 1) {
+            return $"{span.Minutes}m ago";
+        }
+        return "just now";
     }
     #endregion
 }
