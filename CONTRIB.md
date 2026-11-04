@@ -362,6 +362,20 @@ This document captures the coding style patterns used in this project.
 - Use `Thread.Sleep` with `using` or careful disposal when needed for timing.
 
 
+## Testing
+
+- **Do not test private/protected members via reflection** (`Type.GetMethod(...)`
+  + `Invoke`). Reflection-based test accessors are fragile, untyped, and bypass the
+  compiler. Instead:
+  - Prefer making the member `internal` and exposing it to the test assembly with
+    `[assembly: InternalsVisibleTo("...")]` (see `src/**/AssemblyInfo.cs`), then call
+    it directly.
+  - If the member must stay inaccessible (sealed/private by design), use
+    `System.Runtime.CompilerServices.UnsafeAccessor`
+    (`FromMethodAccess` / `FromStaticMethodAccess` / `FromFieldAccess`) rather than
+    raw reflection.
+
+
 ## Files
 
 - One type per file, avoid nested types.  
