@@ -22,9 +22,12 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
     protected BlueskyAgent Agent { get; private set; } = null!;
     protected GameStore GameStore { get; private set; } = new();
 
-    private CancellationTokenSource? _pollingCts;
+    private CancellationTokenSource? _pollingCancellationSource;
     private Task? _pollingTask;
-    private string? _dmCursor;
+    // Cursors are opaque pagination tokens returned by the API, not indices. A
+    // null cursor means "start from the beginning", so passing one before the
+    // first page is fetched is valid (not a use-before-population bug).
+    private string? _directMessageCursor;
     private string? _mentionCursor;
     private Did _botDid = null!;
     private readonly Dictionary<string, string> _conversationCache = new(StringComparer.OrdinalIgnoreCase);
@@ -60,11 +63,11 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
 
         _botDid = Agent.Did!;
 
-        _pollingCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _pollingCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _pollingTask = Task.Run(() => RunPollersAsync(
             options.MentionPollInterval ?? options.DirectMessagePollInterval ?? TimeSpan.FromSeconds(10),
             options.DirectMessagePollInterval ?? TimeSpan.FromSeconds(10),
-            _pollingCts.Token
+            _pollingCancellationSource.Token
         ));
 
         Logger.LogInformation("Bot {handle} started.", options.Handle);
@@ -72,7 +75,7 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
 
     /// <summary>Stop polling and disconnect.</summary>
     public virtual async Task StopAsync() {
-        _pollingCts?.Cancel();
+        _pollingCancellationSource?.Cancel();
         if (_pollingTask is not null) {
             try {
                 await _pollingTask;
@@ -202,9 +205,9 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
     private async Task PollDirectMessagesAsync(TimeSpan interval, CancellationToken cancellationToken) {
         while (!cancellationToken.IsCancellationRequested) {
             try {
-                var logs = await Agent.GetConversationLog(_dmCursor, cancellationToken);
+                var logs = await Agent.GetConversationLog(_directMessageCursor, cancellationToken);
                 if (logs.Succeeded && logs.Result is not null) {
-                    _dmCursor = logs.Result.Cursor;
+                    _directMessageCursor = logs.Result.Cursor;
                     for (var i = 0; i < logs.Result.Count; i++) {
                         var entry = logs.Result[i];
                         if (entry is MessageLogBase messageLog
