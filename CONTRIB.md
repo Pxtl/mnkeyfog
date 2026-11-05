@@ -390,3 +390,9 @@ This document captures the coding style patterns used in this project.
 
 - Repo-standard docs go at root in ALLCAPS. Additional docs go in `/doc/` and
   are `kebab-cased.md`.
+
+## Template Files
+
+- The repo-template files — `CONTRIB.md`, `AGENTS.md`, `.gitignore`, and
+  `.editorconfig` — originate from `Pxtl/dotnet-repo-template`. Changes to them
+  should be PR'd back to that template repo so other projects inherit them.

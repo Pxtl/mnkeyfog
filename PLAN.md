@@ -75,6 +75,18 @@ is 1024.
 
 ## Chatbot could be stateless if there's bidirectional serialization of gamestate.
 
+- Simple emoji mode without borders?  Render a black square for empty spaces?
+  Or U+3000 space?  (BSky is not monospaced, so the pipe-drawn boards won't
+  align.)
+- API for chatbots?  Is there a standard one?  Needs a standard API including
+  @s, DMs, and likes (for voting-based games).
+    - There is not.  Have to DIY if I want to support multiple platforms. The
+      same abstractions could back a general (AI) chatbot.
+- Chatbot could be stateless if there's bidirectional serialization of
+  gamestate (e.g. carried as invisible metadata on a BSky post). **Caution:**
+  a kriegspiel game's private (fogged) state must not leak into public
+  metadata — only the public view may be embedded.
+
 ## Spectator mode rework
 
 The Model's `GameState.GetSpectatorView()` (= `GetView(null)`) is a fully
