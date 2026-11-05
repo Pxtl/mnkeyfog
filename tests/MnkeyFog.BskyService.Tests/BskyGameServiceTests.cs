@@ -185,4 +185,21 @@ public class BskyGameServiceTests {
         var line = BskyGameService.FormatGameLine(s1, "did:plc:p2");
         line.Should().Contain("[E1]").And.Contain(template.CommandName).And.Contain("player O");
     }
+
+    // ── !new player-count validation ──
+
+    [Fact]
+    public async Task New_InvalidPlayerCount_RejectedWithLegalCounts() {
+        var svc = new TestableGameService();
+        // basic-tictactoe only supports 2 players; 3 must be rejected, not silently re-defaulted.
+        await svc.TestHandleMentionAsync("at://u", "did:plc:p1", "!new basic-tictactoe 3", TestContext.Current.CancellationToken);
+        svc.TestedResponses.Single().Should().Contain("supports player-counts");
+    }
+
+    [Fact]
+    public async Task New_NonNumericPlayerCount_Rejected() {
+        var svc = new TestableGameService();
+        await svc.TestHandleMentionAsync("at://u", "did:plc:p1", "!new basic-tictactoe abc", TestContext.Current.CancellationToken);
+        svc.TestedResponses.Single().Should().Contain("not a valid player count");
+    }
 }

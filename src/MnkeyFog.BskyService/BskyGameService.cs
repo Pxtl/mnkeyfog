@@ -210,9 +210,14 @@ public class BskyGameService : BskyBotService {
         }
 
         var legalPlayerCounts = gameTemplate.LegalPlayerCounts;
-        var playerCount = legalPlayerCounts.Min();
-        if (commandArgs.Count > 1 && int.TryParse(commandArgs[1], out var count) && legalPlayerCounts.Contains(count)) {
-            playerCount = count;
+        int playerCount;
+        if (commandArgs.Count > 1) {
+            if (!int.TryParse(commandArgs[1], out playerCount)) {
+                await channel.RespondAsync($"'{commandArgs[1]}' is not a valid player count. Usage: !new [game] [players]");
+                return;
+            }
+        } else {
+            playerCount = legalPlayerCounts.Min();
         }
 
         var result = GameStore.CreateGame(uriKey, senderDid, playerCount, gameTemplate);
