@@ -238,13 +238,10 @@ public sealed class GameStore {
                 return oldest.Code;
             }
 
-            // Rule 3: longer random code, unique among the current sessions.
-            string code;
-            do {
-                code = SessionCodes.RandomLongCode();
-            } while (_sessions.ContainsKey(code));
-
-            return code;
+            // Rule 3: fall back to the counter's natural code (three or more
+            // characters past the short range). Unique because the counter only
+            // ever increases.
+            return SessionCodes.ToBase32((int)next);
         }
     }
     #endregion

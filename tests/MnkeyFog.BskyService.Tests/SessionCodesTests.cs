@@ -109,28 +109,6 @@ public class SessionCodesTests {
     }
 
     [Fact]
-    public void RandomLongCode_DefaultLength_IsSixCharsFromAlphabet() {
-        var codes = Enumerable.Range(0, 10)
-            .Select(_ => SessionCodes.RandomLongCode())
-            .ToList();
-
-        codes.Should().AllSatisfy(code => {
-            code.Length.Should().Be(SessionCodes.LongCodeLength);
-            code.ToCharArray().Should().AllSatisfy(c => c.Should().BeOneOf(SessionCodes.Alphabet));
-        });
-    }
-
-    [Fact]
-    public void RandomLongCode_10KIterations_IsUniqueEnough() {
-        const int iterations = 10_000;
-        var seen = new HashSet<string>();
-        for (var i = 0; i < iterations; i++) {
-            seen.Add(SessionCodes.RandomLongCode());
-        }
-        seen.Count.Should().Be(iterations);
-    }
-
-    [Fact]
     public void ToBase32_EveryValueInShortRange_RoundTrips() {
         // Exhaustive round-trip over the entire short-code range.
         for (var value = 1; value <= SessionCodes.MaxShortCodeValue; value++) {
