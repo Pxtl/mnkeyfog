@@ -24,9 +24,8 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
 
     private CancellationTokenSource? _pollingCancellationSource;
     private Task? _pollingTask;
-    // Cursors are opaque pagination tokens returned by the API, not indices. A
-    // null cursor means "start from the beginning", so passing one before the
-    // first page is fetched is valid (not a use-before-population bug).
+    // Bsky API Cursors are opaque pagination tokens, not indices. A
+    // null cursor means "start from the beginning".
     private string? _directMessageCursor;
     private string? _mentionCursor;
     private Did _botDid = null!;
