@@ -219,10 +219,10 @@ public class BskyGameService : BskyBotService {
         await result.Match(
             async created => {
                 await channel.RespondAsync(
-                    $"Started {gameTemplate.CommandName} ({playerCount}p) — code: **[{created.Code}]**\n"
+                    $"Started {gameTemplate.CommandName} ({playerCount}p) — code: [{created.Code}]\n"
                     + ((await channel.RenderBoardForAsync(created.Session, cancellationToken)).Match(
                         b => b.Text, _ => SecretGamePlaceholder))
-                    + "\nJoin in this thread with **!join**, then play in DMs: **!play <space>** (use g=[code] if you have several games)."
+                    + "\nJoin in this thread with !join, then play in DMs: !play <space> (use g=[code] if you have several games)."
                 );
             },
             error => channel.RespondAsync(error.Message)
@@ -247,9 +247,9 @@ public class BskyGameService : BskyBotService {
                 GameStore.JoinWithIndex(session.Code, senderDid);
                 GameStore.Save(session.Code);
                 await channel.RespondAsync(
-                    $"You joined **[{session.Code}]** as **'{player.Value.Mark}'**\n"
+                    $"You joined [{session.Code}] as '{player.Value.Mark}'\n"
                     + await channel.RenderBoardForAsync(session, cancellationToken)
-                    + "\nPlay in DMs: **!play <space>** (bare space tokens also work if this is your only game).");
+                    + "\nPlay in DMs: !play <space> (bare space tokens also work if this is your only game).");
             },
             error => channel.RespondAsync(error.Message)
         );
@@ -270,14 +270,14 @@ public class BskyGameService : BskyBotService {
 
         if (channel.IsPublic) {
             await channel.RespondAsync(
-                $"WARNING: game **[{session.Code}]** is played in DMs to keep moves private. "
-                + "Do **not** play in this public thread — post to the bot in a DM instead (include g=[code] if you have several games).");
+                $"WARNING: game [{session.Code}] is played in DMs to keep moves private. "
+                + "Do not play in this public thread — post to the bot in a DM instead (include g=[code] if you have several games).");
             return;
         }
 
         var playerIndex = session.GetPlayerIndex(senderDid);
         if (playerIndex is null) {
-            await channel.RespondAsync($"You are not in game **[{session.Code}]**. Join it in the thread where it was started with **!join**.");
+            await channel.RespondAsync($"You are not in game [{session.Code}]. Join it in the thread where it was started with !join.");
             return;
         }
 
@@ -294,8 +294,8 @@ public class BskyGameService : BskyBotService {
         var session = await ResolveSessionAsync(senderDid, explicitSessionCode, channel, cancellationToken, uriKey);
         if (session is null) {
             await channel.RespondAsync(
-                "No game to show. In DMs: **!board g=<code>** (or just **!board** if you have one game). "
-                + "In public threads use **!board** in the thread where the game was started.");
+                "No game to show. In DMs: !board g=<code> (or just !board if you have one game). "
+                + "In public threads use !board in the thread where the game was started.");
             return;
         }
         var boardResult = await channel.RenderBoardForAsync(session, cancellationToken);
@@ -312,14 +312,14 @@ public class BskyGameService : BskyBotService {
         CancellationToken cancellationToken
     ) {
         if (channel.IsPublic) {
-            await channel.RespondAsync("!list is a DM-only command. Send me a direct message with **!list**.");
+            await channel.RespondAsync("!list is a DM-only command. Send me a direct message with !list.");
             return;
         }
 
         var sessions = GameStore.GetSessionsForDid(senderDid);
         if (sessions.Count == 0) {
             await channel.RespondAsync(
-                "You are not in any games. See me in a public thread to start one: **!new [game] [players]**");
+                "You are not in any games. See me in a public thread to start one: !new [game] [players]");
             return;
         }
 
@@ -336,11 +336,11 @@ public class BskyGameService : BskyBotService {
     ) {
         var session = await ResolveSessionAsync(senderDid, explicitSessionCode, channel, cancellationToken, uriKey);
         if (session is null) {
-            await channel.RespondAsync("No game to quit. Use **!quit** in the thread where the game was started, or in a DM with **g=<code>**.");
+            await channel.RespondAsync("No game to quit. Use !quit in the thread where the game was started, or in a DM with g=<code>.");
             return;
         }
         GameStore.DisposeGame(session.Code);
-        await channel.RespondAsync($"Game **[{session.Code}]** ended.");
+        await channel.RespondAsync($"Game [{session.Code}] ended.");
     }
 
     private async Task PlayPlainMovesAsync(
@@ -380,7 +380,7 @@ public class BskyGameService : BskyBotService {
         var moves = ActionParser.ParsePlay(playerView, tokens);
         if (moves.Count == 0) {
             await channel.RespondAsync(
-                $"No valid spaces mentioned for game **[{session.Code}]**. Usage: **!play <space>** — e.g. **!play 5** or **!play 1A**.");
+                $"No valid spaces mentioned for game [{session.Code}]. Usage: !play <space> — e.g. !play 5 or !play 1A.");
             return;
         }
 
@@ -402,7 +402,7 @@ public class BskyGameService : BskyBotService {
         // Public/DM channel response — for secret games this posts the
         // SecretGamePlaceholder instead of a render.
         await channel.RespondAsync(
-            $"Game **[{session.Code}]**\n"
+            $"Game [{session.Code}]\n"
             + string.Join("\n", resultTexts)
             + "\n"
             + (await channel.RenderBoardForAsync(session, cancellationToken)).Match(
@@ -415,7 +415,7 @@ public class BskyGameService : BskyBotService {
                 var view = session.GetViewFor(playerDid);
                 var boardText = TextBoardRenderer.Render(view, maxChars: 500);
                 await SendDmToPlayerAsync(
-                    playerDid, $"**Game [{session.Code}]** board update:\n{boardText}", cancellationToken);
+                    playerDid, $"Game [{session.Code}] board update:\n{boardText}", cancellationToken);
             }
         }
 
@@ -446,7 +446,7 @@ public class BskyGameService : BskyBotService {
             if (GameStore.TryGetByCode(explicitSessionCode, out var fromCode)) {
                 return fromCode;
             }
-            await channel.RespondAsync($"No game with code **{explicitSessionCode}**. Check the code in the post where it was started.");
+            await channel.RespondAsync($"No game with code {explicitSessionCode}. Check the code in the post where it was started.");
             return null;
         }
 
@@ -464,7 +464,7 @@ public class BskyGameService : BskyBotService {
             var listing = string.Join("\n", all.Select(s => $"  [{s.Code}] — {s.GameState.GameTemplate.CommandName}"));
             await channel.RespondAsync(
                 $"You are in {all.Count} games. Which one?\n{listing}\n" +
-                $"Re-send with the code, e.g. **!play 5 g=5F**.");
+                $"Re-send with the code, e.g. !play 5 g=5F.");
         }
         return null;
     }
@@ -491,7 +491,7 @@ public class BskyGameService : BskyBotService {
                 ? $"your turn (round {players.RoundIndex + 1}, move {playerIndex.Value + 1})"
                 : "in progress";
         var elapsed = FormatElapsed(DateTimeOffset.UtcNow - session.StartedAt);
-        return $"**[{session.Code}] {session.GameState.GameTemplate.CommandName}** — {stateText}{playerMark}, started {elapsed}";
+        return $"[{session.Code}] {session.GameState.GameTemplate.CommandName} — {stateText}{playerMark}, started {elapsed}";
     }
 
     private static string FormatElapsed(TimeSpan span) {

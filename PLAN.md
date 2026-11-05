@@ -46,11 +46,13 @@ is 1024.
 
 - A monotonic counter assigns the next sequence value; the counter is never
   decremented.
-- If the corresponding base32 code is already held by an *active* session the
-  allocation is rejected and a 6-character cryptographically random code is
-  issued instead (the long-code fallback).
-- When a session is completed its code returns to the free pool and the
-  counter's natural progression re-uses it on the next matching step.
+- **Rule 1**: the counter's natural base32 code is used while it is two
+  characters long and the slot is free (the slot check is defensive — the
+  counter can serialize worse than the sessions).
+- **Rule 2**: otherwise the oldest completed short-code session's code is
+  recycled, only if it still belongs to that session.
+- **Rule 3**: otherwise the counter's natural code is used (three or more
+  characters, past the short range).
 
 ### Code resolution
 
@@ -72,6 +74,12 @@ is 1024.
 | `!play <x> <y>` | Play a move; result includes the code tag. |
 | `!quit` | End the game early (player-initiated). The code is not recycled until a new game session is created. |
 | `!list` *(proposed, in TODO)* | List the sender's active games: code, template, turn state. See `TODO.md`. |
+
+### Command parsing
+
+Commands are currently parsed by hand (split the message, read args). Longer-term:
+leverage `System.CommandLine` for `!command` parsing. That removes the need to keep
+the `g=<code>` format — `-g <code>` works just as well with a real arg parser.
 
 ## Chatbot could be stateless if there's bidirectional serialization of gamestate.
 

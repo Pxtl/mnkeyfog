@@ -14,8 +14,8 @@ namespace MnkeyFog.BskyService;
 /// they are in several.
 ///
 /// Codes are assigned by a monotonic counter: the counter's base32 value while
-/// it is two characters or fewer, otherwise a recycled code from an
-/// already-completed session, otherwise a longer random code.
+/// it is two characters or fewer and free, otherwise a recycled code from an
+/// already-completed session, otherwise the counter's natural (longer) code.
 ///
 /// When a persistence directory is configured, every change is mirrored to a
 /// JSON file (one per active game) and reloaded on construction for crash
@@ -216,7 +216,10 @@ public sealed class GameStore {
 
             // Rule 1: natural short code, if the slot is free. The slot (base32 of
             // the counter) is not free when a current session — active or
-            // completed-but-not-disposed — still holds that code.
+            // completed-but-not-disposed — still holds that code. This check is
+            // defensive: the counter file can serialize worse than the sessions
+            // (e.g. the counter write failed but the session files persisted), so a
+            // live session may already hold the code the counter would regenerate.
             if (next <= SessionCodes.MaxShortCodeValue) {
                 var natural = SessionCodes.ToBase32((int)next);
                 if (!_sessions.ContainsKey(natural)) {

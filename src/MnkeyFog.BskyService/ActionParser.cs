@@ -36,6 +36,18 @@ public static partial class ActionParser {
     /// </summary>
     public static OneOf<CommandToken, None> ParseCommand(string message, bool isPrefixOptional = false) {
         var trimmed = message.Trim();
+
+        // In a public post the bot is @-mentioned before the command
+        // ("@bot !new 3x3 2"); skip any leading @mention tokens so the
+        // command that follows them is still recognized.
+        while (trimmed.Length > 0 && trimmed[0] == '@') {
+            var mentionEnd = trimmed.IndexOf(' ');
+            if (mentionEnd < 0) {
+                return new None(); // mentions only, no command
+            }
+            trimmed = trimmed[(mentionEnd + 1)..].TrimStart();
+        }
+
         var hasPrefix = trimmed.StartsWith('!');
         if (hasPrefix) {
             trimmed = trimmed[1..];
