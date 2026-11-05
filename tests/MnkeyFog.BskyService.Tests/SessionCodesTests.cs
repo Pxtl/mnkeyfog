@@ -4,16 +4,15 @@ namespace MnkeyFog.BskyService.Tests;
 
 public class SessionCodesTests {
     [Theory]
-    [InlineData(1, "A")]
-    [InlineData(5, "E")]
-    [InlineData(16, "P")]
-    [InlineData(31, "6")]
-    [InlineData(32, "7")]
-    [InlineData(33, "BA")]
-    [InlineData(1023, "76")]
-    [InlineData(1024, "77")]
-    [InlineData(1025, "BAA")]
-    [InlineData(32767, "776")]
+    [InlineData(1, "B")]
+    [InlineData(5, "F")]
+    [InlineData(16, "Q")]
+    [InlineData(31, "7")]
+    [InlineData(32, "BA")]
+    [InlineData(33, "BB")]
+    [InlineData(1023, "77")]
+    [InlineData(1024, "BAA")]
+    [InlineData(32767, "777")]
     public void ToBase32_KnownValues_ReturnsExpectedEncoding(int value, string expected) {
         SessionCodes.ToBase32(value).Should().Be(expected);
     }
@@ -31,15 +30,14 @@ public class SessionCodesTests {
     }
 
     [Theory]
-    [InlineData("A", 1, 1)]
-    [InlineData("E", 5, 1)]
-    [InlineData("P", 16, 1)]
-    [InlineData("6", 31, 1)]
-    [InlineData("7", 32, 1)]
-    [InlineData("76", 1023, 2)]
-    [InlineData("77", 1024, 2)]
-    [InlineData("BAA", 1025, 3)]
-    [InlineData("776", 32767, 3)]
+    [InlineData("B", 1, 1)]
+    [InlineData("F", 5, 1)]
+    [InlineData("Q", 16, 1)]
+    [InlineData("7", 31, 1)]
+    [InlineData("BA", 32, 2)]
+    [InlineData("77", 1023, 2)]
+    [InlineData("BAA", 1024, 3)]
+    [InlineData("777", 32767, 3)]
     public void ToBase32FromBase32_KnownCodes_ReturnsValueAndMatchesCodeLength(string code, int value, int expectedLen) {
         var parsed = SessionCodes.FromBase32(code);
         parsed.Should().Be(value);
@@ -51,13 +49,13 @@ public class SessionCodesTests {
     [InlineData(0, 0)]
     [InlineData(1, 1)]
     [InlineData(31, 1)]
-    [InlineData(32, 1)]
+    [InlineData(32, 2)]
     [InlineData(33, 2)]
     [InlineData(1023, 2)]
-    [InlineData(1024, 2)]
+    [InlineData(1024, 3)]
     [InlineData(1025, 3)]
     [InlineData(32767, 3)]
-    [InlineData(32768, 3)]
+    [InlineData(32768, 4)]
     [InlineData(32769, 4)]
     public void LengthOfValue_KnownValues_ReturnsDigitCount(int value, int expected) {
         SessionCodes.LengthOfValue(value).Should().Be(expected);
@@ -70,9 +68,8 @@ public class SessionCodesTests {
     [InlineData(500)]
     [InlineData(1000)]
     [InlineData(1023)]
-    [InlineData(1024)]
     public void ToBase32_TwoCharRange_HasCorrectLength(int value) {
-        // 1..1024 (MaxShortCodeValue) all fit in at most 2 chars.
+        // 1..1023 (MaxShortCodeValue) all fit in at most 2 chars.
         SessionCodes.ToBase32(value).Length.Should().BeLessThanOrEqualTo(2);
     }
 
@@ -104,8 +101,8 @@ public class SessionCodesTests {
     }
 
     [Fact]
-    public void MaxShortCodeValue_Is1024() {
-        SessionCodes.MaxShortCodeValue.Should().Be(1024);
+    public void MaxShortCodeValue_Is1023() {
+        SessionCodes.MaxShortCodeValue.Should().Be(1023);
     }
 
     [Fact]
