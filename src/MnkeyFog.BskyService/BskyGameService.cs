@@ -153,20 +153,20 @@ public class BskyGameService : BskyBotService {
         CancellationToken cancellationToken,
         string? uriKey
     ) {
-        var (explicitCode, remaining) = ExtractGameCode(command.Arg);
+        var (explicitSessionCode, remaining) = ExtractGameCode(command.Arg);
 
         switch (command.Command) {
             case "new":
                 await HandleNewAsync(senderDid, remaining, channel, cancellationToken, uriKey);
                 break;
             case "join":
-                await HandleJoinAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
+                await HandleJoinAsync(senderDid, explicitSessionCode, channel, cancellationToken, uriKey);
                 break;
             case "play":
-                await HandlePlayAsync(senderDid, remaining, explicitCode, channel, cancellationToken, uriKey);
+                await HandlePlayAsync(senderDid, remaining, explicitSessionCode, channel, cancellationToken, uriKey);
                 break;
             case "board":
-                await HandleBoardAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
+                await HandleBoardAsync(senderDid, explicitSessionCode, channel, cancellationToken, uriKey);
                 break;
             case "list":
                 await HandleListAsync(senderDid, channel, cancellationToken);
@@ -175,7 +175,7 @@ public class BskyGameService : BskyBotService {
                 await channel.RespondAsync(HelpText);
                 break;
             case "quit":
-                await HandleQuitAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
+                await HandleQuitAsync(senderDid, explicitSessionCode, channel, cancellationToken, uriKey);
                 break;
             default:
                 await channel.RespondAsync($"Unknown command '!{command.Command}'. See !help.");
@@ -200,25 +200,26 @@ public class BskyGameService : BskyBotService {
         }
 
         var templateName = commandArgs.Count > 0 ? commandArgs[0].ToLowerInvariant() : "tictactoe";
-        var template = GameTemplates.GetBuiltInGameTemplates()
+        var gameTemplate = GameTemplates.GetBuiltInGameTemplates()
             .FirstOrDefault(t => string.Equals(t.CommandName, templateName, StringComparison.OrdinalIgnoreCase));
 
-        if (template is null) {
+        if (gameTemplate is null) {
             var known = string.Join(", ", GameTemplates.GetBuiltInGameTemplates().Select(t => t.CommandName));
             await channel.RespondAsync($"Unknown game '{templateName}'. Known: {known}");
             return;
         }
 
-        var playerCount = 2;
-        if (commandArgs.Count > 1 && int.TryParse(commandArgs[1], out var count) && count is >= 2 and <= 4) {
+        var legalPlayerCounts = gameTemplate.LegalPlayerCounts;
+        var playerCount = legalPlayerCounts.Min();
+        if (commandArgs.Count > 1 && int.TryParse(commandArgs[1], out var count) && legalPlayerCounts.Contains(count)) {
             playerCount = count;
         }
 
-        var result = GameStore.CreateGame(uriKey, senderDid, playerCount, template);
+        var result = GameStore.CreateGame(uriKey, senderDid, playerCount, gameTemplate);
         await result.Match(
             async created => {
                 await channel.RespondAsync(
-                    $"Started {template.CommandName} ({playerCount}p) — code: **[{created.Code}]**\n"
+                    $"Started {gameTemplate.CommandName} ({playerCount}p) — code: **[{created.Code}]**\n"
                     + ((await channel.RenderBoardForAsync(created.Session, cancellationToken)).Match(
                         b => b.Text, _ => SecretGamePlaceholder))
                     + "\nJoin in this thread with **!join**, then play in DMs: **!play <space>** (use g=[code] if you have several games)."
@@ -230,12 +231,12 @@ public class BskyGameService : BskyBotService {
 
     private async Task HandleJoinAsync(
         string senderDid,
-        string? explicitCode,
+        string? explicitSessionCode,
         MessageChannel channel,
         CancellationToken cancellationToken,
         string? uriKey
     ) {
-        var session = await ResolveSessionAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
+        var session = await ResolveSessionAsync(senderDid, explicitSessionCode, channel, cancellationToken, uriKey);
         if (session is null) {
             return;
         }
@@ -257,12 +258,12 @@ public class BskyGameService : BskyBotService {
     private async Task HandlePlayAsync(
         string senderDid,
         IReadOnlyList<string> commandArgs,
-        string? explicitCode,
+        string? explicitSessionCode,
         MessageChannel channel,
         CancellationToken cancellationToken,
         string? uriKey
     ) {
-        var session = await ResolveSessionAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
+        var session = await ResolveSessionAsync(senderDid, explicitSessionCode, channel, cancellationToken, uriKey);
         if (session is null) {
             return;
         }
@@ -285,12 +286,12 @@ public class BskyGameService : BskyBotService {
 
     private async Task HandleBoardAsync(
         string senderDid,
-        string? explicitCode,
+        string? explicitSessionCode,
         MessageChannel channel,
         CancellationToken cancellationToken,
         string? uriKey
     ) {
-        var session = await ResolveSessionAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
+        var session = await ResolveSessionAsync(senderDid, explicitSessionCode, channel, cancellationToken, uriKey);
         if (session is null) {
             await channel.RespondAsync(
                 "No game to show. In DMs: **!board g=<code>** (or just **!board** if you have one game). "
@@ -328,12 +329,12 @@ public class BskyGameService : BskyBotService {
 
     private async Task HandleQuitAsync(
         string senderDid,
-        string? explicitCode,
+        string? explicitSessionCode,
         MessageChannel channel,
         CancellationToken cancellationToken,
         string? uriKey
     ) {
-        var session = await ResolveSessionAsync(senderDid, explicitCode, channel, cancellationToken, uriKey);
+        var session = await ResolveSessionAsync(senderDid, explicitSessionCode, channel, cancellationToken, uriKey);
         if (session is null) {
             await channel.RespondAsync("No game to quit. Use **!quit** in the thread where the game was started, or in a DM with **g=<code>**.");
             return;
@@ -379,7 +380,7 @@ public class BskyGameService : BskyBotService {
         var moves = ActionParser.ParsePlay(playerView, tokens);
         if (moves.Count == 0) {
             await channel.RespondAsync(
-                $"No valid spaces in game **[{session.Code}]**. Usage: **!play <space>** — e.g. **!play 5** or **!play 1A**.");
+                $"No valid spaces mentioned for game **[{session.Code}]**. Usage: **!play <space>** — e.g. **!play 5** or **!play 1A**.");
             return;
         }
 
@@ -436,16 +437,16 @@ public class BskyGameService : BskyBotService {
     /// </summary>
     private async Task<GameSession?> ResolveSessionAsync(
         string senderDid,
-        string? explicitCode,
+        string? explicitSessionCode,
         MessageChannel channel,
         CancellationToken cancellationToken,
         string? uriKey
     ) {
-        if (explicitCode is not null) {
-            if (GameStore.TryGetByCode(explicitCode, out var fromCode)) {
+        if (explicitSessionCode is not null) {
+            if (GameStore.TryGetByCode(explicitSessionCode, out var fromCode)) {
                 return fromCode;
             }
-            await channel.RespondAsync($"No game with code **{explicitCode}**. Check the code in the post where it was started.");
+            await channel.RespondAsync($"No game with code **{explicitSessionCode}**. Check the code in the post where it was started.");
             return null;
         }
 
