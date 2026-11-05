@@ -339,7 +339,7 @@ public class BskyGameService : BskyBotService {
             await channel.RespondAsync("No game to quit. Use **!quit** in the thread where the game was started, or in a DM with **g=<code>**.");
             return;
         }
-        GameStore.EndGame(session.Code);
+        GameStore.DisposeGame(session.Code);
         await channel.RespondAsync($"Game **[{session.Code}]** ended.");
     }
 

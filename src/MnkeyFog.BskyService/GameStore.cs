@@ -1,6 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
-using System.Text;
 using MnkeyFog.Model.Template;
 using MnkeyFog.Model.Server;
 using Newtonsoft.Json;
@@ -21,14 +19,14 @@ namespace MnkeyFog.BskyService;
 ///
 /// When a persistence directory is configured, every change is mirrored to a
 /// JSON file (one per active game) and reloaded on construction for crash
-/// recovery. Completed-but-not-ended sessions are kept in memory (so their
+/// recovery. Completed-but-not-disposed sessions are kept in memory (so their
 /// codes can be recycled) but are not persisted.
 /// </summary>
 public sealed class GameStore {
     /// <summary>CompletedAt is null while the session is active; set once it has finished.</summary>
     private sealed record ActiveSession(string Code, GameSession Session, DateTimeOffset? CompletedAt);
 
-    /// <summary>All sessions (active and completed-but-not-ended), keyed by code. Codes are unique in this map.</summary>
+    /// <summary>All sessions (active and completed-but-not-disposed), keyed by code. Codes are unique in this map.</summary>
     private readonly ConcurrentDictionary<string, ActiveSession> _sessions = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>DID to the set of codes of games that DID plays in.</summary>
@@ -45,7 +43,7 @@ public sealed class GameStore {
     private readonly object _allocationLock = new();
 
     /// <summary>Default marks used for players when starting a game.</summary>
-    public static readonly string[] DefaultMarks = ["X", "O", "A", "B", "C", "D", "E", "F"];
+    public static readonly string[] DefaultMarks = ["X", "O", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N"];
 
     private static readonly JsonSerializerSettings _persistenceSettings = new() {
         TypeNameHandling = TypeNameHandling.Objects,
@@ -138,19 +136,20 @@ public sealed class GameStore {
             return null;
         }
 
-        return _sessions.Values.SingleOrDefault(a => a.Code.Equals(codes.Keys.Single(), StringComparison.OrdinalIgnoreCase))?.Session;
+        var code = codes.Keys.Single();
+        return _sessions.TryGetValue(code, out var active) ? active.Session : null;
     }
 
-    /// <summary>All sessions (active or completed-but-not-ended) that <paramref name="did"/> plays in, oldest first.</summary>
+    /// <summary>All sessions (active or completed-but-not-disposed) that <paramref name="did"/> plays in, oldest first.</summary>
     public IReadOnlyList<GameSession> GetSessionsForDid(string did) {
         if (!_byDid.TryGetValue(did, out var codes)) {
             return [];
         }
 
         return _sessions.Values
-            .Where(a => codes.ContainsKey(a.Code))
-            .OrderBy(a => a.Session.StartedAt)
-            .Select(a => a.Session)
+            .Where(s => codes.ContainsKey(s.Code))
+            .OrderBy(s => s.Session.StartedAt)
+            .Select(s => s.Session)
             .ToList();
     }
 
@@ -162,7 +161,7 @@ public sealed class GameStore {
     /// <summary>
     /// Mark the session with the given code as naturally completed. It stays in
     /// memory (its code is now recyclable) but is removed from disk. Use
-    /// <see cref="EndGame"/> to remove it from memory entirely.
+    /// <see cref="DisposeGame"/> to remove it from memory entirely.
     /// </summary>
     public void CompleteGame(string code) {
         if (!_sessions.TryGetValue(code, out var active) || active.CompletedAt is not null) {
@@ -173,8 +172,8 @@ public sealed class GameStore {
         DeletePersisted(code);
     }
 
-    /// <summary>Remove a session from the store entirely (player !quit, or after it completed).</summary>
-    public bool EndGame(string code) {
+    /// <summary>Dispose a session from the store entirely (player !quit, or after it completed).</summary>
+    public bool DisposeGame(string code) {
         if (!_sessions.TryRemove(code, out var active)) {
             return false;
         }
@@ -215,7 +214,9 @@ public sealed class GameStore {
         lock (_allocationLock) {
             var next = Interlocked.Increment(ref _counter);
 
-            // Rule 1: natural short code, if the slot is free.
+            // Rule 1: natural short code, if the slot is free. The slot (base32 of
+            // the counter) is not free when a current session — active or
+            // completed-but-not-disposed — still holds that code.
             if (next <= SessionCodes.MaxShortCodeValue) {
                 var natural = SessionCodes.ToBase32((int)next);
                 if (!_sessions.ContainsKey(natural)) {
@@ -227,10 +228,10 @@ public sealed class GameStore {
             // only if that code still belongs to that completed session (after a
             // recycle the old code's session could have already been re-issued).
             var oldest = _sessions.Values
-                .Where(a => a.CompletedAt is not null)
-                .Where(a => a.Session.Code.Length <= 2)
-                .Where(a => ReferenceEquals(_sessions[a.Code], a))
-                .OrderBy(a => a.Session.StartedAt)
+                .Where(s => s.CompletedAt is not null)
+                .Where(s => s.Session.Code.Length <= 2)
+                .Where(s => ReferenceEquals(_sessions[s.Code], s))
+                .OrderBy(s => s.Session.StartedAt)
                 .FirstOrDefault();
             if (oldest is not null) {
                 _sessions.TryRemove(oldest.Code, out _); // re-issue the code
@@ -249,6 +250,11 @@ public sealed class GameStore {
     #endregion
 
     #region persistence
+    // On-disk layout (when a persist directory is configured):
+    //   <dir>/counter        — the last allocated counter value (plain text).
+    //   <dir>/<code>.json    — one JSON file per active game, named by its code.
+    // Active games are written on every save and their files deleted when the
+    // game is completed or disposed; all files are reloaded on construction.
     private void LoadPersisted(string directory) {
         if (!Directory.Exists(directory)) {
             return;
@@ -348,10 +354,8 @@ public sealed class GameStore {
     }
 
     private string GetPersistPath(string code) {
-        // Hash the code into a filesystem-safe file name so the on-disk layout
-        // stays independent of code length.
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code)))[..16];
-        return Path.Combine(_persistDirectory!, $"{hash}.json");
+        // Session codes are base32 alphanumeric and already filesystem-safe.
+        return Path.Combine(_persistDirectory!, $"{code}.json");
     }
     #endregion
 
