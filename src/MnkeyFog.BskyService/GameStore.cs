@@ -14,9 +14,10 @@ namespace MnkeyFog.BskyService;
 /// exactly one active game) or by the explicit code ("g=<code>" argument) when
 /// they are in several.
 ///
-/// Codes are assigned by a monotonic counter: the counter's base32 value while
-/// it is two characters or fewer and free, otherwise a recycled code from an
-/// already-completed session, otherwise the counter's natural (longer) code.
+/// Codes are assigned from the highest current session code value: the base32
+/// of (highest + 1) while that is two characters or fewer and free, otherwise
+/// a recycled code from an already-completed session, otherwise the longer
+/// natural (highest + 1) code.
 ///
 /// When a persistence directory is configured, every change is mirrored to a
 /// JSON file (one per active game) and reloaded on construction for crash
@@ -35,9 +36,6 @@ public sealed class GameStore {
 
     /// <summary>Public thread URI key to code (set when the game is created in that thread).</summary>
     private readonly ConcurrentDictionary<string, string> _byUri = new(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>Monotonic counter: number of games ever started (natural codes are its base32). Never decreases.</summary>
-    private long _counter = 0;
 
     private readonly string? _persistDirectory;
 
@@ -105,7 +103,6 @@ public sealed class GameStore {
 
         IndexDid(creatorDid, code);
         _byUri[uriKey] = code;
-        PersistCounter();
         PersistSession(session);
         return new CreatedGame(code, session);
     }
@@ -205,22 +202,20 @@ public sealed class GameStore {
 
     #region code allocation
     /// <summary>
-    /// Allocate a code for a new game: the counter's natural base32 code while it
-    /// is two characters long and still free; otherwise the code of the
-    /// oldest-started completed short-code session, provided that code has not
-    /// already been re-issued to a different session; otherwise a longer random
-    /// code.
+    /// Allocate a code for a new game: the base32 of (highest current session
+    /// code value + 1) while it is two characters long and still free; otherwise
+    /// the code of the oldest-started completed short-code session, provided that
+    /// code has not already been re-issued to a different session; otherwise the
+    /// longer (highest + 1) code.
     /// </summary>
     private string AllocateCode() {
         lock (_allocationLock) {
-            var next = Interlocked.Increment(ref _counter);
+            var next = HighestSessionCodeValue() + 1;
 
             // Rule 1: natural short code, if the slot is free. The slot (base32 of
-            // the counter) is not free when a current session — active or
-            // completed-but-not-disposed — still holds that code. This check is
-            // defensive: the counter file can serialize worse than the sessions
-            // (e.g. the counter write failed but the session files persisted), so a
-            // live session may already hold the code the counter would regenerate.
+            // next) is not free when a current session — active or
+            // completed-but-not-disposed — still holds that code. Defensive: never
+            // re-issue a code a live session still holds.
             if (next <= SessionCodes.MaxShortCodeValue) {
                 var natural = SessionCodes.ToBase32((int)next);
                 if (!_sessions.ContainsKey(natural)) {
@@ -242,29 +237,38 @@ public sealed class GameStore {
                 return oldest.Code;
             }
 
-            // Rule 3: fall back to the counter's natural code (three or more
-            // characters past the short range). Unique because the counter only
-            // ever increases.
+            // Rule 3: fall back to the natural (highest + 1) code (three or more
+            // characters past the short range). Unique because next is above every
+            // current session code value.
             return SessionCodes.ToBase32((int)next);
         }
+    }
+
+    /// <summary>
+    /// Highest code value among all current sessions (active or
+    /// completed-but-not-disposed); 0 if there are none. Called from
+    /// <see cref="AllocateCode"/> under the allocation lock, so it is a
+    /// consistent snapshot of the codes currently in use.
+    /// </summary>
+    private int HighestSessionCodeValue() {
+        var highest = 0;
+        foreach (var code in _sessions.Keys) {
+            if (SessionCodes.FromBase32(code) is { } value && value > highest) {
+                highest = value;
+            }
+        }
+        return highest;
     }
     #endregion
 
     #region persistence
     // On-disk layout (when a persist directory is configured):
-    //   <dir>/counter        — the last allocated counter value (plain text).
     //   <dir>/<code>.json    — one JSON file per active game, named by its code.
     // Active games are written on every save and their files deleted when the
     // game is completed or disposed; all files are reloaded on construction.
     private void LoadPersisted(string directory) {
         if (!Directory.Exists(directory)) {
             return;
-        }
-
-        // Counter file: the last allocated value, plain text.
-        var counterPath = Path.Combine(directory, "counter");
-        if (File.Exists(counterPath)) {
-            long.TryParse(File.ReadAllText(counterPath).Trim(), out _counter);
         }
 
         foreach (var file in Directory.GetFiles(directory, "*.json")) {
@@ -296,13 +300,6 @@ public sealed class GameStore {
                 _byUri[persisted.ThreadKey] = session.Code;
             } catch (Exception) {
                 continue; // undecodable session: skip; the file stays for manual inspection
-            }
-
-            // A persisted code may outrun the stored counter (e.g. the counter
-            // file failed to write last run) - never let the counter fall below a
-            // decodable code that exists on disk.
-            if (SessionCodes.FromBase32(persisted.Code) is { } codeValue && codeValue > _counter) {
-                _counter = codeValue;
             }
         }
     }
@@ -336,19 +333,6 @@ public sealed class GameStore {
 
         try {
             File.Delete(GetPersistPath(code));
-        } catch (IOException) {
-            // best-effort persistence
-        }
-    }
-
-    private void PersistCounter() {
-        if (_persistDirectory is null) {
-            return;
-        }
-
-        try {
-            Directory.CreateDirectory(_persistDirectory);
-            File.WriteAllText(Path.Combine(_persistDirectory, "counter"), _counter.ToString());
         } catch (IOException) {
             // best-effort persistence
         }

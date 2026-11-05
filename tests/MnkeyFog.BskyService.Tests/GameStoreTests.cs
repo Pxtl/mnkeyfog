@@ -18,9 +18,9 @@ file static class GameStoreTestHelper {
 
 public class GameStoreCodeRecyclingTests {
     /// <summary>
-    /// The natural short-code path: while the counter is at or below
-    /// MaxShortCodeValue (1024), each new game gets the counter's base32 code in
-    /// order - 1-char codes (1..32) then 2-char codes (33..1024).
+    /// The natural short-code path: while the highest session code value is at or
+    /// below MaxShortCodeValue (1024), each new game gets the base32 of (highest
+    /// + 1) in order - 1-char codes (1..32) then 2-char codes (33..1024).
     /// </summary>
     [Fact]
     public void CreateGame_WithinShortRange_CodesAreSequentialBase32() {
@@ -70,7 +70,8 @@ public class GameStoreCodeRecyclingTests {
 
     /// <summary>
     /// Past the short range, when only one short code is completed, that code is
-    /// recycled even though the natural counter has advanced beyond 1023.
+    /// recycled even though the highest session code value has advanced beyond
+    /// 1023.
     /// </summary>
     [Fact]
     public void CreateGame_BeyondShortRangeWithOneCompleted_RecyclesThatCompletedCode() {
