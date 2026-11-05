@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using MnkeyFog.Model.Template;
 using MnkeyFog.Model.Server;
 using Newtonsoft.Json;
+using PxtlCa.Collections;
 
 namespace MnkeyFog.BskyService;
 
@@ -30,7 +31,7 @@ public sealed class GameStore {
     private readonly ConcurrentDictionary<string, ActiveSession> _sessions = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>DID to the set of codes of games that DID plays in.</summary>
-    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> _byDid = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, ConcurrentHashSet<string>> _byDid = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Public thread URI key to code (set when the game is created in that thread).</summary>
     private readonly ConcurrentDictionary<string, string> _byUri = new(StringComparer.OrdinalIgnoreCase);
@@ -136,7 +137,7 @@ public sealed class GameStore {
             return null;
         }
 
-        var code = codes.Keys.Single();
+        var code = codes.Single();
         return _sessions.TryGetValue(code, out var active) ? active.Session : null;
     }
 
@@ -147,7 +148,7 @@ public sealed class GameStore {
         }
 
         return _sessions.Values
-            .Where(s => codes.ContainsKey(s.Code))
+            .Where(s => codes.Contains(s.Code))
             .OrderBy(s => s.Session.StartedAt)
             .Select(s => s.Session)
             .ToList();
@@ -180,7 +181,7 @@ public sealed class GameStore {
 
         foreach (var did in active.Session.PlayerDids.Keys) {
             _byDid.TryGetValue(did, out var set);
-            set?.TryRemove(active.Code, out _);
+            set?.Remove(active.Code);
         }
 
         // Unanchor from the public thread if it still points here.
@@ -361,7 +362,7 @@ public sealed class GameStore {
 
     private void IndexDid(string did, string code) {
         _byDid
-            .GetOrAdd(did, _ => new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase))
-            [code] = 0;
+            .GetOrAdd(did, _ => new ConcurrentHashSet<string>(StringComparer.OrdinalIgnoreCase))
+            .Add(code);
     }
 }
