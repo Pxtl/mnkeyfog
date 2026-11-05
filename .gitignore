@@ -32,7 +32,6 @@ temp/
 *.speedscope.json
 # Agent notes (per MEMORY.md convention)
 MEMORY.md
-TODO.md
 
 # PR-review reconciliation deliverable (delete on merge)
 TEMP.md
