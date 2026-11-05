@@ -103,9 +103,8 @@ Cross-repo items (Pxtl to action — I cannot push to other repos):
 - **pxtl.ca-collections**: add `ConcurrentHashSet<T>` (wrapper over
   `ConcurrentDictionary<T, bool>`). The GameStore description said "set" but it's
   a `ConcurrentDictionary`.
-- **Pxtl/dotnet-repo-template.props**: extract coding-standard elements
-  (analyzers, implicit usings, nullable) from `MnkeyFog.Text.csproj` into a
-  `.props`.
+- **Pxtl/dotnet-repo-template.props**: standard coding-standards `.props`
+  (`Standard.props`) — PR opened: Pxtl/dotnet-repo-template#2.
 - **Pxtl/dotnet-repo-template**: backport template-file changes
   (`CONTRIB.md`, `AGENTS.md`, `.gitignore`, `.editorconfig`).
 
@@ -139,8 +138,3 @@ yet implemented; each is a note for a future pass.
   but never read — the rest of the method only checks `gameView.CanTakeTurn`.
   Either remove the dead assignment or wire up the game-over "show all marks"
   visibility it was clearly meant to gate. (Model change — needs approval.)
-- **Standard coding-standards `.props`**: factor the shared build/analysis
-  settings (nullable, implicit usings, analyzers, langversion, etc.) into a
-  `.props` imported by the csprojs so the standard coding-standards config lives
-  in one place — like a `dotnet-repo-template.props`. (Relates to the cross-repo
-  `Pxtl/dotnet-repo-template.props` follow-up above.)

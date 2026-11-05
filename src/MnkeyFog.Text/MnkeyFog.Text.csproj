@@ -1,14 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-
-    <!-- coding standards -->
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-  </PropertyGroup>
+  <Import Project="..\..\Standard.props" />
 
   <ItemGroup>
     <ProjectReference Include="../MnkeyFog.Model/MnkeyFog.Model.csproj" />
