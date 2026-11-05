@@ -122,3 +122,25 @@ Design decisions (Pxtl to decide):
   name on empty cells; the `MnkeyFog.Text` default only shows it when
   `CanTakeTurn && !board.IsDone`. Decide whether to remove the override (changes
   Bsky display for the non-turn player).
+
+## Notes (this branch)
+
+Small refactor candidates / cleanups found while working the bsky branch. Not
+yet implemented; each is a note for a future pass.
+
+- **`DrawBoards` player-list flexibility** (`MnkeyFog.Text/BoardRenderer`):
+  `DrawBoards(GameView, int maxRenderWidth)` renders every board in a *single*
+  player's `GameView`. It could be more flexible about the player list it draws
+  for — e.g. take a game state plus a list of players (or a subset of boards) and
+  render each view, instead of one call per player.
+- **Dead `player` local** (`MnkeyFog.Model/CommandNameTool.SpaceCommandName`):
+  `var player = gameView.PlayerIndex;` then `player = gameView.IsGameOver ? null
+  : player;` (comment: "show for all players if the game is over") is computed
+  but never read — the rest of the method only checks `gameView.CanTakeTurn`.
+  Either remove the dead assignment or wire up the game-over "show all marks"
+  visibility it was clearly meant to gate. (Model change — needs approval.)
+- **Standard coding-standards `.props`**: factor the shared build/analysis
+  settings (nullable, implicit usings, analyzers, langversion, etc.) into a
+  `.props` imported by the csprojs so the standard coding-standards config lives
+  in one place — like a `dotnet-repo-template.props`. (Relates to the cross-repo
+  `Pxtl/dotnet-repo-template.props` follow-up above.)
