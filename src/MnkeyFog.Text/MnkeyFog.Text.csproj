@@ -3,10 +3,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-  </PropertyGroup>
 
-  <!-- coding standards -->
-  <PropertyGroup>
+    <!-- coding standards -->
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
@@ -18,9 +16,6 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="PxtlCa.SystemCollectionsExtensions" Version="0.3.4" />
-  </ItemGroup>
-  <ItemGroup>
     <Using Include="Newtonsoft.Json" />
   </ItemGroup>
 

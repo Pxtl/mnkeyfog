@@ -1,8 +1,10 @@
 # AGENTS.md
 
-See [CONTRIB.md](CONTRIB.md) for coding style guide.
+See [CONTRIB.md](CONTRIB.md) for coding style guide. Read and follow CONTRIB.md
+before writing code.
 
-See [TODO.md](TODO.md) for the TODO list.  Delete items from the TODO list when
+See [TODO.md](TODO.md) for the TODO list (if there is any, some tasks will be
+controlled from other mechanisms).  Delete items from the TODO list when
 complete.  Each major TODO heading should be implemented as its own PR with its
 own branch from main.
 
@@ -13,6 +15,7 @@ Codebase is using dotnet 10.0.  Use `dotnet build` to compile, and
 ```sh
 dotnet run --project mnkeyfog/tests/MnkeyFog.Model.Tests
 ```
+
 to run unit test suite.
 
 # Testing

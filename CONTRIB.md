@@ -12,7 +12,7 @@ This document captures the coding style patterns used in this project.
 ## General
 
 - **Global usings**: Use `global using` directives at the file top for common namespaces (`System`, `System.Linq`, `System.Collections.Generic`, `System.IO`, etc.). See `.NETCoreApp,Version=v10.0.AssemblyAttributes.cs`.
-- **File-level usings**: Place `using` directives after the namespace declaration, before class definitions.
+- **File-level usings**: Place `using` directives before the namespace declaration, before class definitions.
 - **OneOf types**: Use the `OneOf` library for result types (`ActionQueuedSuccessfully`, `NotFound`, `AlreadyPlayed`, `BoardIsDone`).
 
 ## Indentation
@@ -284,6 +284,37 @@ This document captures the coding style patterns used in this project.
 
 - Convert between `OneOf` types using `.Match<>()` when needed.
 
+- Prefer `OneOf` over a nullable return (`T?` / `(A, B)?`) when a null result
+  means a *very different event* has occurred rather than merely an absent
+  value. Name the alternative case (e.g. `OneOf<CommandToken, None>` for "this
+  message is not a command"), so callers switch on meaning instead of testing
+  for null:
+
+    ```csharp
+    public OneOf<CommandToken, None> ParseCommand(string message) { ... }
+    ```
+
+- Prefer the lambda-based `Switch`/`Match` methods for branching between
+  outcomes; avoid `IsT0`/`AsT0`-style accessors, which scattered-type-check the
+  union and lose exhaustiveness. Use them only where necessary (e.g. a quick
+  `IsT1` bail-out in non-branching code).
+
+- For async handlers, have each `Match` lambda return a `Task` and await the
+  `Match` result once — this keeps both outcomes async-safe (never `Switch`
+  with async lambdas, which is fire-and-forget):
+
+    ```csharp
+    await result.Match(
+        success => HandleSuccessAsync(success),
+        _ => HandleFailureAsync());
+    ```
+
+- An alternative pattern for "found or not" cases is to return an
+  `IEnumerable` of parsed results (1 or 0 items expected) and have the caller
+  simply `foreach` across the results — the empty case then falls out
+  naturally as a no-op. This also extends cleanly to multiple results per
+  call (e.g. several commands in one message, where game rules allow).
+
 ## LINQ and Query Usage
 
 - Use `var` with LINQ expressions.
@@ -331,6 +362,20 @@ This document captures the coding style patterns used in this project.
 - Use `Thread.Sleep` with `using` or careful disposal when needed for timing.
 
 
+## Testing
+
+- **Do not test private/protected members via reflection** (`Type.GetMethod(...)`
+  + `Invoke`). Reflection-based test accessors are fragile, untyped, and bypass the
+  compiler. Instead:
+  - Prefer making the member `internal` and exposing it to the test assembly with
+    `[assembly: InternalsVisibleTo("...")]` (see `src/**/AssemblyInfo.cs`), then call
+    it directly.
+  - If the member must stay inaccessible (sealed/private by design), use
+    `System.Runtime.CompilerServices.UnsafeAccessor`
+    (`FromMethodAccess` / `FromStaticMethodAccess` / `FromFieldAccess`) rather than
+    raw reflection.
+
+
 ## Files
 
 - One type per file, avoid nested types.  
@@ -345,3 +390,9 @@ This document captures the coding style patterns used in this project.
 
 - Repo-standard docs go at root in ALLCAPS. Additional docs go in `/doc/` and
   are `kebab-cased.md`.
+
+## Template Files
+
+- The repo-template files — `CONTRIB.md`, `AGENTS.md`, `.gitignore`, and
+  `.editorconfig` — originate from `Pxtl/dotnet-repo-template`. Changes to them
+  should be PR'd back to that template repo so other projects inherit them.

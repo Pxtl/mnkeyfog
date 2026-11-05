@@ -7,6 +7,15 @@ namespace MnkeyFog.Text;
 /// the given player.
 /// </summary>
 public class BoardRenderer {
+    /// <summary>
+    /// Resolves the text drawn in an unoccupied cell. Alternate hosts (the
+    /// Bsky bot) override this so players see the space name they must type to
+    /// move — the CommandLine default is <c>CommandNameTool.SpaceCommandName</c>,
+    /// which is fog-aware and resolves player marks for occupied cells.
+    /// </summary>
+    public static Func<GameView, sbyte, sbyte, sbyte, string> CellNameResolver { get; set; }
+        = (view, board, col, row) => CommandNameTool.SpaceCommandName(view, board, col, row);
+
     #region constructors
     public BoardRenderer()
     : this(BoardRendererConfiguration.FullPipes) {
@@ -172,7 +181,7 @@ public class BoardRenderer {
                 if (col > 0 && Configuration.HasColumnSeparators) {
                     sb.Append(Configuration.CellColumnSeparator);
                 }
-                var body = CommandNameTool.SpaceCommandName(gameView, boardIndex, col, rowIndex);
+                var body = CellNameResolver(gameView, boardIndex, col, rowIndex);
                 DrawSpaceBody(body, Configuration.CellWidth, sb);
             }
             if (Configuration.HasRightBorder) {
@@ -201,9 +210,6 @@ public class BoardRenderer {
         sb.Append(body);
     }
 
-    /// <summary>
-    /// Get the cursor position (number of characters since last line break).
-    /// </summary>
     public static int GetCursorX(StringBuilder sb) {
         int charsSinceLineBreak = 0;
 
