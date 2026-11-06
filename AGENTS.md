@@ -1,7 +1,7 @@
 # AGENTS.md
 
-See [CONTRIB.md](CONTRIB.md) for coding style guide. Read and follow CONTRIB.md
-before writing code.
+See [CONTRIB.md](CONTRIB.md) for coding style guide(s). Read the CONTRIB.md and
+any appropriate linked documents fully before making changes.
 
 See [TODO.md](TODO.md) for the TODO list (if there is any, some tasks will be
 controlled from other mechanisms).  Delete items from the TODO list when
