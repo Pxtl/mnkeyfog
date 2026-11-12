@@ -16,6 +16,9 @@ making any changes or actions relevant to them.
 
 - Indent 4 spaces for C# or SQL source code, 2 spaces for Markdown, html, xml, json, or
   other document or serialization or configuration files.
+- In files (`.md`, `.cs`, `.ts`, etc.) that practically support line length limits:
+  - soft length limit at 80 char
+  - hard limit at 120 char
 
 ## Project Structure
 
