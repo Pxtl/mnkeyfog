@@ -1,4 +1,4 @@
-# Contributions
+# CONTRIB.md
 
 PRs are welcome, but may get rejected if not in line with my plans for the
 project.  See [TODO.md](TODO.md) (if any) for things that are ready to work on,
