@@ -14,6 +14,14 @@ namespace MnkeyFog.BskyService;
 /// <c>app.bsky.chat.messages.getConversationLog</c>), dispatching both to
 /// virtual handlers.
 /// </summary>
+/// <remarks>
+/// RAII lifecycle. Because C# has no async constructors, the constructor does
+/// *not* perform the acquisition half of RAII — it only initializes fields
+/// (no login, no polling). Concrete subclasses are responsible for providing
+/// an async factory method (e.g. <c>CreateAsync</c>) that constructs the object
+/// and performs acquisition (login and start polling). The release half of RAII
+/// is <see cref="DisposeAsync"/>, which stops polling and disconnects.
+/// </remarks>
 public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
     private const int NotificationPageLimit = 50;
     private static readonly Uri DefaultService = new("https://bsky.social");
@@ -41,7 +49,9 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
     /// Login and start polling for mentions (notification list, server-side
     /// filtered to this account) and DMs (conversation log).
     /// </summary>
-    public virtual async Task StartAsync(BskyBotOptions options, CancellationToken cancellationToken = default) {
+    protected virtual async Task StartAsync(
+        BskyBotOptions options,
+        CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(options);
 
         if (options.GamePersistenceDirectory is not null) {
@@ -72,20 +82,15 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
         Logger.LogInformation("Bot {handle} started.", options.Handle);
     }
 
-    /// <summary>Stop polling and disconnect.</summary>
-    public virtual async Task StopAsync() {
+    public async ValueTask DisposeAsync() {
         _pollingCancellationSource?.Cancel();
         if (_pollingTask is not null) {
             try {
-                await _pollingTask;
+                await _pollingTask.WaitAsync(CancellationToken.None);
             } catch (OperationCanceledException) {
                 // expected on stop
             }
         }
-    }
-
-    public async ValueTask DisposeAsync() {
-        await StopAsync();
         GC.SuppressFinalize(this);
     }
     #endregion

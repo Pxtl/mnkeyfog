@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <Import Project="..\..\Standard.props" />
+
+  <PropertyGroup>
+    <UserSecretsId>dotnet-MnkeyFog.Bsky.WorkerService-4228be12-b5fc-4e56-ba45-c27c454af484</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../MnkeyFog.BskyService/MnkeyFog.BskyService.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+  </ItemGroup>
+
+</Project>

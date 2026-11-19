@@ -11,7 +11,6 @@
     <PackageReference Include="idunno.Bluesky" Version="4.0.0" />
     <PackageReference Include="idunno.AtProto" Version="4.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-
     <PackageReference Include="OneOf" Version="3.0.263" />
     <PackageReference Include="PxtlCa.SystemCollectionsExtensions" Version="0.3.4" />
   </ItemGroup>
