@@ -2,7 +2,6 @@ using idunno.AtProto;
 using idunno.Bluesky;
 using idunno.Bluesky.Chat;
 using idunno.Bluesky.Notifications;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace MnkeyFog.BskyService;
@@ -16,14 +15,13 @@ namespace MnkeyFog.BskyService;
 /// virtual handlers.
 /// </summary>
 /// <remarks>
-/// Implements <see cref="IHostedService"/>: register a concrete subclass and
-/// its <see cref="BskyBotOptions"/> with DI, then start it with
-/// <c>AddHostedService</c>.
+/// RAII lifecycle: create a concrete subclass via its async factory (which
+/// constructs, logs in, and starts polling) and stop it by disposing the
+/// object.
 /// </remarks>
-public abstract class BskyBotService : IHostedService, IAsyncDisposable, IPlayerNotifier {
+public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
     private const int NotificationPageLimit = 50;
     private static readonly Uri DefaultService = new("https://bsky.social");
-    private readonly BskyBotOptions _options;
 
     protected ILogger Logger { get; }
     protected BlueskyAgent Agent { get; private set; } = null!;
@@ -38,11 +36,9 @@ public abstract class BskyBotService : IHostedService, IAsyncDisposable, IPlayer
     private Did _botDid = null!;
     private readonly Dictionary<string, string> _conversationCache = new(StringComparer.OrdinalIgnoreCase);
 
-    protected BskyBotService(ILogger logger, BskyBotOptions options) {
+    protected BskyBotService(ILogger logger) {
         ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(options);
         Logger = logger;
-        _options = options;
     }
 
     #region lifecycle
@@ -50,8 +46,10 @@ public abstract class BskyBotService : IHostedService, IAsyncDisposable, IPlayer
     /// Login and start polling for mentions (notification list, server-side
     /// filtered to this account) and DMs (conversation log).
     /// </summary>
-    public virtual async Task StartAsync(CancellationToken cancellationToken) {
-        var options = _options;
+    protected virtual async Task StartAsync(
+        BskyBotOptions options,
+        CancellationToken cancellationToken = default) {
+        ArgumentNullException.ThrowIfNull(options);
 
         if (options.GamePersistenceDirectory is not null) {
             GameStore = new GameStore(options.GamePersistenceDirectory);
@@ -81,20 +79,15 @@ public abstract class BskyBotService : IHostedService, IAsyncDisposable, IPlayer
         Logger.LogInformation("Bot {handle} started.", options.Handle);
     }
 
-    /// <summary>Stop polling and disconnect.</summary>
-    public virtual async Task StopAsync(CancellationToken cancellationToken) {
+    public async ValueTask DisposeAsync() {
         _pollingCancellationSource?.Cancel();
         if (_pollingTask is not null) {
             try {
-                await _pollingTask.WaitAsync(cancellationToken);
+                await _pollingTask.WaitAsync(CancellationToken.None);
             } catch (OperationCanceledException) {
                 // expected on stop
             }
         }
-    }
-
-    public async ValueTask DisposeAsync() {
-        await StopAsync(CancellationToken.None);
         GC.SuppressFinalize(this);
     }
     #endregion

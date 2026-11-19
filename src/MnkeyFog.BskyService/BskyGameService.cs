@@ -44,7 +44,24 @@ public class BskyGameService : BskyBotService {
     private const string SecretGamePlaceholder =
         "This game is played in DMs to keep moves private. Check your DMs for the board.";
 
-    public BskyGameService(ILogger logger, BskyBotOptions options) : base(logger, options) { }
+    public BskyGameService(ILogger logger) : base(logger) { }
+
+    /// <summary>
+    /// Create a logged-in, polling <see cref="BskyGameService"/>.
+    /// </summary>
+    /// <param name="logger">A logger.</param>
+    /// <param name="options">The bot options.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the login and polling to start, or <see cref="CancellationToken.None" /> to cancel never.</param>
+    /// <returns>The started service.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if login fails.</exception>
+    public static async Task<BskyGameService> CreateAsync(
+        ILogger logger,
+        BskyBotOptions options,
+        CancellationToken cancellationToken = default) {
+        var service = new BskyGameService(logger);
+        await service.StartAsync(options, cancellationToken);
+        return service;
+    }
 
     #region overrides
     protected internal override Task OnDirectMessageAsync(

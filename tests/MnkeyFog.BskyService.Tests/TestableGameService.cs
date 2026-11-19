@@ -9,11 +9,7 @@ namespace MnkeyFog.BskyService.Tests;
 /// store and to intercept DM sends.
 /// </summary>
 internal sealed class TestableGameService : BskyGameService {
-    public TestableGameService()
-        : base(
-            NullLogger.Instance,
-            new BskyBotOptions { Handle = "test.bsky.social", AppPassword = "test" }
-        ) { }
+    public TestableGameService() : base(NullLogger.Instance) { }
 
     /// <summary>
     /// The service's <see cref="BskyBotService.GameStore"/>, exposed for test
