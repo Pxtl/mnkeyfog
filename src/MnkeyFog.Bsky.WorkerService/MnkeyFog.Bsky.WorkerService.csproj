@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../MnkeyFog.BskyService/MnkeyFog.BskyService.csproj" />
+    <ProjectReference Include="../MnkeyFog.Bsky/MnkeyFog.Bsky.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,7 +1,7 @@
 using System.Text;
 using MnkeyFog.Text;
 
-namespace MnkeyFog.BskyService;
+namespace MnkeyFog.Bsky;
 
 /// <summary>
 /// Renders a game board as compact text for Bluesky, with a turn/score header,

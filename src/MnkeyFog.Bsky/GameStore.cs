@@ -4,7 +4,7 @@ using MnkeyFog.Model.Server;
 using Newtonsoft.Json;
 using PxtlCa.Collections;
 
-namespace MnkeyFog.BskyService;
+namespace MnkeyFog.Bsky;
 
 /// <summary>
 /// Thread-safe in-memory store of game sessions keyed by short session code.

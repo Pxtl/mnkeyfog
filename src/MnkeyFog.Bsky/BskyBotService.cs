@@ -4,7 +4,7 @@ using idunno.Bluesky.Chat;
 using idunno.Bluesky.Notifications;
 using Microsoft.Extensions.Logging;
 
-namespace MnkeyFog.BskyService;
+namespace MnkeyFog.Bsky;
 
 /// <summary>
 /// Abstract base service for a Bluesky bot: authenticates and polls the server

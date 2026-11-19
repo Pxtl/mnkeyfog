@@ -2,7 +2,7 @@
 
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace MnkeyFog.BskyService.Tests;
+namespace MnkeyFog.Bsky.Tests;
 
 /// <summary>
 /// Subclass of <see cref="BskyGameService"/> used by tests to set up the game

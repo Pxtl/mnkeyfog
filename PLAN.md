@@ -30,7 +30,7 @@ Mark.  Custom boardwidth?
 
 ## BSky bot (implemented — design decisions)
 
-The BSky chat bot is now implemented in `MnkeyFog.BskyService`.  Key design
+The BSky chat bot is now implemented in `MnkeyFog.Bsky`.  Key design
 decisions are documented here so they are not lost when the implementation
 evolves.
 

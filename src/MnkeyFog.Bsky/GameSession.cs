@@ -4,7 +4,7 @@ using MnkeyFog.Model;
 using MnkeyFog.Model.MNKGame;
 using MnkeyFog.Model.Template;
 
-namespace MnkeyFog.BskyService;
+namespace MnkeyFog.Bsky;
 
 /// <summary>
 /// Wraps a <see cref="GameState"/> with Bluesky metadata: the session's unique

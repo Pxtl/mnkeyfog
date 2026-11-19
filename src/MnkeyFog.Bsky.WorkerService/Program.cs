@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 using MnkeyFog.Bsky.WorkerService;
-using MnkeyFog.BskyService;
+using MnkeyFog.Bsky;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.Configure<BskyBotOptions>(builder.Configuration.GetSection("Bsky"));

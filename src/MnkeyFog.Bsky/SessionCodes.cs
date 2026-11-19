@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-namespace MnkeyFog.BskyService;
+namespace MnkeyFog.Bsky;
 
 /// <summary>
 /// Session-code generation. Codes are the standard (RFC 4648) unpadded base32

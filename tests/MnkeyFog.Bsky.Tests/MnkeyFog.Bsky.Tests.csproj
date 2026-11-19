@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MnkeyFog.BskyService\MnkeyFog.BskyService.csproj" />
+    <ProjectReference Include="..\..\src\MnkeyFog.Bsky\MnkeyFog.Bsky.csproj" />
     <ProjectReference Include="..\..\src\MnkeyFog.Model\MnkeyFog.Model.csproj" />
   </ItemGroup>
 

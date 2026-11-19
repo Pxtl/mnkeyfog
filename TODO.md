@@ -4,7 +4,7 @@ Approved-to-implement ideas. Each item = one branch. Do not touch
 `MnkeyFog.Model` internals without Pxtl's approval; see CONTRIB.md.
 
 
-## BskyService — `!list` command  *(IMPLEMENTED — commit `0d72084`)*
+## Bsky — `!list` command  *(IMPLEMENTED — commit `0d72084`)*
 
 New player-facing command on the bsky bot. Purpose: for a multi-game player,
 see *which* games they are in (code, template, turn state, start time) without

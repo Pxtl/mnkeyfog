@@ -1,4 +1,4 @@
-namespace MnkeyFog.BskyService;
+namespace MnkeyFog.Bsky;
 
 /// <summary>
 /// The rendered board text to reply with.

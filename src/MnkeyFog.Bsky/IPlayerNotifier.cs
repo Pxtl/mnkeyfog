@@ -1,4 +1,4 @@
-namespace MnkeyFog.BskyService;
+namespace MnkeyFog.Bsky;
 
 /// <summary>
 /// Abstraction for sending a DM to a specific player (by DID), independent of

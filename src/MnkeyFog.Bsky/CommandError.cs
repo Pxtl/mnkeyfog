@@ -1,4 +1,4 @@
-namespace MnkeyFog.BskyService;
+namespace MnkeyFog.Bsky;
 
 /// <summary>
 /// A user-facing error message for a rejected bot command.

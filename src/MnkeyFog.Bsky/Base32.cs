@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-namespace MnkeyFog.BskyService;
+namespace MnkeyFog.Bsky;
 
 /// <summary>
 /// A clean, system-agnostic unpadded RFC 4648 base32 encoding (A-Z, 2-7),

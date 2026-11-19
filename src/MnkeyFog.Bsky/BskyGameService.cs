@@ -3,7 +3,7 @@ using idunno.AtProto;
 using idunno.Bluesky;
 using Microsoft.Extensions.Logging;
 
-namespace MnkeyFog.BskyService;
+namespace MnkeyFog.Bsky;
 
 /// <summary>
 /// Hosts MnkeyFog games on Bluesky with a strict public/DM split.
