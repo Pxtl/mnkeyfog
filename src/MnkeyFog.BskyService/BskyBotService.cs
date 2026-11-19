@@ -15,9 +15,12 @@ namespace MnkeyFog.BskyService;
 /// virtual handlers.
 /// </summary>
 /// <remarks>
-/// RAII lifecycle: create a concrete subclass via its async factory (which
-/// constructs, logs in, and starts polling) and stop it by disposing the
-/// object.
+/// RAII lifecycle. Because C# has no async constructors, the constructor does
+/// *not* perform the acquisition half of RAII — it only initializes fields
+/// (no login, no polling). Concrete subclasses are responsible for providing
+/// an async factory method (e.g. <c>CreateAsync</c>) that constructs the object
+/// and performs acquisition (login and start polling). The release half of RAII
+/// is <see cref="DisposeAsync"/>, which stops polling and disconnects.
 /// </remarks>
 public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
     private const int NotificationPageLimit = 50;
