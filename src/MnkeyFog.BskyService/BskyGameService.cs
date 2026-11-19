@@ -44,7 +44,7 @@ public class BskyGameService : BskyBotService {
     private const string SecretGamePlaceholder =
         "This game is played in DMs to keep moves private. Check your DMs for the board.";
 
-    public BskyGameService(ILogger logger) : base(logger) { }
+    public BskyGameService(ILogger logger, BskyBotOptions options) : base(logger, options) { }
 
     #region overrides
     protected internal override Task OnDirectMessageAsync(
