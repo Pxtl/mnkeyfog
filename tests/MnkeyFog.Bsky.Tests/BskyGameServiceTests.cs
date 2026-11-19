@@ -4,7 +4,7 @@ using MnkeyFog.Model;
 using MnkeyFog.Model.MNKGame;
 using MnkeyFog.Model.Template;
 
-namespace MnkeyFog.BskyService.Tests;
+namespace MnkeyFog.Bsky.Tests;
 
 public class BskyGameServiceTests {
     private static List<PlayerInfo> TwoPlayers() => new() { new("X"), new("O") };

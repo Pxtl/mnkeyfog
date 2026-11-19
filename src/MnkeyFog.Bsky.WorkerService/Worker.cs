@@ -1,4 +1,4 @@
-using MnkeyFog.BskyService;
+using MnkeyFog.Bsky;
 
 namespace MnkeyFog.Bsky.WorkerService;
 

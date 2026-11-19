@@ -1,4 +1,4 @@
-namespace MnkeyFog.BskyService;
+namespace MnkeyFog.Bsky;
 
 /// <summary>
 /// The board must not be posted on this channel because the game is secret

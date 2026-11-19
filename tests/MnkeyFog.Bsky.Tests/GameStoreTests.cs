@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-namespace MnkeyFog.BskyService.Tests;
+namespace MnkeyFog.Bsky.Tests;
 
 file static class GameStoreTestHelper {
     public static IGameTemplate MakeTemplate() {

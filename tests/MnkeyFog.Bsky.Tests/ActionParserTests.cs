@@ -1,4 +1,4 @@
-namespace MnkeyFog.BskyService.Tests;
+namespace MnkeyFog.Bsky.Tests;
 
 public class ActionParserTests {
     private static CommandToken? Parse(string message, bool isPrefixOptional)

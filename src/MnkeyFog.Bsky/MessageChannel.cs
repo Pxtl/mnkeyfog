@@ -1,4 +1,4 @@
-namespace MnkeyFog.BskyService;
+namespace MnkeyFog.Bsky;
 
 /// <summary>
 /// How the game service talks back: DM reply vs public post, and which board

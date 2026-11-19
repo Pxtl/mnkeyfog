@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-namespace MnkeyFog.BskyService.Tests;
+namespace MnkeyFog.Bsky.Tests;
 
 public class Base32Tests {
     [Theory]
