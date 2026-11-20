@@ -3,14 +3,12 @@ namespace MnkeyFog.Model.Views;
 
 public record SpaceView
 : GameObjectView {
-    public SpaceView(Space space, int? playerIndex, sbyte col, sbyte row, sbyte boardIndex)
+    public SpaceView(int? markIndex, int? playerIndex, sbyte col, sbyte row, sbyte boardIndex)
     : base(playerIndex) {
         Col = col;
         Row = row;
         BoardIndex = boardIndex;
-        MarkIndex = space.IsKnownToPlayerIndex(playerIndex)
-            ? space.MarkIndex
-            : null;
+        MarkIndex = markIndex;
     }
     #region data properties
     public sbyte Col { get; init; }

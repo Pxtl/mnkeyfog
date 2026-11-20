@@ -7,10 +7,14 @@ public record BoardView
         BoardIndex = boardIndex;
 
         IsDone = board.IsDone;
-        Spaces = new SpaceView[board.ColumnCount, board.RowCount];
+        SpaceDTOs = new SpaceViewDTO[board.ColumnCount, board.RowCount];
         for (sbyte row = 0; row < board.RowCount; row += 1) {
             for (sbyte col = 0; col < board.ColumnCount; col += 1) {
-                Spaces[col, row] = new SpaceView(board.Spaces[col, row], PlayerIndex, col, row, BoardIndex);
+                var space = board.Spaces[col, row];
+                var mark = space.IsKnownToPlayerIndex(PlayerIndex)
+                    ? space.MarkIndex
+                    : null;
+                SpaceDTOs[col, row] = new SpaceViewDTO(mark);
             }
         }
         ScoreCard = board.Ruleset.Score(board, playerIndex);
@@ -24,10 +28,13 @@ public record BoardView
     public sbyte BoardIndex { get; init; }
 
     /// <summary>
-    /// The player's view of the spaces on the board.  The Spaces will match the
-    /// Spaces of the underlying Board, but their contents may not.
+    /// The player's view of the spaces on the board, one per cell.  Each entry
+    /// holds just the mark; the full <see cref="SpaceView"/> for a cell is
+    /// reconstructed from its position by <see cref="GetSpaceView(sbyte, sbyte)"/>
+    /// and <see cref="AsSpaceViewEnumerable"/>.  The marks match those of the
+    /// underlying Board, but their contents may not (fog of war).
     /// </summary>
-    public SpaceView[,] Spaces { get; init; }
+    public SpaceViewDTO[,] SpaceDTOs { get; init; }
 
     /// <summary>
     /// The player's view of the score for the board.  May or may not reflect
@@ -59,28 +66,31 @@ public record BoardView
     /// </summary>
     [JsonIgnore()]
     public sbyte ColumnCount
-    => Spaces.GetLength(0).AsSByte;
+    => SpaceDTOs.GetLength(0).AsSByte;
 
     /// <summary>
     /// Number of rows on the board.
     /// </summary>
     [JsonIgnore()]
     public sbyte RowCount
-    => Spaces.GetLength(1).AsSByte;
+    => SpaceDTOs.GetLength(1).AsSByte;
 
     /// <summary>
     /// Get how many spaces are on the board.
     /// </summary>
     [JsonIgnore()]
     public int SpaceCount
-    => Spaces.GetLength(0) * Spaces.GetLength(1);
+    => SpaceDTOs.GetLength(0) * SpaceDTOs.GetLength(1);
     #endregion
 
     public string GetSpaceName(GameView gameView, sbyte col, sbyte row)
     => gameView.GetSpaceName(BoardName, col, row);
 
     public SpaceView GetSpaceView(sbyte col, sbyte row)
-    => Spaces[col, row];
+    => CreateSpaceView(col, row);
+
+    private SpaceView CreateSpaceView(sbyte col, sbyte row)
+    => new SpaceView(SpaceDTOs[col, row].MarkIndex, PlayerIndex, col, row, BoardIndex);
 
     /// <summary>
     /// Enumerate across all of the spaces on the board.
@@ -88,7 +98,7 @@ public record BoardView
     public IEnumerable<SpaceView> AsSpaceViewEnumerable() {
         for (sbyte col = 0; col < ColumnCount; col += 1) {
             for (sbyte row = 0; row < RowCount; row += 1) {
-                yield return Spaces[col, row];
+                yield return CreateSpaceView(col, row);
             }
         }
     }

@@ -129,7 +129,7 @@ public abstract class MonteCarloAI : IPlayerAI {
         foreach (var boardView in originalStateView.Boards) {
             foreach (var spaceView in boardView.AsSpaceViewEnumerable()) {
                 var clonedSpace = clonedState.Boards[boardView.BoardIndex].Spaces[spaceView.Col, spaceView.Row];
-                clonedSpace.MarkIndex = boardView.Spaces[spaceView.Col, spaceView.Row].MarkIndex;
+                clonedSpace.MarkIndex = boardView.SpaceDTOs[spaceView.Col, spaceView.Row].MarkIndex;
                 clonedSpace.MakeKnownToPlayerIndex(originalStateView.PlayerIndex.Value);
                 if (clonedSpace.MarkIndex != null && clonedSpace.MarkIndex != Space.ImpasseMarkIndex) {
                     clonedSpace.MakeKnownToPlayerIndex(clonedSpace.MarkIndex.Value);
