@@ -51,12 +51,10 @@ namespace MnkeyFog.Model.PlayerAIs {
                 }
             }
 
-            // SpaceNames fallback: try each space name for coordinate lookup
-            foreach (var spaceName in gameView.SpaceNames) {
-                bool result = gameView.TryGetCoordinatesFromSpaceName(spaceName, out sbyte biBox, out sbyte colBox2, out sbyte rowBox);
-
+            // SpaceViews fallback: try each space for coordinate lookup
+            foreach (var spaceView in gameView.SpaceViews) {
                 if (factorySpaceActions.Count > 0) {
-                    gameView.Attempt(factorySpaceActions[0].Create(biBox, colBox2, rowBox));
+                    gameView.Attempt(factorySpaceActions[0].Create(spaceView.BoardIndex, spaceView.Col, spaceView.Row));
                 }
             }
 

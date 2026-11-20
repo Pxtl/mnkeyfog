@@ -130,6 +130,10 @@ public record GameView
         .Select(s => GetSpaceName(b.BoardName, s.Col, s.Row))
     ); //zero-pad.
 
+    [JsonIgnore()]
+    public IEnumerable<SpaceView> SpaceViews
+    => Boards.SelectMany(b => b.AsSpaceViewEnumerable());
+
     /// <summary>
     /// For the given space on the board, generate the space's name. Only used
     /// on small (3x3 or less) boards.

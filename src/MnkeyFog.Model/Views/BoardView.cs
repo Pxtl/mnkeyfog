@@ -10,7 +10,7 @@ public record BoardView
         Spaces = new SpaceView[board.ColumnCount, board.RowCount];
         for (sbyte row = 0; row < board.RowCount; row += 1) {
             for (sbyte col = 0; col < board.ColumnCount; col += 1) {
-                Spaces[col, row] = new SpaceView(board.Spaces[col, row], PlayerIndex, col, row);
+                Spaces[col, row] = new SpaceView(board.Spaces[col, row], PlayerIndex, col, row, BoardIndex);
             }
         }
         ScoreCard = board.Ruleset.Score(board, playerIndex);
