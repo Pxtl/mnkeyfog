@@ -73,13 +73,34 @@ is 1024.
 | `!board` | Show the current board (with `[#<code>]` tag). |
 | `!play <x> <y>` | Play a move; result includes the code tag. |
 | `!quit` | End the game early (player-initiated). The code is not recycled until a new game session is created. |
-| `!list` *(proposed, in TODO)* | List the sender's active games: code, template, turn state. See `TODO.md`. |
+| `!list` | List the sender's active games: code, template, turn state, start time. |
 
 ### Command parsing
 
 Commands are currently parsed by hand (split the message, read args). Longer-term:
 leverage `System.CommandLine` for `!command` parsing. That removes the need to keep
 the `g=<code>` format — `-g <code>` works just as well with a real arg parser.
+
+### Open design items
+
+Moved from `TODO.md` — substantial open questions; not implementable without more
+design/decisions first.
+
+- **`!list` per-DID timezone source** (from the `!list` work): `idunno.Bluesky`
+  / atproto does not expose a user's timezone (getProfile/getPreferences/chat have
+  no TZ field). Options for a localized `!list` timestamp: (1) skip — relative or
+  UTC (the current default; easiest); (2) a `!tz <name>` command storing an IANA
+  TZ per DID — the only reliable per-user source the bot can own, and it anchors
+  future per-player prefs (small Model change + one command); (3) heuristic from
+  displayName/location (fragile, don't). Decision not made; (2) is a Model change
+  (needs approval).
+- **`!resign`** (from PR #11 review): `!quit` is incoherent for online games;
+  `!resign` should abandon-while-game-continues. May need `MnkeyFog.Model` to
+  allow resign at any time (Model is leaf — needs approval).
+- **`CellNameResolver` override** (from PR #11 review): the Bsky override always
+  shows the space name on empty cells; the `MnkeyFog.Text` default only shows it
+  when `CanTakeTurn && !board.IsDone`. Decide whether to remove the override
+  (changes Bsky display for the non-turn player).
 
 ## Chatbot could be stateless if there's bidirectional serialization of gamestate.
 
