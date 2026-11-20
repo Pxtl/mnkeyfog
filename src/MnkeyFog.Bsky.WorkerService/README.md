@@ -32,3 +32,20 @@ Full provider order, later wins:
 
 If `Handle`/`AppPassword` are missing they bind to null and login throws, so a
 misconfigured worker fails fast at startup instead of silently misbehaving.
+
+## Persistence
+
+The bot's game-state persistence is a blob store (`IGameSessionStore`). The
+registered implementation is chosen from the `Bsky:GamePersistenceDirectory`
+setting:
+
+- **Set** (e.g. `Bsky__GamePersistenceDirectory=/var/mnkeyfog/persist`) → a
+  filesystem-backed store (`FileSystemGameSessionStore`), one JSON file per active
+  game in that directory. Set it the same ways as credentials (env var
+  `Bsky__GamePersistenceDirectory`, user secret `Bsky:GamePersistenceDirectory`,
+  or `--Bsky:GamePersistenceDirectory <path>`).
+- **Unset** → a no-op store (`NoOpGameSessionStore`); games run in memory only and
+  are lost on restart.
+
+A different backend (e.g. Azure Blob Storage) can be injected by registering a
+different `IGameSessionStore` — no change to the bot or store call-sites.

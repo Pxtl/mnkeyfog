@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using MnkeyFog.Model.Template;
 using MnkeyFog.Model.Server;
-using Newtonsoft.Json;
 using PxtlCa.Collections;
 
 namespace MnkeyFog.Bsky;
@@ -19,10 +18,10 @@ namespace MnkeyFog.Bsky;
 /// a recycled code from an already-completed session, otherwise the longer
 /// natural (highest + 1) code.
 ///
-/// When a persistence directory is configured, every change is mirrored to a
-/// JSON file (one per active game) and reloaded on construction for crash
-/// recovery. Completed-but-not-disposed sessions are kept in memory (so their
-/// codes can be recycled) but are not persisted.
+/// When a session store is configured, every change is mirrored to it and
+/// reloaded on construction for crash recovery. Completed-but-not-disposed
+/// sessions are kept in memory (so their codes can be recycled) but are not
+/// persisted.
 /// </summary>
 public sealed class GameStore {
     /// <summary>CompletedAt is null while the session is active; set once it has finished.</summary>
@@ -37,31 +36,24 @@ public sealed class GameStore {
     /// <summary>Public thread URI key to code (set when the game is created in that thread).</summary>
     private readonly ConcurrentDictionary<string, string> _byUri = new(StringComparer.OrdinalIgnoreCase);
 
-    private readonly string? _persistDirectory;
+    private readonly IGameSessionStore? _store;
 
     private readonly object _allocationLock = new();
 
     /// <summary>Default marks used for players when starting a game.</summary>
     public static readonly string[] DefaultMarks = ["X", "O", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N"];
 
-    private static readonly JsonSerializerSettings _persistenceSettings = new() {
-        TypeNameHandling = TypeNameHandling.Objects,
-        SerializationBinder = KnownTypesBinder.Instance,
-    };
-
     /// <summary>A successfully created game: its code and the session.</summary>
     public sealed record CreatedGame(string Code, GameSession Session);
 
     #region constructors
     /// <summary>
-    /// Create a store. When <paramref name="persistDirectory"/> is provided, previously
-    /// persisted games are loaded from it and changes are saved back to it.
+    /// Create a store. When <paramref name="store"/> is provided, previously persisted
+    /// games are loaded from it and changes are saved back to it.
     /// </summary>
-    public GameStore(string? persistDirectory = null) {
-        _persistDirectory = persistDirectory;
-        if (persistDirectory is not null) {
-            LoadPersisted(persistDirectory);
-        }
+    public GameStore(IGameSessionStore? store = null) {
+        _store = store;
+        LoadPersisted();
     }
     #endregion
 
@@ -262,26 +254,15 @@ public sealed class GameStore {
     #endregion
 
     #region persistence
-    // On-disk layout (when a persist directory is configured):
-    //   <dir>/<code>.json    — one JSON file per active game, named by its code.
-    // Active games are written on every save and their files deleted when the
-    // game is completed or disposed; all files are reloaded on construction.
-    private void LoadPersisted(string directory) {
-        if (!Directory.Exists(directory)) {
+    // Persistence is delegated to an <see cref="IGameSessionStore"/> (configured at
+    // construction). The default is filesystem-backed; an alternative backend (e.g.
+    // blob storage) can be injected.
+    private void LoadPersisted() {
+        if (_store is null) {
             return;
         }
 
-        foreach (var file in Directory.GetFiles(directory, "*.json")) {
-            PersistedGameSession? persisted;
-            try {
-                persisted = JsonConvert.DeserializeObject<PersistedGameSession>(File.ReadAllText(file), _persistenceSettings);
-            } catch (Exception ex) when (ex is Newtonsoft.Json.JsonException or IOException) {
-                continue; // corrupted file: skip it rather than fail startup
-            }
-            if (persisted is null) {
-                continue;
-            }
-
+        foreach (var persisted in _store.LoadAll()) {
             try {
                 var session = new GameSession(
                     persisted.Code,
@@ -299,18 +280,17 @@ public sealed class GameStore {
                 }
                 _byUri[persisted.ThreadKey] = session.Code;
             } catch (Exception) {
-                continue; // undecodable session: skip; the file stays for manual inspection
+                continue; // undecodable session: skip; the store entry stays for manual inspection
             }
         }
     }
 
     private void PersistSession(GameSession session) {
-        if (_persistDirectory is null) {
+        if (_store is null) {
             return;
         }
 
         try {
-            Directory.CreateDirectory(_persistDirectory);
             var persisted = new PersistedGameSession(
                 session.Code,
                 session.UriKey,
@@ -319,28 +299,22 @@ public sealed class GameStore {
                 [.. session.PlayerDids.Select(kvp => new PersistedPlayer(kvp.Key, kvp.Value))],
                 session.GameState
             );
-            var json = JsonConvert.SerializeObject(persisted, _persistenceSettings);
-            File.WriteAllText(GetPersistPath(session.Code), json);
+            _store.Save(persisted);
         } catch (IOException) {
             // best-effort persistence: a failed save must not break gameplay
         }
     }
 
     private void DeletePersisted(string code) {
-        if (_persistDirectory is null) {
+        if (_store is null) {
             return;
         }
 
         try {
-            File.Delete(GetPersistPath(code));
+            _store.Delete(code);
         } catch (IOException) {
             // best-effort persistence
         }
-    }
-
-    private string GetPersistPath(string code) {
-        // Session codes are base32 alphanumeric and already filesystem-safe.
-        return Path.Combine(_persistDirectory!, $"{code}.json");
     }
     #endregion
 

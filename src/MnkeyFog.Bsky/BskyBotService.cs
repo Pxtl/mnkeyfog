@@ -51,12 +51,11 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
     /// </summary>
     protected virtual async Task StartAsync(
         BskyBotOptions options,
+        IGameSessionStore? store = null,
         CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(options);
 
-        if (options.GamePersistenceDirectory is not null) {
-            GameStore = new GameStore(options.GamePersistenceDirectory);
-        }
+        GameStore = new GameStore(store);
 
         if (options.Service is not null && options.Service != DefaultService) {
             throw new NotSupportedException("Custom PDS services are not supported by this bot yet.");

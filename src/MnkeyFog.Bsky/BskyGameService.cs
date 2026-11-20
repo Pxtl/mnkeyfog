@@ -51,15 +51,17 @@ public class BskyGameService : BskyBotService {
     /// </summary>
     /// <param name="logger">A logger.</param>
     /// <param name="options">The bot options.</param>
+    /// <param name="store">An optional session store for persistence; defaults to no persistence.</param>
     /// <param name="cancellationToken">A token to observe while waiting for the login and polling to start, or <see cref="CancellationToken.None" /> to cancel never.</param>
     /// <returns>The started service.</returns>
     /// <exception cref="InvalidOperationException">Thrown if login fails.</exception>
     public static async Task<BskyGameService> CreateAsync(
         ILogger logger,
         BskyBotOptions options,
+        IGameSessionStore? store = null,
         CancellationToken cancellationToken = default) {
         var service = new BskyGameService(logger);
-        await service.StartAsync(options, cancellationToken);
+        await service.StartAsync(options, store, cancellationToken);
         return service;
     }
 
