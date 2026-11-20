@@ -138,3 +138,8 @@ yet implemented; each is a note for a future pass.
   but never read — the rest of the method only checks `gameView.CanTakeTurn`.
   Either remove the dead assignment or wire up the game-over "show all marks"
   visibility it was clearly meant to gate. (Model change — needs approval.)
+- **Error logging for undecodable persisted sessions** (`MnkeyFog.Bsky/GameStore.LoadPersisted`):
+  the `catch (Exception) { continue; }` that skips a persisted session that can't be
+  reconstructed is silent. Add an error/warning log there so an operator knows a
+  session was skipped at startup (the store entry stays on disk for manual
+  inspection). Out of scope for the persistence-abstract PR — small follow-up.
