@@ -36,7 +36,7 @@ misconfigured worker fails fast at startup instead of silently misbehaving.
 ## Persistence
 
 The bot's game-state persistence is a blob store (`IGameSessionStore`). The
-registered implementation is chosen from the `Bsky:GamePersistenceDirectory`
+registered implementation is chosen based on the `Bsky:GamePersistenceDirectory`
 setting:
 
 - **Set** (e.g. `Bsky__GamePersistenceDirectory=/var/mnkeyfog/persist`) → a

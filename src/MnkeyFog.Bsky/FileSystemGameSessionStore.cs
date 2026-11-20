@@ -8,7 +8,7 @@ namespace MnkeyFog.Bsky;
 /// directory.
 /// </summary>
 /// <remarks>
-/// On-disk layout: <c>&lt;dir&gt;/&lt;code&gt;.json</c> — one JSON file per active
+/// On-disk layout: <c>{{dir}}/{{code}}.json</c> — one JSON file per active
 /// game, named by its code. Active games are written on every save and their files
 /// deleted when the game is completed or disposed; all files are reloaded on
 /// construction.

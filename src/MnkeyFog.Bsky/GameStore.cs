@@ -36,7 +36,7 @@ public sealed class GameStore {
     /// <summary>Public thread URI key to code (set when the game is created in that thread).</summary>
     private readonly ConcurrentDictionary<string, string> _byUri = new(StringComparer.OrdinalIgnoreCase);
 
-    private readonly IGameSessionStore? _store;
+    private readonly IGameSessionStore _store;
 
     private readonly object _allocationLock = new();
 
@@ -48,11 +48,12 @@ public sealed class GameStore {
 
     #region constructors
     /// <summary>
-    /// Create a store. When <paramref name="store"/> is provided, previously persisted
-    /// games are loaded from it and changes are saved back to it.
+    /// Create a store. <paramref name="store"/> is the backend for persisted games
+    /// (loaded on construction, saved on every change); when not provided, a no-op
+    /// store is used (no persistence).
     /// </summary>
     public GameStore(IGameSessionStore? store = null) {
-        _store = store;
+        _store = store ?? new NoOpGameSessionStore();
         LoadPersisted();
     }
     #endregion
@@ -255,13 +256,9 @@ public sealed class GameStore {
 
     #region persistence
     // Persistence is delegated to an <see cref="IGameSessionStore"/> (configured at
-    // construction). The default is filesystem-backed; an alternative backend (e.g.
-    // blob storage) can be injected.
+    // construction; a no-op store is used when none is provided). An alternative
+    // backend (e.g. blob storage) can be injected.
     private void LoadPersisted() {
-        if (_store is null) {
-            return;
-        }
-
         foreach (var persisted in _store.LoadAll()) {
             try {
                 var session = new GameSession(
@@ -286,10 +283,6 @@ public sealed class GameStore {
     }
 
     private void PersistSession(GameSession session) {
-        if (_store is null) {
-            return;
-        }
-
         try {
             var persisted = new PersistedGameSession(
                 session.Code,
@@ -306,10 +299,6 @@ public sealed class GameStore {
     }
 
     private void DeletePersisted(string code) {
-        if (_store is null) {
-            return;
-        }
-
         try {
             _store.Delete(code);
         } catch (IOException) {
