@@ -28,6 +28,23 @@ monospaced fonts. Allow the players to pick an emoji or a 2-char-long
 Mark.  Custom boardwidth?
 - Will have to block Marks that are a substring of other Marks.
 
+Test notes: 0-10 (for 11x11) is ideal.  Use fullwidth text for rows & space,
+number-buttons for columns.  Small black square for blank spaces, Full black
+square for lines between spaces if gridding.
+
+　0️⃣1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣🔟
+Ａ▪️⭕▪️▪️▪️▪️▪️❎▪️▪️▪️
+Ｂ▪️▪️▪️▪️💠▪️▪️▪️🟫▪️▪️
+Ｃ▪️▪️⭐▪️▪️▪️▪️▪️▪️▪️🩷
+Ｄ▪️▪️▪️▪️▪️💧▪️▪️▪️▪️▪️
+Ｅ▪️✴️▪️▪️▪️▪️▪️▪️🔳▪️▪️
+Ｆ▪️▪️▪️▪️🌀▪️▪️▪️▪️▪️▪️
+Ｇ▪️▪️▪️▪️▪️▪️🔘▪️▪️▪️❇️
+Ｈ▪️🛑▪️▪️▪️▪️▪️▪️▪️▪️▪️
+Ｉ▪️▪️▪️▪️🔶▪️▪️▪️🧿▪️▪️
+Ｊ▪️▪️▪️▪️▪️▪️▪️▪️▪️🟣▪️
+Ｋ▪️▪️▪️▪️▪️▪️▪️▪️▪️▪️▪️
+
 ## BSky bot (implemented — design decisions)
 
 The BSky chat bot is now implemented in `MnkeyFog.Bsky`.  Key design
