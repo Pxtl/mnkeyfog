@@ -15,9 +15,8 @@ public class RandomAI : IPlayerAI {
             var board = SelectRandomItem(gameView.Boards);
             gameView.Attempt(actionFactorForBoard.Create(board.BoardIndex));
         } else if (actionFactory is GameActionFactoryForSpace actionFactoryForSpace) {
-            var spaceName = SelectRandomItem(gameView.SpaceNames);
-            gameView.TryGetCoordinatesFromSpaceName(spaceName, out sbyte boardIndex, out var col, out var row);
-            gameView.Attempt(actionFactoryForSpace.Create(boardIndex, col, row));
+            var spaceView = SelectRandomItem(gameView.SpaceViews);
+            gameView.Attempt(actionFactoryForSpace.Create(spaceView.BoardIndex, spaceView.Col, spaceView.Row));
         }
     }
 
