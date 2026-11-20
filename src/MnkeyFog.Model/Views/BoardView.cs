@@ -6,7 +6,6 @@ public record BoardView
     : base(playerIndex) {
         BoardIndex = boardIndex;
 
-        BoardName = CommandNameTool.BoardNameFromIndex(BoardIndex);
         IsDone = board.IsDone;
         Spaces = new SpaceView[board.ColumnCount, board.RowCount];
         for (sbyte row = 0; row < board.RowCount; row += 1) {
@@ -40,12 +39,6 @@ public record BoardView
     #region copied calculated properties
 
     /// <summary>
-    /// The name of the board as used in the UI.  Typically it's BoardIndex+1
-    /// converted to string.
-    /// </summary>
-    public string BoardName { get; init; }
-
-    /// <summary>
     /// Whether or not the underlying board is Done.  If it is Done, then it
     /// accepts no actions.
     /// </summary>
@@ -53,6 +46,14 @@ public record BoardView
     #endregion
 
     #region helper properties
+    /// <summary>
+    /// The name of the board as used in the UI.  Typically it's BoardIndex+1
+    /// converted to string.
+    /// </summary>
+    [JsonIgnore()]
+    public string BoardName
+    => CommandNameTool.BoardNameFromIndex(BoardIndex);
+
     /// <summary>
     /// Number of columns on the board.
     /// </summary>
