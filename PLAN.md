@@ -94,6 +94,11 @@ design/decisions first.
   future per-player prefs (small Model change + one command); (3) heuristic from
   displayName/location (fragile, don't). Decision not made; (2) is a Model change
   (needs approval).
+- **`!list` "last move" column** (from the `!list` work): a per-game column
+  showing when the most recent move was made (vs. `StartedAt`). `GameSession`
+  only exposes `StartedAt` — there's no move-log/last-move field in
+  `MnkeyFog.Model`, so this needs a Model change (`LastMoveAt` or an
+  action/move-log field). (Was out of scope for the `!list` PR — not a decline.)
 - **`!resign`** (from PR #11 review): `!quit` is incoherent for online games;
   `!resign` should abandon-while-game-continues. May need `MnkeyFog.Model` to
   allow resign at any time (Model is leaf — needs approval).
