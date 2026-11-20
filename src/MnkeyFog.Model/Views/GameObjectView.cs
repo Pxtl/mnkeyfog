@@ -1,7 +1,5 @@
 namespace MnkeyFog.Model.Views;
 
-//TODO: Should these *contain* their data so they can be serialized without leaking the underlying data to the client?
-
 /// <summary>
 /// Abstract base class for a single player's views of Game Objects (or no
 /// player for omniscient spectator).
