@@ -37,6 +37,11 @@ likelihood of OOM and still runs the tests.  You may have to use `top` and
 Do not attempt to refactor or otherwise clean-up the code unless specifically
 instructed to do so. Do not remove comments unless they are untrue.
 
+# MnkeyFog.Model
+
+Do not modify `MnkeyFog.Model` internals without maintainer approval; see
+[CONTRIB.md](CONTRIB.md).
+
 # Scratch space
 
 Create any needed working files such as to-do lists within the `temp` dir, which is gitignored.

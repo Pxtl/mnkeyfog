@@ -7,8 +7,6 @@ confident about it (likely to approve). Each item is one branch.
 > where it came from (e.g. "from PR #16 review"). General backlog items need no
 > origin.
 
-Do not touch `MnkeyFog.Model` internals without Pxtl's approval; see CONTRIB.md.
-
 - **TextBoardRenderer → `MnkeyFog.Text`** (from PR #11 review): move the
   header/footer/budget into `MnkeyFog.Text` as a public `GameState + PlayerId →
   string` method. The board-drawing already delegates; only the Bsky-specific
@@ -19,7 +17,7 @@ Do not touch `MnkeyFog.Model` internals without Pxtl's approval; see CONTRIB.md.
   players (or a subset of boards) and render each view, instead of one call per
   player.
 - **Dead `player` local** (`MnkeyFog.Model/CommandNameTool.SpaceCommandName`;
-  from the bsky branch work; Model change — needs approval): `var player =
+  from the bsky branch work; requires model change): `var player =
   gameView.PlayerIndex;` then `player = gameView.IsGameOver ? null : player;`
   (comment: "show for all players if the game is over") is computed but never
   read — the rest of the method only checks `gameView.CanTakeTurn`. Remove the
