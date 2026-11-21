@@ -1,16 +1,11 @@
-namespace MnkeyFog.Model;
+namespace MnkeyFog.Text;
 
 using System.Text.RegularExpressions;
-using MnkeyFog.Model.Views;
-using OneOf;
-using OneOf.Types;
 
 /// <summary>
-/// Static class for functions that calculate a typeable key for a given thing.
+/// Provides static methods for building player command names and resolving
+/// space command names.
 /// </summary>
-/// <remarks>
-/// Because these are functional, they are testable.
-/// </remarks>
 public static class CommandNameTool {
     public static OrderedDictionary<int, string> BuildPlayerToCommandNameMap(IEnumerable<Player> availablePlayers) {
         // Build alternate key mapping for ALL players before entering loop
@@ -92,28 +87,6 @@ public static class CommandNameTool {
             return boardView.GetSpaceName(gameView, col, row);
         } else {
             return gameView.PlayersState.GetMark(spaceView.MarkIndex);
-        }
-    }
-
-    public static bool TryGetBoardIndexByName(string boardName, int boardsCount, out sbyte boardIndex) {
-        var boardNameAsSbyte = sbyte.Parse(boardName);
-        boardIndex = (boardNameAsSbyte - 1).AsSByte;
-        if (boardIndex >= 0 && boardIndex < boardsCount) {
-            return true;
-        } else {
-            boardIndex = -1;
-            return false;
-        }
-    }
-
-    public static string BoardNameFromIndex(int boardIndex)
-    => (boardIndex + 1).ToString();
-
-    public static OneOf<NotFound, Result<sbyte>> GetBoardIndexByName(string boardName, int boardsCount) {
-        if (TryGetBoardIndexByName(boardName, boardsCount, out var boardIndex)) {
-            return new Result<sbyte>(boardIndex);
-        } else {
-            return new NotFound();
         }
     }
 }
