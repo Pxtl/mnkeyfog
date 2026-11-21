@@ -180,9 +180,10 @@ internal static class ConsoleLoop {
 
     private static IPlayActionResult DoSpaceSelection(ref GameState state, Player player, string sharedStateFilePath, GameActionFactoryForSpace actionFactory) {
         var gameView = state.GetView(player);
+        var namer = new ModelNamer();
         var spaceCommand = InputUtility.ReadCommandInputWithAddedStandardPlayerCommands(
                 "Press numeric key(s) to play a space, or 'r' to resign, or 'q' to save game and quit.",
-                gameView.GetSpaceNames()
+                gameView.GetSpaceNames(namer)
         );
         using (var stateStorage = new StateStorage(sharedStateFilePath, out state)) {
             gameView = state.GetView(player);
@@ -193,7 +194,7 @@ internal static class ConsoleLoop {
                         return gameViewForSwitch.ResignPlayer();
                     } else if ("q".Equals(result.Value, StringComparison.OrdinalIgnoreCase)) {
                         return Quit();
-                    } else if (gameView.TryGetCoordinatesFromSpaceName(result.Value, out sbyte boardIndex, out var col, out var row)) {
+                    } else if (gameView.TryGetCoordinatesFromSpaceName(result.Value, namer, out sbyte boardIndex, out var col, out var row)) {
                         return actionFactory.Create(boardIndex, col, row).Attempt(stateStorage.State, player);
                     } else {
                         return new InvalidCommand(result.Value);
@@ -208,7 +209,8 @@ internal static class ConsoleLoop {
 
     internal static OneOf<Result<Player>, RoundIsOver, GameIsOver> DoPlayerChooserLoop(PlayersState playerState) {
         // Use ModelToKeyUtility for clean, testable key mapping
-        var playerIndexToCommand = CommandNameTool.BuildPlayerToCommandNameMap(playerState.PlayersAvailableForTurn);
+        var namer = new ModelNamer();
+        var playerIndexToCommand = namer.BuildPlayerToCommandNameMap(playerState.PlayersAvailableForTurn);
 
         var commandToPlayerIndex = playerIndexToCommand
             .ToOrderedDictionary(
@@ -262,6 +264,7 @@ internal static class ConsoleLoop {
             }
         } else {
             var gameView = state.GetView(player);
+            var namer = new ModelNamer();
             var availableBoardCommands = gameView.GetAllBoardNames();
             var boardCommand = InputUtility.ReadCommandInputWithAddedStandardPlayerCommands(
                 "Press numeric key(s) to pick a board, 'r' to resign, or 'q' to save game and quit.",
@@ -278,7 +281,7 @@ internal static class ConsoleLoop {
                             Quit();
                             return new Quitting();
                         } else {
-                            return gameView.AttemptBoard(result.Value).Match(
+                            return gameView.AttemptBoard(result.Value, namer).Match(
                                 boardViewResult
                                 => actionFactory.Create(boardViewResult.Value.BoardIndex).Attempt(stateStorage.State, player),
                                 boardIsDone => boardIsDone,
