@@ -10,8 +10,6 @@ public static class GameViewExtensions {
     /// <summary>
     /// Attempts to select a board by name.
     /// </summary>
-    /// <param name="gameView">The game view.</param>
-    /// <param name="boardName">The name of the board to select.</param>
     /// <returns>
     /// A <see cref="Result{T}"/> containing the selected board if successful;
     /// an <see cref="InvalidCommand"/> if the name is invalid; or a
@@ -26,8 +24,6 @@ public static class GameViewExtensions {
     /// <summary>
     /// Attempts to select a board by index.
     /// </summary>
-    /// <param name="gameView">The game view.</param>
-    /// <param name="boardIndex">The index of the board to select.</param>
     /// <returns>
     /// A <see cref="Result{T}"/> containing the selected board if successful;
     /// an <see cref="InvalidCommand"/> if the index is out of range; or a

@@ -6,17 +6,6 @@ using System.Text.RegularExpressions;
 /// Provides static methods for building player command names and resolving
 /// space command names.
 /// </summary>
-/// <remarks>
-/// <para>
-/// The <c>CommandNameTool</c> class is part of the "command name" layer,
-/// which is separate from the "space name" layer (see
-/// <see cref="BoardView.GetSpaceName(GameView, sbyte, sbyte)"/>).
-/// </para>
-/// <para>
-/// Command names are what the player types; space names are what the game
-/// reports.
-/// </para>
-/// </remarks>
 public static class CommandNameTool {
     public static OrderedDictionary<int, string> BuildPlayerToCommandNameMap(IEnumerable<Player> availablePlayers) {
         // Build alternate key mapping for ALL players before entering loop
