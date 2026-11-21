@@ -10,6 +10,8 @@
   <ItemGroup>
     <PackageReference Include="idunno.Bluesky" Version="4.0.0" />
     <PackageReference Include="idunno.AtProto" Version="4.0.0" />
+    <!-- Pin patched Microsoft.AspNetCore.WebUtilities (transitive via idunno); 10.0.0 is GHSA-x33c-w48q-qrgc (high). -->
+    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.15" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="OneOf" Version="3.0.263" />
     <PackageReference Include="PxtlCa.SystemCollectionsExtensions" Version="0.3.4" />
