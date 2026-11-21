@@ -1,6 +1,8 @@
 namespace MnkeyFog.Text;
 
 using System.Text.RegularExpressions;
+using OneOf;
+using OneOf.Types;
 
 /// <summary>
 /// Provides static methods for building player command names and resolving
@@ -61,6 +63,27 @@ public static class CommandNameTool {
         return playerIndexToKey;
     }
 
+    public static string BoardNameFromIndex(int boardIndex)
+    => (boardIndex + 1).ToString();
+
+    public static bool TryGetBoardIndexByName(string boardName, int boardsCount, out sbyte boardIndex) {
+        var boardNameAsSbyte = sbyte.Parse(boardName);
+        boardIndex = (boardNameAsSbyte - 1).AsSByte;
+        if (boardIndex >= 0 && boardIndex < boardsCount) {
+            return true;
+        } else {
+            boardIndex = -1;
+            return false;
+        }
+    }
+
+    public static OneOf<NotFound, Result<sbyte>> GetBoardIndexByName(string boardName, int boardsCount) {
+        if (TryGetBoardIndexByName(boardName, boardsCount, out var boardIndex)) {
+            return new Result<sbyte>(boardIndex);
+        } else {
+            return new NotFound();
+        }
+    }
 
     /// <summary>
     /// For the given space, for the given player, get the textual

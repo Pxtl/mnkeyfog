@@ -6,8 +6,6 @@ namespace MnkeyFog.Model.Template;
 [ModelSerializable]
 public record BoardBuilder(sbyte ColumnCount, sbyte RowCount, BoardRuleset Ruleset = null!) {
     public BoardRuleset Ruleset = Ruleset ?? BoardRuleset.Empty;
-    public string ToString(string boardName)
-    => $"Board {boardName}:" + ToString();
     public override string ToString()
     => $"{ColumnCount}x{RowCount}, ruleset {Ruleset}";
 };

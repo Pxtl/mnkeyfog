@@ -26,11 +26,11 @@ public record struct Quitting()
     public string GetResultText(PlayersState playersState)
     => "Quitting.  Use 'load' to resume later.";
 }
-public record struct Enqueued(bool IsViewChanged, string SpaceName)
+public record struct Enqueued(bool IsViewChanged)
 : IPlayActionResult {
     public bool IsTurnDone => true;
     public string GetResultText(PlayersState playersState)
-    => $"Played space {SpaceName}.";
+    => $"Made move.";
 }
 public record struct CannotTakeTurn(int PlayerIndex)
 : IPlayActionResult {

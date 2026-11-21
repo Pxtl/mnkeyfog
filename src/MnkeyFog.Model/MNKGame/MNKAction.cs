@@ -72,8 +72,7 @@ public record MNKAction
             space.MakeKnownToPlayerIndex(actionPlayerIndex);
             gameState.ActionQueue.Add(GetPlayerAction(actionPlayerIndex));
             gameState.EndTurn(actionPlayerIndex, out var hasStateChanged);
-            var spaceName = gameState.GetView(actionPlayerIndex).GetSpaceName(BoardIndex, Col, Row);
-            return new Enqueued(hasStateChanged, spaceName);
+            return new Enqueued(hasStateChanged);
         } else if (space.IsKnownToPlayerIndex(actionPlayerIndex)) {
             return new PositionAlreadyPlayed(actionPlayerIndex);
         } else {
@@ -93,16 +92,5 @@ public record MNKAction
             space.MarkIndex = actionPlayerIndex;
         }
         space.MakeKnownToPlayerIndex(actionPlayerIndex);
-    }
-
-    public static GameAction Create(
-        GameState gameState,
-        string spaceName
-    ) {
-        if (gameState.GetView(playerIndex: null).TryGetCoordinatesFromSpaceName(spaceName, out sbyte boardIndex, out var col, out var row)) {
-            return new MNKAction(boardIndex, col, row);
-        } else {
-            throw new KeyNotFoundException("That is not a valid space name.");
-        }
     }
 }

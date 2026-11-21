@@ -56,11 +56,11 @@ public class BskyGameServiceTests {
 
     [Fact]
     public void IsViewChanged_EnqueuedTrue_IsTrue() =>
-        Assert.True(new Enqueued(true, "1").IsViewChanged);
+        Assert.True(new Enqueued(true).IsViewChanged);
 
     [Fact]
     public void IsViewChanged_EnqueuedFalse_IsFalse() =>
-        Assert.False(new Enqueued(false, "1").IsViewChanged);
+        Assert.False(new Enqueued(false).IsViewChanged);
 
     [Fact]
     public void IsViewChanged_NewlyLearned_IsTrue() =>

@@ -54,14 +54,6 @@ public record BoardView
 
     #region helper properties
     /// <summary>
-    /// The name of the board as used in the UI.  Typically it's BoardIndex+1
-    /// converted to string.
-    /// </summary>
-    [JsonIgnore()]
-    public string BoardName
-    => BoardNameTool.BoardNameFromIndex(BoardIndex);
-
-    /// <summary>
     /// Number of columns on the board.
     /// </summary>
     [JsonIgnore()]
@@ -82,9 +74,6 @@ public record BoardView
     public int SpaceCount
     => SpaceDTOs.GetLength(0) * SpaceDTOs.GetLength(1);
     #endregion
-
-    public string GetSpaceName(GameView gameView, sbyte col, sbyte row)
-    => gameView.GetSpaceName(BoardName, col, row);
 
     public SpaceView GetSpaceView(sbyte col, sbyte row)
     => CreateSpaceView(col, row);

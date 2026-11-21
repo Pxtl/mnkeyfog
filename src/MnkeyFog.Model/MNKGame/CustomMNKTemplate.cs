@@ -27,9 +27,13 @@ public record CustomMNKTemplate : MNKTemplate {
             + $"synchronous: {isSynchronousMode}";
     }
 
+    /// <summary>
+    /// Converts the list of boardbuilders into strings.  While the boards are
+    /// numbered, these are not intended to match the board's command-names.
+    /// </summary>
     private IEnumerable<string> BoardBuildersToStrings() {
         for (var i = 0; i < BoardBuilders.Count; i += 1) {
-            yield return BoardBuilders[i].ToString(BoardNameTool.BoardNameFromIndex(i));
+            yield return $"Board {i + 1}: {BoardBuilders[i].ToString()}";
         }
     }
 }

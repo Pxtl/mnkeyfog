@@ -182,7 +182,7 @@ internal static class ConsoleLoop {
         var gameView = state.GetView(player);
         var spaceCommand = InputUtility.ReadCommandInputWithAddedStandardPlayerCommands(
                 "Press numeric key(s) to play a space, or 'r' to resign, or 'q' to save game and quit.",
-                gameView.SpaceNames
+                gameView.GetSpaceNames()
         );
         using (var stateStorage = new StateStorage(sharedStateFilePath, out state)) {
             gameView = state.GetView(player);
@@ -262,7 +262,7 @@ internal static class ConsoleLoop {
             }
         } else {
             var gameView = state.GetView(player);
-            var availableBoardCommands = gameView.BoardNames;
+            var availableBoardCommands = gameView.GetAllBoardNames();
             var boardCommand = InputUtility.ReadCommandInputWithAddedStandardPlayerCommands(
                 "Press numeric key(s) to pick a board, 'r' to resign, or 'q' to save game and quit.",
                 availableBoardCommands
