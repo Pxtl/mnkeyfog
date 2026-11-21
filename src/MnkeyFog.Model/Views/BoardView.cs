@@ -59,7 +59,7 @@ public record BoardView
     /// </summary>
     [JsonIgnore()]
     public string BoardName
-    => CommandNameTool.BoardNameFromIndex(BoardIndex);
+    => BoardNameTool.BoardNameFromIndex(BoardIndex);
 
     /// <summary>
     /// Number of columns on the board.

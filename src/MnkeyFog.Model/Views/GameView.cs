@@ -59,21 +59,6 @@ public record GameView
         return GameStateServer.Attempt(playAction.GetPlayerAction(PlayerIndex.Value));
     }
 
-    public OneOf<Result<BoardView>, InvalidCommand, BoardIsDone> AttemptBoard(string boardName)
-        => CommandNameTool.GetBoardIndexByName(boardName, Boards.Count).Match(
-            notFound => new InvalidCommand(boardName),
-            indexResult => AttemptBoard(indexResult.Value)
-        );
-
-    public OneOf<Result<BoardView>, InvalidCommand, BoardIsDone> AttemptBoard(sbyte boardIndex)
-        => (boardIndex >= 0 && boardIndex < BoardsCount)
-            ? (
-                Boards[boardIndex].IsDone
-                    ? OneOf<Result<BoardView>, InvalidCommand, BoardIsDone>.FromT2(new BoardIsDone())
-                    : new Result<BoardView>(GetBoardViewByIndex(boardIndex))
-                )
-            : new InvalidCommand(CommandNameTool.BoardNameFromIndex(boardIndex));
-
     //TODO: Row and Column attempt functions.
     #endregion
 
@@ -102,7 +87,7 @@ public record GameView
         if (BoardsCount == 1) {
             return Boards.Single();
         }
-        var boardIndex = CommandNameTool.GetBoardIndexByName(boardName, BoardsCount).Match(
+        var boardIndex = BoardNameTool.GetBoardIndexByName(boardName, BoardsCount).Match(
             notFound => throw new ArgumentException($"That is not a valid board: '{boardName}", nameof(boardName)),
             result => result.Value
         );
@@ -187,7 +172,7 @@ public record GameView
 
     public bool TryGetCoordinatesFromSpaceName(string spaceName, out sbyte boardIndex, out sbyte resultCol, out sbyte resultRow) {
         if (TryGetCoordinatesFromSpaceName(spaceName, out string boardName, out resultCol, out resultRow)) {
-            if (CommandNameTool.TryGetBoardIndexByName(boardName, BoardsCount, out boardIndex)) {
+            if (BoardNameTool.TryGetBoardIndexByName(boardName, BoardsCount, out boardIndex)) {
                 return true;
             } else {
                 return false;

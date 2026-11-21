@@ -29,7 +29,7 @@ public record CustomMNKTemplate : MNKTemplate {
 
     private IEnumerable<string> BoardBuildersToStrings() {
         for (var i = 0; i < BoardBuilders.Count; i += 1) {
-            yield return BoardBuilders[i].ToString(CommandNameTool.BoardNameFromIndex(i));
+            yield return BoardBuilders[i].ToString(BoardNameTool.BoardNameFromIndex(i));
         }
     }
 }
