@@ -45,6 +45,9 @@ square for lines between spaces if gridding.
 Ｊ▪️▪️▪️▪️▪️▪️▪️▪️▪️🟣▪️
 Ｋ▪️▪️▪️▪️▪️▪️▪️▪️▪️▪️▪️
 
+List in planned player order:
+　❎⭕💠⭐🔳🔶❇️🌀🟣🩷🛑🟫✴️🔘💧🧿
+
 ## BSky bot (implemented — design decisions)
 
 The BSky chat bot is now implemented in `MnkeyFog.Bsky`.  Key design
