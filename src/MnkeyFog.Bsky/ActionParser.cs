@@ -25,6 +25,8 @@ public static partial class ActionParser {
     [GeneratedRegex(@"^g(?:a(m?e)?code)?\s*=\s*[A-Za-z0-9]+$", RegexOptions.IgnoreCase)]
     private static partial Regex GameCodeAssignmentPrefixRegex();
 
+    private static readonly ModelNamer _namer = new();
+
     /// <summary>
     /// Parse a command token. Returns a <see cref="CommandToken"/> with the
     /// lowercased command name (without the '!') and the whitespace-split
@@ -130,7 +132,7 @@ public static partial class ActionParser {
     ) {
         move = null;
         try {
-            if (!playerView.TryGetCoordinatesFromSpaceName(token, out sbyte boardIndex, out sbyte col, out sbyte row)) {
+            if (!playerView.TryGetCoordinatesFromSpaceName(token, _namer, out sbyte boardIndex, out sbyte col, out sbyte row)) {
                 return false;
             }
             move = factory.Create(boardIndex, col, row);

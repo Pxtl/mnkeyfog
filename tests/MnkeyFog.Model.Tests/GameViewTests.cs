@@ -15,14 +15,16 @@ public class GameViewTests {
     public void GetSpaceName_3x3TopRightSpace_AsExpected() {
         // top-right corner (row 0, col 2) in 3x3
         // board matches layout of numpad, 1 is bottom left.
-        var code = CreateGameView(new BoardBuilder(3, 3)).GetSpaceName("", 2, 0);
+        var namer = new ModelNamer();
+        var code = CreateGameView(new BoardBuilder(3, 3)).GetSpaceName("", 2, 0, namer);
         code.Should().Be("9");
     }
 
     [Fact]
     public void GetSpaceName_4x4BottomLeftSpace_AsExpected() {
         // 4x4 board: (row 3, col 0), uses letter-number format, bottom left space
-        var code = CreateGameView(new BoardBuilder(4, 4)).GetSpaceName("", 0, 3);
+        var namer = new ModelNamer();
+        var code = CreateGameView(new BoardBuilder(4, 4)).GetSpaceName("", 0, 3, namer);
         code.Should().Be("A1");
     }
     #endregion
@@ -30,8 +32,9 @@ public class GameViewTests {
     #region TryGetCoordinatesFromSpaceName
     [Fact]
     public void TryGetCoordinatesFrom3x3SpaceName_AsExpected() {
+        var namer = new ModelNamer();
         var ok = CreateGameView(new BoardBuilder(3, 3, new MNKBoardRuleset()))
-            .TryGetCoordinatesFromSpaceName("1", out string boardName, out var col, out var row);
+            .TryGetCoordinatesFromSpaceName("1", namer, out string boardName, out var col, out var row);
         ok.Should().BeTrue();
         boardName.Should().Be("1");
         col.Should().Be(0);
@@ -40,14 +43,16 @@ public class GameViewTests {
 
     [Fact]
     public void TryGetCoordinatesFrom3x3SpaceName_Invalid() {
-        var ok = CreateGameView(new BoardBuilder(3, 3, new MNKBoardRuleset())).TryGetCoordinatesFromSpaceName("99", out string _, out _, out _);
+        var namer = new ModelNamer();
+        var ok = CreateGameView(new BoardBuilder(3, 3, new MNKBoardRuleset())).TryGetCoordinatesFromSpaceName("99", namer, out string _, out _, out _);
         ok.Should().BeFalse();
     }
 
     [Fact]
     public void TryGetCoordinatesFrom4x4BottomLeftSpace_AsExpected() {
         // 4x4 board: (row 3, col 0), uses letter-number format, bottom left space
-        var ok = CreateGameView(new BoardBuilder(4, 4, new MNKBoardRuleset())).TryGetCoordinatesFromSpaceName("A1", out string boardName, out var col, out var row);
+        var namer = new ModelNamer();
+        var ok = CreateGameView(new BoardBuilder(4, 4, new MNKBoardRuleset())).TryGetCoordinatesFromSpaceName("A1", namer, out string boardName, out var col, out var row);
         boardName.Should().Be("1");
         ok.Should().BeTrue();
         col.Should().Be(0);

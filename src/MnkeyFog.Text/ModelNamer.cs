@@ -5,11 +5,12 @@ using OneOf;
 using OneOf.Types;
 
 /// <summary>
-/// Provides static methods for building player command names and resolving
-/// space command names.
+/// Names model entities (players, boards, spaces) for the text interface.
+/// Unconfigured for now (uses the default naming rules); long-term it will be
+/// configured with platform-specific naming conventions.
 /// </summary>
-public static class CommandNameTool {
-    public static OrderedDictionary<int, string> BuildPlayerToCommandNameMap(IEnumerable<Player> availablePlayers) {
+public class ModelNamer {
+    public OrderedDictionary<int, string> BuildPlayerToCommandNameMap(IEnumerable<Player> availablePlayers) {
         // Build alternate key mapping for ALL players before entering loop
         // Keys are uppercase only (A-Z, 0-9)
         var usedKeys = availablePlayers
@@ -63,10 +64,10 @@ public static class CommandNameTool {
         return playerIndexToKey;
     }
 
-    public static string BoardNameFromIndex(int boardIndex)
+    public string BoardNameFromIndex(int boardIndex)
     => (boardIndex + 1).ToString();
 
-    public static bool TryGetBoardIndexByName(string boardName, int boardsCount, out sbyte boardIndex) {
+    public bool TryGetBoardIndexByName(string boardName, int boardsCount, out sbyte boardIndex) {
         var boardNameAsSbyte = sbyte.Parse(boardName);
         boardIndex = (boardNameAsSbyte - 1).AsSByte;
         if (boardIndex >= 0 && boardIndex < boardsCount) {
@@ -77,7 +78,7 @@ public static class CommandNameTool {
         }
     }
 
-    public static OneOf<NotFound, Result<sbyte>> GetBoardIndexByName(string boardName, int boardsCount) {
+    public OneOf<NotFound, Result<sbyte>> GetBoardIndexByName(string boardName, int boardsCount) {
         if (TryGetBoardIndexByName(boardName, boardsCount, out var boardIndex)) {
             return new Result<sbyte>(boardIndex);
         } else {
@@ -92,7 +93,7 @@ public static class CommandNameTool {
     /// they have created or discovered.  If the player is the
     /// current-turn-player, then the space index codes will be displayed.
     /// </summary>
-    public static string SpaceCommandName(GameView gameView, sbyte boardIndex, sbyte col, sbyte row) {
+    public string SpaceCommandName(GameView gameView, sbyte boardIndex, sbyte col, sbyte row) {
         ArgumentNullException.ThrowIfNull(gameView);
         var player = gameView.PlayerIndex;
         player = gameView.IsGameOver //show for all players if the game is over.
@@ -107,7 +108,7 @@ public static class CommandNameTool {
             && !boardView.IsDone
             && gameView.CanTakeTurn
         ) {
-            return boardView.GetSpaceName(gameView, col, row);
+            return boardView.GetSpaceName(this, gameView, col, row);
         } else {
             return gameView.PlayersState.GetMark(spaceView.MarkIndex);
         }

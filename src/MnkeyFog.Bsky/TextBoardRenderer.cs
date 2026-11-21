@@ -9,7 +9,7 @@ namespace MnkeyFog.Bsky;
 ///
 /// The shared pipe-drawing lives in BoardRenderer (MnkeyFog.Text); this class
 /// only adds the Bsky-specific header/footer and character budget, and sets the
-/// BoardRenderer.CellNameResolver so that empty cells display their
+/// renderer's CellNameResolver so that empty cells display their
 /// space *name* (so players can type the name of the space to move) instead of
 /// the fog-aware command name the CommandLine renderer uses.
 /// </summary>
@@ -17,7 +17,7 @@ public static class TextBoardRenderer {
     private static readonly BoardRenderer _renderer = new();
 
     static TextBoardRenderer() {
-        BoardRenderer.CellNameResolver = BskyCellName;
+        _renderer.CellNameResolver = BskyCellName;
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ public static class TextBoardRenderer {
         var space = board.GetSpaceView(col, row);
         return space.MarkIndex.HasValue
             ? gameView.PlayersState.GetMark(space.MarkIndex)
-            : board.GetSpaceName(gameView, col, row);
+            : board.GetSpaceName(_renderer.ModelNamer, gameView, col, row);
     }
 
     private static string RenderScores(GameView gameView) {
