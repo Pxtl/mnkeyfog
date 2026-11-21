@@ -10,8 +10,14 @@ namespace MnkeyFog.CommandLine;
 /// <summary>
 /// Game logic implementation.
 /// </summary>
-internal static class ConsoleLoop {
-    public static void RunGame(
+internal class ConsoleLoop {
+    private readonly ModelNamer _namer;
+
+    public ConsoleLoop(ModelNamer namer) {
+        _namer = namer;
+    }
+
+    public void RunGame(
         FileInfo sharedStateFilePath,
         GameState state,
         OneOf<PlayerInfo, LocalHotseatGame> joinAsPlayer,
@@ -126,7 +132,7 @@ internal static class ConsoleLoop {
                 );
             } else {
                 Console.Out.WriteLine(state.GameStateText);
-                var boardRenderer = new BoardRenderer();
+                var boardRenderer = new BoardRenderer(_namer);
                 Console.Out.WriteLine(boardRenderer.DrawBoards(state.GetSpectatorView(), maxRenderWidth: Console.BufferWidth));
                 isGameOver = true;
             }
@@ -136,25 +142,25 @@ internal static class ConsoleLoop {
         sharedStateFilePath.Delete();
     }
 
-    private static void DoPlayerTurnLoop(ref GameState state, Player player, string sharedStateFilePath) {
+    private void DoPlayerTurnLoop(ref GameState state, Player player, string sharedStateFilePath) {
         IPlayActionResult? playActionResult = null;
         while (playActionResult == null || !playActionResult.IsTurnDone) {
             Console.Out.WriteLine(state.GameStateText);
             Console.Out.WriteLine($"Player {player.Info}, take your turn.");
             var gameView = state.GetView(player);
-            var boardRenderer = new BoardRenderer();
+            var boardRenderer = new BoardRenderer(_namer);
             Console.Out.WriteLine(boardRenderer.DrawBoards(gameView, maxRenderWidth: Console.BufferWidth));
             playActionResult = DoPlayerAction(ref state, player, sharedStateFilePath);
             Console.Out.WriteLine(playActionResult.GetResultText(state.PlayersState));
         }
         var isViewChanged = playActionResult.IsViewChanged;
         if (isViewChanged) {
-            var boardRenderer = new BoardRenderer();
+            var boardRenderer = new BoardRenderer(_namer);
             Console.Out.WriteLine(boardRenderer.DrawBoards(state.GetView(player), maxRenderWidth: Console.BufferWidth));
         }
     }
 
-    private static IPlayActionResult DoPlayerAction(ref GameState state, Player player, string sharedStateFilePath) {
+    private IPlayActionResult DoPlayerAction(ref GameState state, Player player, string sharedStateFilePath) {
         var gameView = state.GetView(player);
         var actionFactories = gameView.AvailableActions; ;
 
@@ -178,11 +184,11 @@ internal static class ConsoleLoop {
         }
     }
 
-    private static IPlayActionResult DoSpaceSelection(ref GameState state, Player player, string sharedStateFilePath, GameActionFactoryForSpace actionFactory) {
+    private IPlayActionResult DoSpaceSelection(ref GameState state, Player player, string sharedStateFilePath, GameActionFactoryForSpace actionFactory) {
         var gameView = state.GetView(player);
         var spaceCommand = InputUtility.ReadCommandInputWithAddedStandardPlayerCommands(
                 "Press numeric key(s) to play a space, or 'r' to resign, or 'q' to save game and quit.",
-                gameView.GetSpaceNames()
+                gameView.GetSpaceNames(_namer)
         );
         using (var stateStorage = new StateStorage(sharedStateFilePath, out state)) {
             gameView = state.GetView(player);
@@ -193,7 +199,7 @@ internal static class ConsoleLoop {
                         return gameViewForSwitch.ResignPlayer();
                     } else if ("q".Equals(result.Value, StringComparison.OrdinalIgnoreCase)) {
                         return Quit();
-                    } else if (gameView.TryGetCoordinatesFromSpaceName(result.Value, out sbyte boardIndex, out var col, out var row)) {
+                    } else if (gameView.TryGetCoordinatesFromSpaceName(result.Value, _namer, out sbyte boardIndex, out var col, out var row)) {
                         return actionFactory.Create(boardIndex, col, row).Attempt(stateStorage.State, player);
                     } else {
                         return new InvalidCommand(result.Value);
@@ -206,9 +212,9 @@ internal static class ConsoleLoop {
         }
     }
 
-    internal static OneOf<Result<Player>, RoundIsOver, GameIsOver> DoPlayerChooserLoop(PlayersState playerState) {
+    internal OneOf<Result<Player>, RoundIsOver, GameIsOver> DoPlayerChooserLoop(PlayersState playerState) {
         // Use ModelToKeyUtility for clean, testable key mapping
-        var playerIndexToCommand = CommandNameTool.BuildPlayerToCommandNameMap(playerState.PlayersAvailableForTurn);
+        var playerIndexToCommand = _namer.BuildPlayerToCommandNameMap(playerState.PlayersAvailableForTurn);
 
         var commandToPlayerIndex = playerIndexToCommand
             .ToOrderedDictionary(
@@ -254,7 +260,7 @@ internal static class ConsoleLoop {
         }
     }
 
-    internal static IPlayActionResult DoBoardSelection(ref GameState state, Player player, string sharedStateFilePath, GameActionFactoryForBoard actionFactory) {
+    internal IPlayActionResult DoBoardSelection(ref GameState state, Player player, string sharedStateFilePath, GameActionFactoryForBoard actionFactory) {
         if (state.SingleActiveBoardIndex.HasValue) {
             var boardIndex = state.SingleActiveBoardIndex.Value;
             using (var stateStorage = new StateStorage(sharedStateFilePath, out state)) {
@@ -278,7 +284,7 @@ internal static class ConsoleLoop {
                             Quit();
                             return new Quitting();
                         } else {
-                            return gameView.AttemptBoard(result.Value).Match(
+                            return gameView.AttemptBoard(result.Value, _namer).Match(
                                 boardViewResult
                                 => actionFactory.Create(boardViewResult.Value.BoardIndex).Attempt(stateStorage.State, player),
                                 boardIsDone => boardIsDone,
@@ -294,7 +300,7 @@ internal static class ConsoleLoop {
         }
     }
 
-    private static Quitting Quit() {
+    private Quitting Quit() {
         Console.WriteLine("Quitting.  Use 'load' to resume later.");
         Environment.Exit(0);
         return new Quitting();

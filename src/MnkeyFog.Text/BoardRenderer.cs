@@ -10,21 +10,32 @@ public class BoardRenderer {
     /// <summary>
     /// Resolves the text drawn in an unoccupied cell. Alternate hosts (the
     /// Bsky bot) override this so players see the space name they must type to
-    /// move — the CommandLine default is <c>CommandNameTool.SpaceCommandName</c>,
+    /// move — the CommandLine default is <c>ModelNamer.SpaceCommandName</c>,
     /// which is fog-aware and resolves player marks for occupied cells.
     /// </summary>
-    public static Func<GameView, sbyte, sbyte, sbyte, string> CellNameResolver { get; set; }
-        = (view, board, col, row) => CommandNameTool.SpaceCommandName(view, board, col, row);
+    public Func<GameView, sbyte, sbyte, sbyte, string> CellNameResolver { get; set; }
 
     #region constructors
     public BoardRenderer()
-    : this(BoardRendererConfiguration.FullPipes) {
+    : this(new ModelNamer(), BoardRendererConfiguration.FullPipes) {
     }
 
-    public BoardRenderer(BoardRendererConfiguration configuration) {
+    public BoardRenderer(BoardRendererConfiguration configuration)
+    : this(new ModelNamer(), configuration) {
+    }
+
+    public BoardRenderer(ModelNamer modelNamer)
+    : this(modelNamer, BoardRendererConfiguration.FullPipes) {
+    }
+
+    public BoardRenderer(ModelNamer modelNamer, BoardRendererConfiguration configuration) {
+        ModelNamer = modelNamer;
         Configuration = configuration;
+        CellNameResolver = (view, board, col, row) => ModelNamer.SpaceCommandName(view, board, col, row);
     }
     #endregion
+
+    public ModelNamer ModelNamer { get; }
 
     public BoardRendererConfiguration Configuration { get; }
 
@@ -196,7 +207,7 @@ public class BoardRenderer {
         sb.Append(doShowBoardName
             ? (board.IsDone
                 ? Configuration.DoneBoardLeader
-                : Configuration.BoardNameMappingToBoardLeader(CommandNameTool.BoardNameFromIndex(boardIndex))
+                : Configuration.BoardNameMappingToBoardLeader(ModelNamer.BoardNameFromIndex(boardIndex))
             ) : Configuration.EmptyBoardLeader
         );
     }

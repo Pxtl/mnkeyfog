@@ -15,9 +15,15 @@ namespace MnkeyFog.Bsky;
 /// A "g=<code>" (or "game=" / "gamecode=") argument on any command names the
 /// session code it applies to — used when a player is in more than one game.
 /// </summary>
-public static partial class ActionParser {
+public partial class ActionParser {
     /// <summary>Command names the bot recognizes (without the '!' prefix).</summary>
     public static readonly IReadOnlyList<string> KnownCommands = ["new", "join", "play", "board", "list", "help", "quit"];
+
+    private readonly ModelNamer _namer;
+
+    public ActionParser(ModelNamer namer) {
+        _namer = namer;
+    }
 
     [GeneratedRegex(@"^space\s*[=:]\s*", RegexOptions.IgnoreCase)]
     private static partial Regex SpaceAssignmentPrefixRegex();
@@ -34,7 +40,7 @@ public static partial class ActionParser {
     /// optional: a message whose first token names a known command counts as a
     /// command even without the prefix.
     /// </summary>
-    public static OneOf<CommandToken, None> ParseCommand(string message, bool isPrefixOptional = false) {
+    public OneOf<CommandToken, None> ParseCommand(string message, bool isPrefixOptional = false) {
         var trimmed = message.Trim();
 
         // In a public post the bot is @-mentioned before the command
@@ -68,7 +74,7 @@ public static partial class ActionParser {
     }
 
     /// <summary>Whitespace-tokenize a message into argument/move tokens.</summary>
-    public static IReadOnlyList<string> Tokenize(string text)
+    public IReadOnlyList<string> Tokenize(string text)
         => [.. text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)];
 
     /// <summary>
@@ -77,7 +83,7 @@ public static partial class ActionParser {
     /// this command; it is case-insensitive and is removed from the argument
     /// list. Returns (null, tokens) if no game-code argument appears.
     /// </summary>
-    public static (string? Code, IReadOnlyList<string> RemainingArgs) ExtractGameCode(IReadOnlyList<string> tokens) {
+    public (string? Code, IReadOnlyList<string> RemainingArgs) ExtractGameCode(IReadOnlyList<string> tokens) {
         var codeRegex = GameCodeAssignmentPrefixRegex();
         for (var i = 0; i < tokens.Count; i++) {
             if (codeRegex.IsMatch(tokens[i])) {
@@ -95,7 +101,7 @@ public static partial class ActionParser {
     /// resolve space names (board prefixes etc.); fog is not a factor — fogged
     /// spaces remain playable, per Kriegspiel rules.
     /// </summary>
-    public static IReadOnlyList<GameAction> ParsePlay(GameView playerView, IReadOnlyList<string> tokens) {
+    public IReadOnlyList<GameAction> ParsePlay(GameView playerView, IReadOnlyList<string> tokens) {
         var moves = new List<GameAction>();
         GameActionFactoryForSpace? factory = playerView.AvailableActions
             .OfType<GameActionFactoryForSpace>()
@@ -122,7 +128,7 @@ public static partial class ActionParser {
     /// The model's lookup throws on invalid board-name prefixes (multi-board
     /// games), so this is guarded.
     /// </summary>
-    private static bool TryCreateMove(
+    private bool TryCreateMove(
         GameActionFactoryForSpace factory,
         GameView playerView,
         string token,
@@ -130,7 +136,7 @@ public static partial class ActionParser {
     ) {
         move = null;
         try {
-            if (!playerView.TryGetCoordinatesFromSpaceName(token, out sbyte boardIndex, out sbyte col, out sbyte row)) {
+            if (!playerView.TryGetCoordinatesFromSpaceName(token, _namer, out sbyte boardIndex, out sbyte col, out sbyte row)) {
                 return false;
             }
             move = factory.Create(boardIndex, col, row);

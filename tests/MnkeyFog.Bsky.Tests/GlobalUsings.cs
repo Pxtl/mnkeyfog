@@ -4,5 +4,6 @@ global using MnkeyFog.Model;
 global using MnkeyFog.Model.MNKGame;
 global using MnkeyFog.Model.Template;
 global using MnkeyFog.Bsky;
+global using MnkeyFog.Text;
 global using OneOf;
 global using OneOf.Types;
