@@ -13,10 +13,13 @@ namespace MnkeyFog.Bsky;
 /// space *name* (so players can type the name of the space to move) instead of
 /// the fog-aware command name the CommandLine renderer uses.
 /// </summary>
-public static class TextBoardRenderer {
-    private static readonly BoardRenderer _renderer = new();
+public class TextBoardRenderer {
+    private readonly BoardRenderer _renderer;
+    private readonly ModelNamer _namer;
 
-    static TextBoardRenderer() {
+    public TextBoardRenderer(ModelNamer namer) {
+        _namer = namer;
+        _renderer = new BoardRenderer(namer);
         _renderer.CellNameResolver = BskyCellName;
     }
 
@@ -24,7 +27,7 @@ public static class TextBoardRenderer {
     /// Render the board from the given view, with turn/score info, budgeted to
     /// <paramref name="maxChars"/> characters.
     /// </summary>
-    public static string Render(GameView gameView, int maxChars = 300) {
+    public string Render(GameView gameView, int maxChars = 300) {
         var sb = new StringBuilder(256);
 
         // Header: turn (or winners when the game is over).
@@ -63,15 +66,15 @@ public static class TextBoardRenderer {
     /// show the occupying mark (already fog-filtered for filled cells) on
     /// occupied cells.
     /// </summary>
-    private static string BskyCellName(GameView gameView, sbyte boardIndex, sbyte col, sbyte row) {
+    private string BskyCellName(GameView gameView, sbyte boardIndex, sbyte col, sbyte row) {
         var board = gameView.GetBoardViewByIndex(boardIndex);
         var space = board.GetSpaceView(col, row);
         return space.MarkIndex.HasValue
             ? gameView.PlayersState.GetMark(space.MarkIndex)
-            : board.GetSpaceName(_renderer.ModelNamer, gameView, col, row);
+            : board.GetSpaceName(_namer, gameView, col, row);
     }
 
-    private static string RenderScores(GameView gameView) {
+    private string RenderScores(GameView gameView) {
         var parts = gameView.ScoreCard.PlayerScores
             .Select(ps => $"{gameView.PlayersState.GetMark(ps.PlayerIndex)}:{ps.Score}");
         var joined = string.Join(" ", parts);

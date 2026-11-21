@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using OneOf;
 using MnkeyFog.Model.Template;
 using MnkeyFog.Model.PlayerAIs;
+using MnkeyFog.Text;
 using PxtlCa.SystemCollectionsExtensions;
 
 namespace MnkeyFog.CommandLine;
@@ -125,7 +126,8 @@ public class Program {
             : OneOf<PlayerInfo, LocalHotseatGame>.FromT0(new PlayerInfo(JoinAsPlayer));
 
         if (StateFilePath != null && GameState != null) {
-            ConsoleLoop.RunGame(
+            var consoleLoop = new ConsoleLoop(new ModelNamer());
+            consoleLoop.RunGame(
                 StateFilePath!,
                 GameState!,
                 joinAsPlayerUnion,

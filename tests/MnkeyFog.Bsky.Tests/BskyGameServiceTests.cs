@@ -137,7 +137,7 @@ public class BskyGameServiceTests {
         svc.Store.JoinWithIndex(session.Code, "did:plc:p2");
 
         // p1 (player X) has already played, so p2 (player O) is next.
-        var moves = ActionParser.ParsePlay(session.GetViewFor("did:plc:p1"), ["5"]);
+        var moves = new ActionParser(new ModelNamer()).ParsePlay(session.GetViewFor("did:plc:p1"), ["5"]);
         foreach (var move in moves) {
             session.Attempt(0, move);
             session.GameState.ExecutePendingActions();

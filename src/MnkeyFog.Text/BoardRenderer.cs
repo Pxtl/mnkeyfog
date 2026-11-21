@@ -24,6 +24,10 @@ public class BoardRenderer {
     : this(new ModelNamer(), configuration) {
     }
 
+    public BoardRenderer(ModelNamer modelNamer)
+    : this(modelNamer, BoardRendererConfiguration.FullPipes) {
+    }
+
     public BoardRenderer(ModelNamer modelNamer, BoardRendererConfiguration configuration) {
         ModelNamer = modelNamer;
         Configuration = configuration;

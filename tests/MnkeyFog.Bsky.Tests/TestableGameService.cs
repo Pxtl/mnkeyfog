@@ -9,7 +9,8 @@ namespace MnkeyFog.Bsky.Tests;
 /// store and to intercept DM sends.
 /// </summary>
 internal sealed class TestableGameService : BskyGameService {
-    public TestableGameService() : base(NullLogger.Instance) { }
+    public TestableGameService()
+        : base(NullLogger.Instance, new ActionParser(new ModelNamer()), new TextBoardRenderer(new ModelNamer())) { }
 
     /// <summary>
     /// The service's <see cref="BskyBotService.GameStore"/>, exposed for test

@@ -4,13 +4,13 @@ using MnkeyFog.Text;
 using Xunit;
 
 public class ModelNamerTests {
-    private readonly ModelNamer namer = new();
+    private readonly ModelNamer _namer = new();
 
 
     #region BuildPlayerToCommandNameMap
     [Fact]
     public void BuildPlayerToCommandNameMap_SingleTypeableMark() {
-        var map = namer.BuildPlayerToCommandNameMap(
+        var map = _namer.BuildPlayerToCommandNameMap(
             (new[] { new PlayerInfo("A") }).ToPlayersIndexed()
         );
 
@@ -22,7 +22,7 @@ public class ModelNamerTests {
     public void BuildPlayerToCommandNameMap_WithOnlyTypeableMarks_ReturnsIdentity() {
         var players = (new[] { "X", "O", "9", "5" }).ToPlayersIndexed();
 
-        var result = namer.BuildPlayerToCommandNameMap(players);
+        var result = _namer.BuildPlayerToCommandNameMap(players);
 
         Assert.Equal(4, result.Count);
         foreach (var player in players) {
@@ -34,7 +34,7 @@ public class ModelNamerTests {
     public void BuildPlayerToCommandNameMap_LowercaseLettersAreIdentity() {
         var players = (new[] { "x", "a", "z", "b" }).ToPlayersIndexed();
 
-        var result = namer.BuildPlayerToCommandNameMap(players);
+        var result = _namer.BuildPlayerToCommandNameMap(players);
 
         foreach (var player in players) {
             Assert.Equal(player.Info.Mark, result[player.Index]);
@@ -45,7 +45,7 @@ public class ModelNamerTests {
     public void BuildPlayerToCommandNameMap_AlphabeticLettersAreTypeable() {
         var players = (new[] { "X", "O", "A", "Z", "B" }).ToPlayersIndexed();
 
-        var result = namer.BuildPlayerToCommandNameMap(players);
+        var result = _namer.BuildPlayerToCommandNameMap(players);
 
         foreach (var player in players) {
             Assert.Equal(player.Info.Mark, result[player.Index]);
@@ -63,7 +63,7 @@ public class ModelNamerTests {
             [players.Single(p => p.Mark == ":").Index] = "4",
             [players.Single(p => p.Mark == ";").Index] = "5"
         };
-        var actual = namer.BuildPlayerToCommandNameMap(players);
+        var actual = _namer.BuildPlayerToCommandNameMap(players);
         actual.Should().BeEquivalentTo(expected);
     }
 
@@ -77,7 +77,7 @@ public class ModelNamerTests {
             [players.Single(p => p.Mark == "!").Index] = "3",
             [players.Single(p => p.Mark == "1").Index] = "1"
         };
-        var actual = namer.BuildPlayerToCommandNameMap(players);
+        var actual = _namer.BuildPlayerToCommandNameMap(players);
         actual.Should().BeEquivalentTo(expected);
     }
 
@@ -98,7 +98,7 @@ public class ModelNamerTests {
             [players.Single(p => p.Mark == ";").Index] = "A",
             [players.Single(p => p.Mark == "/").Index] = "B",
         };
-        var actual = namer.BuildPlayerToCommandNameMap(players);
+        var actual = _namer.BuildPlayerToCommandNameMap(players);
         actual.Should().BeEquivalentTo(expected);
     }
 
@@ -112,7 +112,7 @@ public class ModelNamerTests {
         }.ToPlayersIndexed();
 
         var typeablePlayerInfo = playerInfos.First();
-        var result = namer.BuildPlayerToCommandNameMap(playerInfos);
+        var result = _namer.BuildPlayerToCommandNameMap(playerInfos);
 
         // Single-char typeable mark returns identity
         Assert.Equal(typeableMark, result[typeablePlayerInfo.Index]);
@@ -125,7 +125,7 @@ public class ModelNamerTests {
             new PlayerInfo("O")
         }.ToPlayersIndexed();
 
-        var result = namer.BuildPlayerToCommandNameMap(playerInfos);
+        var result = _namer.BuildPlayerToCommandNameMap(playerInfos);
 
         var originalX = playerInfos.First(p => p.Mark == "X");
         Assert.True(result.ContainsKey(originalX.Index));
@@ -135,7 +135,7 @@ public class ModelNamerTests {
     [Fact]
     public void BuildPlayerToCommandNameMap_ReturnsCorrectCountForEmptyInput() {
         var emptyPlayerInfos = new List<PlayerInfo>().ToPlayersIndexed();
-        var result = namer.BuildPlayerToCommandNameMap(emptyPlayerInfos);
+        var result = _namer.BuildPlayerToCommandNameMap(emptyPlayerInfos);
         Assert.Empty(result);
     }
 
@@ -143,7 +143,7 @@ public class ModelNamerTests {
     public void BuildPlayerToCommandNameMap_DigitsAreTypeable() {
         var players = (new[] { "1", "8", "9" }).ToPlayersIndexed();
 
-        var result = namer.BuildPlayerToCommandNameMap(players);
+        var result = _namer.BuildPlayerToCommandNameMap(players);
 
         foreach (var player in players) {
             Assert.Equal(player.Info.Mark, result[player.Index]);
@@ -167,7 +167,7 @@ public class ModelNamerTests {
             [playerInfos.Single(p => p.Mark == ".").Index] = "1",
             [playerInfos.Single(p => p.Mark == "!").Index] = "2"
         };
-        var actual = namer.BuildPlayerToCommandNameMap(playerInfos);
+        var actual = _namer.BuildPlayerToCommandNameMap(playerInfos);
 
         actual.Should().BeEquivalentTo(expected);
     }
@@ -178,7 +178,7 @@ public class ModelNamerTests {
         var player2 = new PlayerInfo("☂"); //unicode umbrella
         var player1Index = 0;
         var player2Index = 1;
-        var map = namer.BuildPlayerToCommandNameMap(
+        var map = _namer.BuildPlayerToCommandNameMap(
             new[] { player1, player2 }.ToPlayersIndexed()
         );
 
@@ -191,7 +191,7 @@ public class ModelNamerTests {
 
     [Fact]
     public void BuildPlayerToCommandNameMap_EmptyArray() {
-        var map = namer.BuildPlayerToCommandNameMap(Array.Empty<Player>());
+        var map = _namer.BuildPlayerToCommandNameMap(Array.Empty<Player>());
 
         map.Count.Should().Be(0);
     }
@@ -199,7 +199,7 @@ public class ModelNamerTests {
     [Fact]
     public void BuildPlayerToCommandNameMap_NullValueThrows() {
         var action = () => {
-            _ = namer.BuildPlayerToCommandNameMap(null!);
+            _ = _namer.BuildPlayerToCommandNameMap(null!);
         };
         action.Should().Throw<ArgumentNullException>();
     }
@@ -224,7 +224,7 @@ public class ModelNamerTests {
 
         for (sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for (sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = namer.SpaceCommandName(new GameView(gameState, playerXIndex), 0, col, row);
+                var actual = _namer.SpaceCommandName(new GameView(gameState, playerXIndex), 0, col, row);
                 actual.Should().Be(expected[row, col]);
             }
         }
@@ -244,7 +244,7 @@ public class ModelNamerTests {
 
         for (sbyte row = 0; row < gameState.Boards[0].RowCount; row += 1) {
             for (sbyte col = 0; col < gameState.Boards[0].RowCount; col += 1) {
-                var actual = namer.SpaceCommandName(new GameView(gameState, playerOIndex), 0, col, row);
+                var actual = _namer.SpaceCommandName(new GameView(gameState, playerOIndex), 0, col, row);
                 actual.Should().Be(expected);
             }
         }
@@ -272,7 +272,7 @@ public class ModelNamerTests {
 
         for (sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for (sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = namer.SpaceCommandName(new GameView(gameState, playerXIndex), 0, col, row);
+                var actual = _namer.SpaceCommandName(new GameView(gameState, playerXIndex), 0, col, row);
                 actual.Should().Be(expected[row, col]);
             }
         }
@@ -299,7 +299,7 @@ public class ModelNamerTests {
 
         for (sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for (sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = namer.SpaceCommandName(new GameView(gameState, playerOIndex), 0, col, row);
+                var actual = _namer.SpaceCommandName(new GameView(gameState, playerOIndex), 0, col, row);
                 actual.Should().Be(expected[row, col]);
             }
         }
@@ -322,7 +322,7 @@ public class ModelNamerTests {
         gameState.EndRound(out _);
 
         var expected = players[playerXIndex].Mark;
-        var actual = namer.SpaceCommandName(
+        var actual = _namer.SpaceCommandName(
             new GameView(gameState, 1),
             boardIndex: 0,
             col: 1,
@@ -347,7 +347,7 @@ public class ModelNamerTests {
         gameState.EndRound(out _);
 
         var expected = " ";
-        var actual = namer.SpaceCommandName(new GameView(gameState, playerOIndex), boardIndex: 0, col: 1, row: 1);
+        var actual = _namer.SpaceCommandName(new GameView(gameState, playerOIndex), boardIndex: 0, col: 1, row: 1);
         actual.Should().Be(expected);
     }
 
@@ -380,7 +380,7 @@ public class ModelNamerTests {
 
         for (sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for (sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = namer.SpaceCommandName(new GameView(gameState, null), 0, col, row);
+                var actual = _namer.SpaceCommandName(new GameView(gameState, null), 0, col, row);
                 actual.Should().Be(expected[row, col]);
             }
         }
@@ -405,7 +405,7 @@ public class ModelNamerTests {
 
         for (sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for (sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = namer.SpaceCommandName(new GameView(gameState, playerXIndex), 0, col, row);
+                var actual = _namer.SpaceCommandName(new GameView(gameState, playerXIndex), 0, col, row);
                 actual.Should().Be(expected[row, col]);
             }
         }

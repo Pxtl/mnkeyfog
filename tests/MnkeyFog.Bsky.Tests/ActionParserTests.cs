@@ -1,8 +1,10 @@
 namespace MnkeyFog.Bsky.Tests;
 
 public class ActionParserTests {
+    private static readonly ActionParser _parser = new(new ModelNamer());
+
     private static CommandToken? Parse(string message, bool isPrefixOptional)
-        => ActionParser.ParseCommand(message, isPrefixOptional).Match<CommandToken?>(c => c, _ => null);
+        => _parser.ParseCommand(message, isPrefixOptional).Match<CommandToken?>(c => c, _ => null);
 
     [Fact]
     public void ParseCommand_SkipsLeadingMention() {
