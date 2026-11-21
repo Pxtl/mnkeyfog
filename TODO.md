@@ -29,6 +29,3 @@ confident about it (likely to approve). Each item is one branch.
   reconstructed is silent. Add an error/warning log so an operator knows a
   session was skipped at startup (the store entry stays on disk for manual
   inspection).
-- **Deterministic Random AI** Many of the AIs use randomness (one as main strat,
-  some as fallback).  Introduce optional random seed settings to these AIs so
-  that when run in testing they will have deterministic pseudorandom behaviour.

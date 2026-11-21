@@ -5,6 +5,16 @@ namespace MnkeyFog.Model.PlayerAIs;
 
 [ModelSerializable]
 public class RandomAI : IPlayerAI {
+    private readonly Random _random;
+
+    public RandomAI() : this(Random.Shared) { }
+
+    public RandomAI(int seed) : this(new Random(seed)) { }
+
+    public RandomAI(Random random) {
+        _random = random;
+    }
+
     public string Description => "Randy, Difficulty 1";
     public void Attempt(GameView gameView) {
         var actionFactories = gameView.AvailableActions;
@@ -20,8 +30,8 @@ public class RandomAI : IPlayerAI {
         }
     }
 
-    private static T SelectRandomItem<T>(IEnumerable<T> items) {
+    private T SelectRandomItem<T>(IEnumerable<T> items) {
         var list = items.ToList();
-        return list[Random.Shared.Next(list.Count)];
+        return list[_random.Next(list.Count)];
     }
 }

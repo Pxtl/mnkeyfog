@@ -8,6 +8,16 @@ namespace MnkeyFog.Model.PlayerAIs {
     /// </summary>
     [ModelSerializable]
     public class AsterAI : IPlayerAI {
+        private readonly Random _random;
+
+        public AsterAI() : this(new Random()) { }
+
+        public AsterAI(int seed) : this(new Random(seed)) { }
+
+        public AsterAI(Random random) {
+            _random = random;
+        }
+
         public string Description => "Aster, Difficulty 3";
 
         // persist these across executions so we'll keep our order of plan from
@@ -22,7 +32,7 @@ namespace MnkeyFog.Model.PlayerAIs {
 
             //shuffle the boards so it won't be a consistent pattern of where it starts.
             if (Boards == null) {
-                Boards = gameView.Boards.Shuffle().ToList();
+                Boards = SeededShuffle(gameView.Boards, _random);
             }
 
             // Iterate ALL boards - handles multi-board games correctly
@@ -101,7 +111,7 @@ namespace MnkeyFog.Model.PlayerAIs {
                     foreach (var line in Lines) {
                         line.RemoveAll(pos => !board.IsSpaceInsideOfBoard(pos));
                     }
-                    Lines = Lines.Shuffle().ToList();
+                    Lines = SeededShuffle(Lines, _random);
                 }
 
                 // now with our slices ready, we'll also be a bit smarter and abort a slice if it's visibly impossible.
@@ -127,6 +137,19 @@ namespace MnkeyFog.Model.PlayerAIs {
             if (simpleFactory != null) {
                 gameView.Attempt(simpleFactory.Create());
             }
+        }
+
+        /// <summary>
+        /// Fisher-Yates shuffle using the supplied Random, so a seeded AsterAI is
+        /// deterministic.
+        /// </summary>
+        private static List<T> SeededShuffle<T>(IEnumerable<T> source, Random random) {
+            var list = source.ToList();
+            for (var i = list.Count - 1; i > 0; i--) {
+                var j = random.Next(i + 1);
+                (list[i], list[j]) = (list[j], list[i]);
+            }
+            return list;
         }
     }
 }

@@ -9,7 +9,15 @@ public abstract class MonteCarloAI : IPlayerAI {
     //currently depth > 4 has dire performance.
     public abstract string Description { get; }
     public abstract int MaxDepth { get; }
-    Random _random = new Random();
+    private readonly Random _random;
+
+    public MonteCarloAI() : this(new Random()) { }
+
+    public MonteCarloAI(int seed) : this(new Random(seed)) { }
+
+    public MonteCarloAI(Random random) {
+        _random = random;
+    }
 
     public void Attempt(GameView gameView) {
         var optimalGameAction = FindOptimalGameAction(gameView);
