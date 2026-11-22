@@ -11,11 +11,6 @@ confident about it (likely to approve). Each item is one branch.
 
 The following items are fully approved and can be taken up immediately.
 
-- **Replace Quit with Resign** in MnkeyFog.Bsky.  Players should not be able to
-  shut down a game for others.  Instead, resigning should use the resign
-  mechanic already present in Mnkeyfog.Model to concede the game to the other
-  players.
-
 - **Error logging** (`MnkeyFog.Bsky/GameStore.LoadPersisted`; from PR #16
   review): the `catch (Exception) { continue; }` that skips a persisted session
   that can't be reconstructed is silent. Add an error/warning log so an operator

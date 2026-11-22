@@ -72,7 +72,7 @@ public sealed class GameStore {
         }
 
         if (_byUri.ContainsKey(uriKey)) {
-            return new CommandError("A game is already running in this thread. Use !quit to end it first.");
+            return new CommandError("A game is already running in this thread.");
         }
 
         var players = DefaultMarks
@@ -163,7 +163,7 @@ public sealed class GameStore {
         DeletePersisted(code);
     }
 
-    /// <summary>Dispose a session from the store entirely (player !quit, or after it completed).</summary>
+    /// <summary>Dispose a session from the store entirely (e.g. after it completed and was recycled).</summary>
     public bool DisposeGame(string code) {
         if (!_sessions.TryRemove(code, out var active)) {
             return false;
