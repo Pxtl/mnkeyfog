@@ -10,9 +10,9 @@ public static class AIGameRunner {
     /// <summary>
     /// Variant of RunGame that outputs the gamestate for examination.
     /// </summary>
-    public static ScoreCard RunAIGame(GameTemplate gameTemplate, OrderedDictionary<PlayerInfo, IPlayerAI> aiPlayers, out GameState gameState) {
+    public static ScoreCard RunAIGame(GameTemplate gameTemplate, OrderedDictionary<PlayerInfo, IPlayerAI> aiPlayers, out GameState gameState, bool isRandomPlayerOrder = true) {
         var playersIndexed = aiPlayers.Keys.ToPlayersIndexed();
-        gameState = new GameState(aiPlayers.Keys.ToArray(), gameTemplate, true);
+        gameState = new GameState(aiPlayers.Keys.ToArray(), gameTemplate, isRandomPlayerOrder);
         while (!gameState.IsGameOver) {
             var playerAttemptCounts = new AutoConstructingDictionary<int, int>(); //defaults all keys to zero.
             while (!gameState.PlayersState.IsRoundOver && !gameState.IsGameOver) {
@@ -41,7 +41,7 @@ public static class AIGameRunner {
         return new ScoreCard(translatedPlayerScores);
     }
 
-    public static ScoreCard RunAIGame(GameTemplate gameTemplate, OrderedDictionary<PlayerInfo, IPlayerAI> aiPlayers) {
-        return RunAIGame(gameTemplate, aiPlayers, out _);
+    public static ScoreCard RunAIGame(GameTemplate gameTemplate, OrderedDictionary<PlayerInfo, IPlayerAI> aiPlayers, bool isRandomPlayerOrder = true) {
+        return RunAIGame(gameTemplate, aiPlayers, out _, isRandomPlayerOrder);
     }
 }

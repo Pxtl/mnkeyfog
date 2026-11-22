@@ -86,14 +86,17 @@ public class PlayerAITests {
         // AsterAI vs RandomAI should show AsterAI winning more often
         int iterations = 50;
 
+        // Arbitrary; any fixed, distinct seeds work for determinism.
+        const int asterAiSeed = 100;
+        const int randomAiSeed = 200;
         var playerAIs = new OrderedDictionary<PlayerInfo, IPlayerAI> {
-            [new PlayerInfo("X")] = new AsterAI(),
-            [new PlayerInfo("O")] = new RandomAI()
+            [new PlayerInfo("X")] = new AsterAI(asterAiSeed),
+            [new PlayerInfo("O")] = new RandomAI(randomAiSeed)
         };
         var asterAIPlayerXIndex = 0;
         var scoreSum = ScoreCard.Empty;
         for (int i = 0; i < iterations; i++) {
-            scoreSum += AIGameRunner.RunAIGame(GameTemplates.BasicTicTacToe, playerAIs, out var gameState);
+            scoreSum += AIGameRunner.RunAIGame(GameTemplates.BasicTicTacToe, playerAIs, out var gameState, isRandomPlayerOrder: false);
             // commented out debugging code because it was too much content.
             // Console.Out.WriteLine(new BoardRenderer().DrawBoards(gameState.GetSpectatorView(), 100));
             // Console.Out.WriteLine(gameState.GameStateText);
@@ -107,14 +110,17 @@ public class PlayerAITests {
         // MontyAI vs AsterAI should show MontyAI winning more often
         int iterations = 50;
 
+        // Arbitrary; any fixed, distinct seeds work for determinism.
+        const int montyAiSeed = 500;
+        const int asterAiSeed = 600;
         var playerAIs = new OrderedDictionary<PlayerInfo, IPlayerAI> {
-            [new PlayerInfo("X")] = new MontyAI(),
-            [new PlayerInfo("O")] = new AsterAI()
+            [new PlayerInfo("X")] = new MontyAI(montyAiSeed),
+            [new PlayerInfo("O")] = new AsterAI(asterAiSeed)
         };
         var montyAIPlayerXIndex = 0;
         var scoreSum = ScoreCard.Empty;
         for (int i = 0; i < iterations; i++) {
-            scoreSum += AIGameRunner.RunAIGame(GameTemplates.BasicTicTacToe, playerAIs, out var gameState);
+            scoreSum += AIGameRunner.RunAIGame(GameTemplates.BasicTicTacToe, playerAIs, out var gameState, isRandomPlayerOrder: false);
             // commented out debugging code because it was too much content.
             // Console.Out.WriteLine(new BoardRenderer().DrawBoards(gameState.GetSpectatorView(), 100));
             // Console.Out.WriteLine(gameState.GameStateText);
@@ -133,7 +139,8 @@ public class PlayerAITests {
         gameState.Boards[0].Spaces[2, 2].MarkIndex = playerX.Index;
         gameState.Boards[0].Spaces[2, 1].MarkIndex = playerX.Index;
         var gameView = gameState.GetView(playerX);
-        var montyAI = new MontyAI();
+        // Arbitrary; any fixed seed works for determinism.
+        var montyAI = new MontyAI(700);
         var gameAction = montyAI.FindOptimalGameAction(gameView)!;
         gameAction.GetType().Should().Be(typeof(MNKAction));
         var mnkAction = (MNKAction)gameAction;
@@ -147,15 +154,18 @@ public class PlayerAITests {
         // AsterAI vs RandomAI should show AsterAI winning more often
         int iterations = 50;
 
+        // Arbitrary; any fixed, distinct seeds work for determinism.
+        const int asterAiSeed = 300;
+        const int randomAiSeed = 400;
         var playerAIs = new OrderedDictionary<PlayerInfo, IPlayerAI> {
-            [new PlayerInfo("X")] = new AsterAI(),
-            [new PlayerInfo("O")] = new RandomAI()
+            [new PlayerInfo("X")] = new AsterAI(asterAiSeed),
+            [new PlayerInfo("O")] = new RandomAI(randomAiSeed)
         };
         var playerState = new PlayersState(playerAIs.Keys, RoundRobinPlayManager.Instance);
         var asterAIPlayerX = playerAIs.Keys.First();
         var scoreSum = ScoreCard.Empty;
         for (int i = 0; i < iterations; i++) {
-            var result = AIGameRunner.RunAIGame(GameTemplates.FogTicTacToe, playerAIs, out var gameState);
+            var result = AIGameRunner.RunAIGame(GameTemplates.FogTicTacToe, playerAIs, out var gameState, isRandomPlayerOrder: false);
             // add 1 point per-win.
             scoreSum += new ScoreCard(
                 result.Highest.PlayerScores.Select(ps => new PlayerIndexScore(ps.PlayerIndex, 1))
