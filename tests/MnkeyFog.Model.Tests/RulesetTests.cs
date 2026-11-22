@@ -355,4 +355,25 @@ public class RulesetTests {
         board.ScoreCard.Highest.Should().Be(ScoreCard.Empty);
     }
     #endregion
+    #region impasse
+    [Fact]
+    public void Given3x3Board_WhenLineOfImpasse_ThenImpasseIsNotScored() {
+        var board = new Board(3, 3, new MNKBoardRuleset());
+
+        // A full line of impasses (MarkIndex == -1) is the state that used to
+        // be scored as player -1, putting an out-of-range entry in the
+        // ScoreCard that broke AIGameRunner.
+        for (int row = 0; row < 3; row += 1) {
+            board.Spaces[0, row].MarkIndex = Space.ImpasseMarkIndex;
+        }
+
+        board.ExecuteRuleset();
+
+        // Impasse spaces are not owned by any player, so they must not be
+        // scored.
+        board.ScoreCard.PlayerScores
+            .Should()
+            .NotContain(ps => ps.PlayerIndex == Space.ImpasseMarkIndex);
+    }
+    #endregion
 }
