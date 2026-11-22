@@ -86,6 +86,7 @@ public class PlayerAITests {
         // AsterAI vs RandomAI should show AsterAI winning more often
         int iterations = 50;
 
+        // Arbitrary; any fixed, distinct seeds work for determinism.
         const int asterAiSeed = 100;
         const int randomAiSeed = 200;
         var playerAIs = new OrderedDictionary<PlayerInfo, IPlayerAI> {
@@ -109,6 +110,7 @@ public class PlayerAITests {
         // MontyAI vs AsterAI should show MontyAI winning more often
         int iterations = 50;
 
+        // Arbitrary; any fixed, distinct seeds work for determinism.
         const int montyAiSeed = 500;
         const int asterAiSeed = 600;
         var playerAIs = new OrderedDictionary<PlayerInfo, IPlayerAI> {
@@ -137,6 +139,7 @@ public class PlayerAITests {
         gameState.Boards[0].Spaces[2, 2].MarkIndex = playerX.Index;
         gameState.Boards[0].Spaces[2, 1].MarkIndex = playerX.Index;
         var gameView = gameState.GetView(playerX);
+        // Arbitrary; any fixed seed works for determinism.
         var montyAI = new MontyAI(700);
         var gameAction = montyAI.FindOptimalGameAction(gameView)!;
         gameAction.GetType().Should().Be(typeof(MNKAction));
@@ -151,6 +154,7 @@ public class PlayerAITests {
         // AsterAI vs RandomAI should show AsterAI winning more often
         int iterations = 50;
 
+        // Arbitrary; any fixed, distinct seeds work for determinism.
         const int asterAiSeed = 300;
         const int randomAiSeed = 400;
         var playerAIs = new OrderedDictionary<PlayerInfo, IPlayerAI> {
