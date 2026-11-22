@@ -17,7 +17,7 @@ namespace MnkeyFog.Bsky;
 /// </summary>
 public partial class ActionParser {
     /// <summary>Command names the bot recognizes (without the '!' prefix).</summary>
-    public static readonly IReadOnlyList<string> KnownCommands = ["new", "join", "play", "board", "list", "help", "quit"];
+    public static readonly IReadOnlyList<string> KnownCommands = ["new", "join", "play", "board", "list", "help", "resign"];
 
     private readonly ModelNamer _namer;
 

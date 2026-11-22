@@ -37,7 +37,7 @@ public class BskyGameService : BskyBotService {
         + "  !board                 — show the board\n"
         + "  !list                  — list the games you are in (DMs)\n"
         + "  !help                  — show this help\n"
-        + "  !quit                  — end the game\n"
+        + "  !resign                — resign the game (concede to the other players)\n"
         + "Use g=<code> on any command to target a specific game (DMs): !play 5 g=5F\n"
         + "In DMs the ! prefix is optional — just send '5' to play space 5 (your only game).";
 
@@ -140,7 +140,7 @@ public class BskyGameService : BskyBotService {
         CancellationToken cancellationToken
     ) => HandleMessageAsync(senderDid, message, new MessageChannel(
         RespondAsync: text => { TestedResponses.Add(text); return Task.CompletedTask; },
-        RenderBoardForAsync: default!,
+        RenderBoardForAsync: (_, _) => Task.FromResult<OneOf<BoardView, BoardHidden>>(new BoardHidden()),
         IsPublic: false
     ), cancellationToken, isPrefixOptional: true);
 
@@ -155,7 +155,7 @@ public class BskyGameService : BskyBotService {
         CancellationToken cancellationToken
     ) => HandleMessageAsync(authorDid, message, new MessageChannel(
         RespondAsync: text => { TestedResponses.Add(text); return Task.CompletedTask; },
-        RenderBoardForAsync: default!,
+        RenderBoardForAsync: (_, _) => Task.FromResult<OneOf<BoardView, BoardHidden>>(new BoardHidden()),
         IsPublic: true
     ), cancellationToken, isPrefixOptional: false, uriKey: postUri);
 
@@ -204,8 +204,8 @@ public class BskyGameService : BskyBotService {
             case "help":
                 await channel.RespondAsync(HelpText);
                 break;
-            case "quit":
-                await HandleQuitAsync(senderDid, explicitSessionCode, channel, cancellationToken, uriKey);
+            case "resign":
+                await HandleResignAsync(senderDid, explicitSessionCode, channel, cancellationToken, uriKey);
                 break;
             default:
                 await channel.RespondAsync($"Unknown command '!{command.Command}'. See !help.");
@@ -362,7 +362,7 @@ public class BskyGameService : BskyBotService {
         await channel.RespondAsync(string.Join("\n", lines));
     }
 
-    private async Task HandleQuitAsync(
+    private async Task HandleResignAsync(
         string senderDid,
         string? explicitSessionCode,
         MessageChannel channel,
@@ -371,11 +371,40 @@ public class BskyGameService : BskyBotService {
     ) {
         var session = await ResolveSessionAsync(senderDid, explicitSessionCode, channel, cancellationToken, uriKey);
         if (session is null) {
-            await channel.RespondAsync("No game to quit. Use !quit in the thread where the game was started, or in a DM with g=<code>.");
+            await channel.RespondAsync("No game to resign. Use !resign in the thread where the game was started, or in a DM with g=<code>.");
             return;
         }
-        GameStore.DisposeGame(session.Code);
-        await channel.RespondAsync($"Game [{session.Code}] ended.");
+
+        var playerIndex = session.GetPlayerIndex(senderDid);
+        if (playerIndex is null) {
+            await channel.RespondAsync($"You are not in game [{session.Code}]. Join it in the thread where it was started with !join.");
+            return;
+        }
+
+        if (session.GameState.IsGameOver) {
+            await channel.RespondAsync($"Game [{session.Code}] is already over.");
+            return;
+        }
+
+        var result = session.Resign(playerIndex.Value);
+        var resultText = result.GetResultText(session.GameState.PlayersState);
+
+        if (session.GameState.PlayersState.IsRoundOver) {
+            session.GameState.EndRound(out _);
+        }
+
+        if (session.GameState.IsGameOver) {
+            GameStore.CompleteGame(session.Code);
+        } else {
+            GameStore.Save(session.Code);
+        }
+
+        await channel.RespondAsync(
+            $"Game [{session.Code}]\n"
+            + resultText
+            + "\n"
+            + (await channel.RenderBoardForAsync(session, cancellationToken)).Match(
+                b => b.Text, _ => SecretGamePlaceholder));
     }
 
     private async Task PlayPlainMovesAsync(

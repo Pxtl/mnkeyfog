@@ -121,5 +121,10 @@ public sealed class GameSession {
     public IPlayActionResult Attempt(int playerIndex, GameAction action) {
         return GameState.Attempt(action.GetPlayerAction(playerIndex));
     }
+
+    /// <summary>Resign the given player, conceding the game to the other players. Returns the resign result.</summary>
+    public IPlayActionResult Resign(int playerIndex) {
+        return GameState.GetView(playerIndex).ResignPlayer();
+    }
     #endregion
 }

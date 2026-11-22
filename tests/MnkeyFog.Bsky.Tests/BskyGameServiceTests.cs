@@ -202,4 +202,48 @@ public class BskyGameServiceTests {
         await svc.TestHandleMentionAsync("at://u", "did:plc:p1", "!new basic-tictactoe abc", TestContext.Current.CancellationToken);
         svc.TestedResponses.Single().Should().Contain("not a valid player count");
     }
+
+    // ── !resign tests ──
+
+    [Fact]
+    public async Task Resign_TwoPlayerGame_ConcedesToOtherPlayer() {
+        var svc = new TestableGameService();
+        var session = CreateGame(svc, "did:plc:p1", PlainTemplate());
+        session.Join("did:plc:p2");
+        svc.Store.JoinWithIndex(session.Code, "did:plc:p2");
+
+        await svc.TestHandleMessageAsync("did:plc:p2", "!resign", TestContext.Current.CancellationToken);
+        var response = svc.TestedResponses.Single();
+        response.Should().Contain("resigning");
+        // p2 resigned, so p1 (player 0) is the only active player → game over.
+        session.GameState.IsGameOver.Should().BeTrue();
+        session.GameState.Winners.Single().Mark.Should().Be("X");
+    }
+
+    [Fact]
+    public async Task Resign_GameAlreadyOver_Errors() {
+        var svc = new TestableGameService();
+        var session = CreateGame(svc, "did:plc:p1", PlainTemplate());
+        session.Join("did:plc:p2");
+        svc.Store.JoinWithIndex(session.Code, "did:plc:p2");
+
+        // p2 resigns → game over (p1 is the only active player).
+        await svc.TestHandleMessageAsync("did:plc:p2", "!resign", TestContext.Current.CancellationToken);
+        // p2 tries again → the game is already over.
+        await svc.TestHandleMessageAsync("did:plc:p2", "!resign", TestContext.Current.CancellationToken);
+        svc.TestedResponses[1].Should().Contain("already over");
+    }
+
+    [Fact]
+    public async Task Quit_IsNoLongerACommand() {
+        var svc = new TestableGameService();
+        var session = CreateGame(svc, "did:plc:p1", PlainTemplate());
+        session.Join("did:plc:p2");
+        svc.Store.JoinWithIndex(session.Code, "did:plc:p2");
+
+        await svc.TestHandleMessageAsync("did:plc:p2", "!quit", TestContext.Current.CancellationToken);
+        svc.TestedResponses.Single().Should().Contain("Unknown command");
+        // The game must still be running (a stray !quit must not end it for everyone).
+        session.GameState.IsGameOver.Should().BeFalse();
+    }
 }
