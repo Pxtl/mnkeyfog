@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 
+using Microsoft.Extensions.Logging;
+using MnkeyFog.Model.Server;
+
 namespace MnkeyFog.Bsky.Tests;
 
 file static class GameStoreTestHelper {
@@ -175,5 +178,62 @@ public class GameStoreDidIndexTests {
         store.TryGetByCode(second.Code, out var byCode).Should().BeTrue();
         byCode!.Code.Should().Be(second.Code);
         store.TryGetByCode("zombie-code-absent", out _).Should().BeFalse();
+    }
+}
+
+/// <summary>
+/// Crash-recovery logging: a persisted session that cannot be reconstructed is
+/// skipped with an error log so an operator knows a session was dropped at
+/// startup (the store entry stays on disk for manual inspection).
+/// </summary>
+public class GameStoreLoadPersistedTests {
+    [Fact]
+    public void LoadPersisted_UndecodableSession_LogsError_AndSkipsIt() {
+        var logger = new CapturingLogger();
+        // An empty CreatorId makes the GameSession restore ctor throw (undecodable).
+        var bad = new PersistedGameSession(
+            Code: "abc",
+            ThreadKey: "at://thread",
+            CreatorId: "",
+            StartedAt: DateTimeOffset.UtcNow,
+            Players: [],
+            GameState: new GameState([new PlayerInfo("X"), new PlayerInfo("O")], GameStoreTestHelper.MakeTemplate(), isRandomPlayerOrder: false));
+        var store = new InMemorySessionStore([bad]);
+
+        var gameStore = new GameStore(store, logger);
+
+        // The bad session is skipped (not loaded) and an error was logged with its code.
+        gameStore.TryGetByCode("abc", out _).Should().BeFalse();
+        logger.Entries.Should().ContainSingle();
+        var entry = logger.Entries.Single();
+        entry.Level.Should().Be(LogLevel.Error);
+        entry.Message.Should().Contain("abc");
+    }
+}
+
+file sealed class InMemorySessionStore : IGameSessionStore {
+    private readonly List<PersistedGameSession> _sessions;
+    public InMemorySessionStore(IEnumerable<PersistedGameSession> sessions) {
+        _sessions = [.. sessions];
+    }
+    public IEnumerable<PersistedGameSession> LoadAll() => _sessions;
+    public void Save(PersistedGameSession session) => _sessions.Add(session);
+    public void Delete(string code) { /* no-op for the test */ }
+}
+
+file sealed class CapturingLogger : ILogger {
+    public List<(LogLevel Level, string Message)> Entries { get; } = [];
+
+    IDisposable ILogger.BeginScope<TState>(TState state) => NoopScope.Instance;
+
+    public bool IsEnabled(LogLevel logLevel) => true;
+
+    void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) {
+        Entries.Add((logLevel, formatter(state, exception)));
+    }
+
+    private sealed class NoopScope : IDisposable {
+        public static readonly NoopScope Instance = new();
+        public void Dispose() { }
     }
 }

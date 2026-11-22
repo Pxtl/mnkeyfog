@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using MnkeyFog.Model.Template;
 using MnkeyFog.Model.Server;
 using PxtlCa.Collections;
@@ -38,6 +40,8 @@ public sealed class GameStore {
 
     private readonly IGameSessionStore _store;
 
+    private readonly ILogger _logger;
+
     private readonly object _allocationLock = new();
 
     /// <summary>Default marks used for players when starting a game.</summary>
@@ -52,8 +56,9 @@ public sealed class GameStore {
     /// (loaded on construction, saved on every change); when not provided, a no-op
     /// store is used (no persistence).
     /// </summary>
-    public GameStore(IGameSessionStore? store = null) {
+    public GameStore(IGameSessionStore? store = null, ILogger? logger = null) {
         _store = store ?? new NoOpGameSessionStore();
+        _logger = logger ?? NullLogger.Instance;
         LoadPersisted();
     }
     #endregion
@@ -276,8 +281,12 @@ public sealed class GameStore {
                     IndexDid(playerDid, session.Code);
                 }
                 _byUri[persisted.ThreadKey] = session.Code;
-            } catch (Exception) {
-                continue; // undecodable session: skip; the store entry stays for manual inspection
+            } catch (Exception ex) {
+                // Undecodable session: skip it so the rest of the store still loads, but log so an
+                // operator knows a session was dropped at startup (the store entry stays on disk
+                // for manual inspection).
+                _logger.LogError(ex, "Could not reconstruct persisted session {Code} at startup; skipped (the store entry stays on disk for manual inspection).", persisted.Code);
+                continue;
             }
         }
     }
@@ -293,16 +302,19 @@ public sealed class GameStore {
                 session.GameState
             );
             _store.Save(persisted);
-        } catch (IOException) {
-            // best-effort persistence: a failed save must not break gameplay
+        } catch (IOException ex) {
+            // Best-effort persistence: a failed save must not break gameplay, but the
+            // operator should know persistence is degrading (risk of data loss on crash).
+            _logger.LogWarning(ex, "Failed to persist session {Code}; gameplay continues but this session is not durable.", session.Code);
         }
     }
 
     private void DeletePersisted(string code) {
         try {
             _store.Delete(code);
-        } catch (IOException) {
-            // best-effort persistence
+        } catch (IOException ex) {
+            // Best-effort persistence: a failed delete leaves the old file behind.
+            _logger.LogWarning(ex, "Failed to delete persisted session {Code}; the old file remains on disk.", code);
         }
     }
     #endregion

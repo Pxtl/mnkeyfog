@@ -55,7 +55,7 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
         CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(options);
 
-        GameStore = new GameStore(store);
+        GameStore = new GameStore(store, Logger);
 
         if (options.Service is not null && options.Service != DefaultService) {
             throw new NotSupportedException("Custom PDS services are not supported by this bot yet.");
