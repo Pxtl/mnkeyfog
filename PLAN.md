@@ -54,14 +54,6 @@ The BSky chat bot is now implemented in `MnkeyFog.Bsky`.  Key design
 decisions are documented here so they are not lost when the implementation
 evolves.
 
-### Session-code encoding
-
-Codes use the same convention as `CommandNameTool`: an *offset-by-1* unpadded
-RFC 4648 base32 encoding.  The code for sequence value `n` is the standard
-big-endian base32 digit string of `n - 1`, so the alphabet covers values
-1–32 in one character and 33–1024 in two characters.  `MaxShortCodeValue`
-is 1024.
-
 ### Code allocation
 
 - A monotonic counter assigns the next sequence value; the counter is never
@@ -119,13 +111,6 @@ design/decisions first.
   only exposes `StartedAt` — there's no move-log/last-move field in
   `MnkeyFog.Model`, so this needs a Model change (`LastMoveAt` or an
   action/move-log field). (Was out of scope for the `!list` PR — not a decline.)
-- **`!resign`** (from PR #11 review): `!quit` is incoherent for online games;
-  `!resign` should abandon-while-game-continues. May need `MnkeyFog.Model` to
-  allow resign at any time (Model is leaf — needs approval).
-- **`CellNameResolver` override** (from PR #11 review): the Bsky override always
-  shows the space name on empty cells; the `MnkeyFog.Text` default only shows it
-  when `CanTakeTurn && !board.IsDone`. Decide whether to remove the override
-  (changes Bsky display for the non-turn player).
 
 ## Chatbot could be stateless if there's bidirectional serialization of gamestate.
 
