@@ -22,7 +22,7 @@ internal static class InputUtility {
 
     /// <summary>
     /// Works like <see cref="ReadCommandInput"/> but with the standard "r" for
-    /// retire command and "q" for quit added.
+    /// resign command and "q" for quit added.
     /// </summary>
     /// <returns>
     /// The chosen command, in the casing listed in the `validCommands` list as

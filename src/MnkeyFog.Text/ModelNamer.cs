@@ -10,6 +10,13 @@ using OneOf.Types;
 /// configured with platform-specific naming conventions.
 /// </summary>
 public class ModelNamer {
+    /// <summary>
+    /// Builds a mapping of key-commands to players, so that actions that
+    /// require choosing a player (like choosing which player is ready in
+    /// hotseat mode) can be done with keyboard commands.  If a player's mark is
+    /// a typeable character, use that.  If not, assign an alternate unused char
+    /// for the player.  Only currently used in `MnkeyFog.CommandLine`.
+    /// </summary>
     public OrderedDictionary<int, string> BuildPlayerToCommandNameMap(IEnumerable<Player> availablePlayers) {
         // Build alternate key mapping for ALL players before entering loop
         // Keys are uppercase only (A-Z, 0-9)
