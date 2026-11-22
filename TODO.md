@@ -11,14 +11,6 @@ confident about it (likely to approve). Each item is one branch.
 
 The following items are fully approved and can be taken up immediately.
 
-- **Error logging** (`MnkeyFog.Bsky/GameStore.LoadPersisted`; from PR #16
-  review): the `catch (Exception) { continue; }` that skips a persisted session
-  that can't be reconstructed is silent. Add an error/warning log so an operator
-  knows a session was skipped at startup (the store entry stays on disk for
-  manual inspection) and the exception+stacktrace can be inspected.  There is at
-  least one other case of `} catch (Exception) {` unqualified.  Unqualified
-  catches must be logged.
-
 - **Refactor BoardRenderer:**
   - Make the scope of `ModelNamer.SpaceCommandName` actually match its function:
     It should only provide the graphical representation of pickable spaces.  The
