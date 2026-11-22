@@ -49,7 +49,9 @@ public record MNKBoardRuleset(sbyte? ScoringLength = null, bool IsBoardDoneWhenS
 
         foreach (var spaceEnumerator in board.AsSpaceEnumerable()) {
             var lineOwnerMarkIndex = spaceEnumerator.Space.MarkIndex;
-            if (lineOwnerMarkIndex != null) {
+            // Impasse spaces (MarkIndex == -1) are not owned by any player, so
+            // they are not scored.
+            if (lineOwnerMarkIndex != null && lineOwnerMarkIndex.Value != Space.ImpasseMarkIndex) {
                 result += ScoreSpace(
                     lineOwnerMarkIndex.Value,
                     board,
