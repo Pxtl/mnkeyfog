@@ -32,6 +32,7 @@ Test notes: 0-10 (for 11x11) is ideal.  Use fullwidth text for rows & space,
 number-buttons for columns.  Small black square for blank spaces, Full black
 square for lines between spaces if gridding.
 
+```
 　0️⃣1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣🔟
 Ａ▪️⭕▪️▪️▪️▪️▪️❎▪️▪️▪️
 Ｂ▪️▪️▪️▪️💠▪️▪️▪️🟫▪️▪️
@@ -44,8 +45,10 @@ square for lines between spaces if gridding.
 Ｉ▪️▪️▪️▪️🔶▪️▪️▪️🧿▪️▪️
 Ｊ▪️▪️▪️▪️▪️▪️▪️▪️▪️🟣▪️
 Ｋ▪️▪️▪️▪️▪️▪️▪️▪️▪️▪️▪️
+```
 
 List in planned player order:
+
 　❎⭕💠⭐🔳🔶❇️🌀🟣🩷🛑🟫✴️🔘💧🧿
 
 ## BSky bot (implemented — design decisions)
