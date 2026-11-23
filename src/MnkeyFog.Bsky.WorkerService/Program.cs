@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MnkeyFog.Bsky.WorkerService;
 using MnkeyFog.Bsky;
@@ -11,8 +12,10 @@ builder.Services.AddSingleton<ModelNamer>();
 builder.Services.AddSingleton<ActionParser>();
 builder.Services.AddSingleton<TextBoardRenderer>();
 var persistDirectory = builder.Configuration["Bsky:GamePersistenceDirectory"];
-builder.Services.AddSingleton<IGameSessionStore>(
-    persistDirectory is null ? new NoOpGameSessionStore() : new FileSystemGameSessionStore(persistDirectory));
+builder.Services.AddSingleton<IGameSessionStore>(sp =>
+    persistDirectory is null
+        ? new NoOpGameSessionStore()
+        : new FileSystemGameSessionStore(persistDirectory, sp.GetRequiredService<ILogger<FileSystemGameSessionStore>>()));
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();

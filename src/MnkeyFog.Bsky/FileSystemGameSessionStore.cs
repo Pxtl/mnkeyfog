@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using MnkeyFog.Model.Server;
 using Newtonsoft.Json;
 
@@ -15,13 +16,15 @@ namespace MnkeyFog.Bsky;
 /// </remarks>
 public sealed class FileSystemGameSessionStore : IGameSessionStore {
     private readonly string _directory;
+    private readonly ILogger _logger;
     private static readonly JsonSerializerSettings _persistenceSettings = new() {
         TypeNameHandling = TypeNameHandling.Objects,
         SerializationBinder = KnownTypesBinder.Instance,
     };
 
-    public FileSystemGameSessionStore(string directory) {
+    public FileSystemGameSessionStore(string directory, ILogger logger) {
         _directory = directory;
+        _logger = logger;
     }
 
     public IEnumerable<PersistedGameSession> LoadAll() {
@@ -35,7 +38,11 @@ public sealed class FileSystemGameSessionStore : IGameSessionStore {
             try {
                 persisted = JsonConvert.DeserializeObject<PersistedGameSession>(File.ReadAllText(file), _persistenceSettings);
             } catch (Exception ex) when (ex is Newtonsoft.Json.JsonException or IOException) {
-                continue; // corrupted file: skip it rather than fail startup
+                // Corrupted file: skip it rather than fail startup, but log so an operator knows a
+                // persisted session was dropped at startup (the file stays on disk for manual
+                // inspection).
+                _logger.LogError(ex, "Could not load persisted session file {File} at startup; skipped (the file stays on disk for manual inspection).", file);
+                continue;
             }
             if (persisted is not null) {
                 result.Add(persisted);
