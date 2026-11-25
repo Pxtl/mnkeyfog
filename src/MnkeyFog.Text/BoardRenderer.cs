@@ -7,14 +7,6 @@ namespace MnkeyFog.Text;
 /// the given player.
 /// </summary>
 public class BoardRenderer {
-    /// <summary>
-    /// Resolves the text drawn in an unoccupied cell. Alternate hosts (the
-    /// Bsky bot) override this so players see the space name they must type to
-    /// move — the CommandLine default is <c>ModelNamer.SpaceCommandName</c>,
-    /// which is fog-aware and resolves player marks for occupied cells.
-    /// </summary>
-    public Func<GameView, sbyte, sbyte, sbyte, string> CellNameResolver { get; set; }
-
     #region constructors
     public BoardRenderer()
     : this(new ModelNamer(), BoardRendererConfiguration.FullPipes) {
@@ -31,7 +23,6 @@ public class BoardRenderer {
     public BoardRenderer(ModelNamer modelNamer, BoardRendererConfiguration configuration) {
         ModelNamer = modelNamer;
         Configuration = configuration;
-        CellNameResolver = (view, board, col, row) => ModelNamer.SpaceCommandName(view, board, col, row);
     }
     #endregion
 
@@ -41,6 +32,7 @@ public class BoardRenderer {
 
     public string DrawBoards(
         GameView gameView,
+        bool doShowSpaceCommandName,
         int maxRenderWidth = int.MaxValue
     ) {
         bool doShowBoardNameForAllBoards = gameView.BoardsCount > 1;
@@ -92,7 +84,8 @@ public class BoardRenderer {
                     boardRenderWidth,
                     doShowBoardName,
                     maxRenderWidth,
-                    sb
+                    sb,
+                    doShowSpaceCommandName
                 );
                 doShowBoardName = false;
             }
@@ -171,7 +164,8 @@ public class BoardRenderer {
         int boardRenderWidth,
         bool doShowBoardName,
         int maxRenderWidth,
-        StringBuilder sb
+        StringBuilder sb,
+        bool doShowSpaceCommandName
     ) {
         var boardIndex = startBoardIndex;
         for (; boardIndex < gameView.BoardsCount; boardIndex += 1) {
@@ -192,7 +186,7 @@ public class BoardRenderer {
                 if (col > 0 && Configuration.HasColumnSeparators) {
                     sb.Append(Configuration.CellColumnSeparator);
                 }
-                var body = CellNameResolver(gameView, boardIndex, col, rowIndex);
+                var body = ModelNamer.GetSpaceBody(gameView, boardIndex, col, rowIndex, doShowSpaceCommandName);
                 DrawSpaceBody(body, Configuration.CellWidth, sb);
             }
             if (Configuration.HasRightBorder) {

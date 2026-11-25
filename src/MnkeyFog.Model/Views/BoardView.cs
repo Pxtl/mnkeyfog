@@ -2,16 +2,19 @@ namespace MnkeyFog.Model.Views;
 
 public record BoardView
 : GameObjectView {
-    public BoardView(Board board, int? playerIndex, sbyte boardIndex)
+    public BoardView(Board board, int? playerIndex, sbyte boardIndex, bool isGameOver)
     : base(playerIndex) {
         BoardIndex = boardIndex;
 
         IsDone = board.IsDone;
+        // When the game is over, every mark is visible to every player (no fog
+        // of war) — the same omniscient visibility as a null/spectator index.
+        int? markVisibilityPlayerIndex = isGameOver ? null : playerIndex;
         SpaceDTOs = new SpaceViewDTO[board.ColumnCount, board.RowCount];
         for (sbyte row = 0; row < board.RowCount; row += 1) {
             for (sbyte col = 0; col < board.ColumnCount; col += 1) {
                 var space = board.Spaces[col, row];
-                var mark = space.IsKnownToPlayerIndex(PlayerIndex)
+                var mark = space.IsKnownToPlayerIndex(markVisibilityPlayerIndex)
                     ? space.MarkIndex
                     : null;
                 SpaceDTOs[col, row] = new SpaceViewDTO(mark);

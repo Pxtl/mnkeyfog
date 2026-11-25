@@ -8,19 +8,15 @@ namespace MnkeyFog.Bsky;
 /// a scores footer, and a character budget for posts (DMs get a larger budget).
 ///
 /// The shared pipe-drawing lives in BoardRenderer (MnkeyFog.Text); this class
-/// only adds the Bsky-specific header/footer and character budget, and sets the
-/// renderer's CellNameResolver so that empty cells display their
-/// space *name* (so players can type the name of the space to move) instead of
-/// the fog-aware command name the CommandLine renderer uses.
+/// only adds the Bsky-specific header/footer and character budget.  It renders
+/// with doShowSpaceCommandName set, so empty cells display their space *name*
+/// (so players can type the name of the space to move).
 /// </summary>
 public class TextBoardRenderer {
     private readonly BoardRenderer _renderer;
-    private readonly ModelNamer _namer;
 
     public TextBoardRenderer(ModelNamer namer) {
-        _namer = namer;
         _renderer = new BoardRenderer(namer);
-        _renderer.CellNameResolver = BskyCellName;
     }
 
     /// <summary>
@@ -46,8 +42,9 @@ public class TextBoardRenderer {
 
         sb.AppendLine();
 
-        // Board(s) — shared pipe-drawing from MnkeyFog.Text.
-        sb.Append(_renderer.DrawBoards(gameView, int.MaxValue));
+        // Board(s) — shared pipe-drawing from MnkeyFog.Text.  Show space
+        // command names on empty cells so players can type the name to move.
+        sb.Append(_renderer.DrawBoards(gameView, doShowSpaceCommandName: true, maxRenderWidth: int.MaxValue));
 
         // Footer: scores.
         var scoreSummary = RenderScores(gameView);
@@ -58,20 +55,6 @@ public class TextBoardRenderer {
 
         var result = sb.ToString();
         return result.Length <= maxChars ? result : result[..maxChars];
-    }
-
-    /// <summary>
-    /// Bsky's cell-name rule, overriding the CommandLine fog-aware default: show
-    /// the space name on empty cells so players can type the name to move, and
-    /// show the occupying mark (already fog-filtered for filled cells) on
-    /// occupied cells.
-    /// </summary>
-    private string BskyCellName(GameView gameView, sbyte boardIndex, sbyte col, sbyte row) {
-        var board = gameView.GetBoardViewByIndex(boardIndex);
-        var space = board.GetSpaceView(col, row);
-        return space.MarkIndex.HasValue
-            ? gameView.PlayersState.GetMark(space.MarkIndex)
-            : board.GetSpaceName(_namer, gameView, col, row);
     }
 
     private string RenderScores(GameView gameView) {

@@ -94,28 +94,37 @@ public class ModelNamer {
     }
 
     /// <summary>
-    /// For the given space, for the given player, get the textual
-    /// representation of the space.  If the game is over, all players see
-    /// everything, all marks on the board.  If not, they will only see the ones
-    /// they have created or discovered.  If the player is the
-    /// current-turn-player, then the space index codes will be displayed.
+    /// The graphical representation of a pickable space: the space's command
+    /// name (the text a player types to play the space).  This is the space
+    /// name; the decision of *whether* to show it (vs. an occupying mark) is
+    /// made by <see cref="GetSpaceBody"/>.
     /// </summary>
     public string SpaceCommandName(GameView gameView, sbyte boardIndex, sbyte col, sbyte row) {
         ArgumentNullException.ThrowIfNull(gameView);
-        var player = gameView.PlayerIndex;
-        player = gameView.IsGameOver //show for all players if the game is over.
-            ? null
-            : player;
+        var boardView = gameView.GetBoardViewByIndex(boardIndex);
+        return boardView.GetSpaceName(this, gameView, col, row);
+    }
 
+    /// <summary>
+    /// The text drawn in a space's body.  When <paramref name="doShowSpaceCommandName"/>
+    /// is true and the space is empty on an active board, show the space's
+    /// command name (<see cref="SpaceCommandName"/>); otherwise show the
+    /// occupying mark.  Fog-of-war filtering is applied upstream by the
+    /// <see cref="BoardView"/> (and, once the game is over, the
+    /// <see cref="BoardView"/> shows every mark), so this resolves to marks for
+    /// all spaces when the game is over.
+    /// </summary>
+    public string GetSpaceBody(GameView gameView, sbyte boardIndex, sbyte col, sbyte row, bool doShowSpaceCommandName) {
+        ArgumentNullException.ThrowIfNull(gameView);
         var boardView = gameView.GetBoardViewByIndex(boardIndex);
         var spaceView = boardView.GetSpaceView(col, row);
 
         if (
-            !spaceView.MarkIndex.HasValue
+            doShowSpaceCommandName
+            && !spaceView.MarkIndex.HasValue
             && !boardView.IsDone
-            && gameView.CanTakeTurn
         ) {
-            return boardView.GetSpaceName(this, gameView, col, row);
+            return SpaceCommandName(gameView, boardIndex, col, row);
         } else {
             return gameView.PlayersState.GetMark(spaceView.MarkIndex);
         }
