@@ -11,26 +11,6 @@ confident about it (likely to approve). Each item is one branch.
 
 The following items are fully approved and can be taken up immediately.
 
-- **Refactor BoardRenderer:**
-  - Make the scope of `ModelNamer.SpaceCommandName` actually match its function:
-    It should only provide the graphical representation of pickable spaces.  The
-    logic of determining what to show in an occupied and seen space should be
-    moved into new function `GetSpaceBody`, which will in turn call
-    `SpaceCommandName` when it has determined that a SpaceCommand is in fact
-    needed.  This is mostly a refactor - the logic will remain the same, but
-    it's a clearer separation of responsibilities.
-  - Remove `CellNameResolver` as a property.  Instead, the Draw functions like
-    `DrawBoards` and the new `GetSpaceBody` will just take a new `bool`
-    parameter `DoShowSpaceCommandName`.  If true, show the space's command-name.
-    If not, don't.
-  - As part of this, fix the bug: **Dead `player` local**
-    (`MnkeyFog.Model/CommandNameTool.SpaceCommandName`; from the bsky branch
-    work; requires model change): `var player = gameView.PlayerIndex;` then
-    `player = gameView.IsGameOver ? null : player;` (comment: "show for all
-    players if the game is over") is computed but never read — the rest of the
-    method only checks `gameView.CanTakeTurn`. Wire up the game-over "show all
-    marks" visibility it was meant to gate.
-
 - **Pre-provided `BoardModelNames`:**
   - Background: Currently board command names are always boardindex+1.  This is
     too inflexible.
