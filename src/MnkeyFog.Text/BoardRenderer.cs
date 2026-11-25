@@ -201,7 +201,7 @@ public class BoardRenderer {
         sb.Append(doShowBoardName
             ? (board.IsDone
                 ? Configuration.DoneBoardLeader
-                : Configuration.BoardNameMappingToBoardLeader(ModelNamer.BoardNameFromIndex(boardIndex))
+                : Configuration.BoardNameMappingToBoardLeader(ModelNamer.BoardDisplayNameFromIndex(boardIndex))
             ) : Configuration.EmptyBoardLeader
         );
     }

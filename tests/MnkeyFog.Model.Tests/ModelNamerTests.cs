@@ -461,7 +461,120 @@ public class ModelNamerTests {
         var actual = _namer.SpaceCommandName(gameView, boardIndex: 0, col: 1, row: 1);
         actual.Should().Be("5");
     }
+    #endregion
 
+    #region BoardModelNames
+    [Fact]
+    public void GetBoardModelName_DefaultNamer_IsIndexPlusOne() {
+        var namer = new ModelNamer();
+
+        namer.GetBoardModelName(0).Should().Be(new ModelName("1", "1"));
+        namer.GetBoardModelName(3).Should().Be(new ModelName("4", "4"));
+    }
+
+    [Fact]
+    public void GetBoardModelName_DefaultNamer_WorksForLargeIndex() {
+        var namer = new ModelNamer();
+
+        namer.GetBoardModelName(99).Should().Be(new ModelName("100", "100"));
+    }
+
+    [Fact]
+    public void GetBoardModelName_CustomNamer_IsPreProvided() {
+        var namer = new ModelNamer(new[] {
+            new ModelName("P", "U"),
+            new ModelName("Q", "V"),
+            new ModelName("R", "W")
+        });
+
+        namer.GetBoardModelName(0).Should().Be(new ModelName("P", "U"));
+        namer.GetBoardModelName(1).Should().Be(new ModelName("Q", "V"));
+        namer.GetBoardModelName(2).Should().Be(new ModelName("R", "W"));
+    }
+
+    [Fact]
+    public void GetBoardModelName_CustomNamer_OutOfRangeThrows() {
+        var namer = new ModelNamer(new[] { new ModelName("P", "U") });
+
+        var action = () => namer.GetBoardModelName(1);
+
+        action.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void GetBoardModelName_CustomNamer_NullListThrows() {
+        var action = () => new ModelNamer((IEnumerable<ModelName>)null!);
+
+        action.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void BoardNameFromIndex_DefaultNamer_IsIndexPlusOne() {
+        var namer = new ModelNamer();
+
+        namer.BoardNameFromIndex(0).Should().Be("1");
+        namer.BoardNameFromIndex(3).Should().Be("4");
+    }
+
+    [Fact]
+    public void BoardNameFromIndex_CustomNamer_IsCommandName() {
+        var namer = new ModelNamer(new[] {
+            new ModelName("P", "U"),
+            new ModelName("Q", "V"),
+            new ModelName("R", "W")
+        });
+
+        namer.BoardNameFromIndex(0).Should().Be("P");
+        namer.BoardNameFromIndex(1).Should().Be("Q");
+        namer.BoardNameFromIndex(2).Should().Be("R");
+    }
+
+    [Fact]
+    public void BoardDisplayNameFromIndex_DefaultNamer_IsIndexPlusOne() {
+        var namer = new ModelNamer();
+
+        namer.BoardDisplayNameFromIndex(0).Should().Be("1");
+        namer.BoardDisplayNameFromIndex(2).Should().Be("3");
+    }
+
+    [Fact]
+    public void BoardDisplayNameFromIndex_CustomNamer_IsDisplayName() {
+        var namer = new ModelNamer(new[] {
+            new ModelName("P", "U"),
+            new ModelName("Q", "V"),
+            new ModelName("R", "W")
+        });
+
+        namer.BoardDisplayNameFromIndex(0).Should().Be("U");
+        namer.BoardDisplayNameFromIndex(1).Should().Be("V");
+        namer.BoardDisplayNameFromIndex(2).Should().Be("W");
+    }
+
+    [Fact]
+    public void TryGetBoardIndexByName_DefaultNamer_ParsesNumber() {
+        var namer = new ModelNamer();
+
+        namer.TryGetBoardIndexByName("3", 5, out var i).Should().BeTrue();
+        i.Should().Be(2);
+
+        namer.TryGetBoardIndexByName("99", 5, out var i2).Should().BeFalse();
+        i2.Should().Be(-1);
+    }
+
+    [Fact]
+    public void TryGetBoardIndexByName_CustomNamer_FindsByCommandName() {
+        var namer = new ModelNamer(new[] {
+            new ModelName("P", "U"),
+            new ModelName("Q", "V"),
+            new ModelName("R", "W")
+        });
+
+        namer.TryGetBoardIndexByName("Q", 3, out var i).Should().BeTrue();
+        i.Should().Be(1);
+
+        namer.TryGetBoardIndexByName("X", 3, out var i2).Should().BeFalse();
+        i2.Should().Be(-1);
+    }
     #endregion
 }
 

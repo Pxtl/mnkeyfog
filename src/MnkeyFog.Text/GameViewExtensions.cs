@@ -8,9 +8,9 @@ using OneOf.Types;
 /// </summary>
 public static class GameViewExtensions {
     #region Board Names
-    public static IEnumerable<string> GetAllBoardNames(this GameView gameView) {
-        for (var i = 1; i <= gameView.Boards.Count; i += 1) {
-            yield return i.ToString();
+    public static IEnumerable<string> GetAllBoardNames(this GameView gameView, ModelNamer namer) {
+        for (var i = 0; i < gameView.Boards.Count; i += 1) {
+            yield return namer.BoardNameFromIndex(i);
         }
     }
 

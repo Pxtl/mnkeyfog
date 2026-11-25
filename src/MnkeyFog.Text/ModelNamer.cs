@@ -11,6 +11,50 @@ using OneOf.Types;
 /// </summary>
 public class ModelNamer {
     /// <summary>
+    /// The pre-provided board names. Null means the default naming: the
+    /// <c>CommandName</c> and <c>DisplayName</c> of board <c>i</c> are both
+    /// <c>i + 1</c> (works for any board index).
+    /// </summary>
+    private readonly IReadOnlyList<ModelName>? _boardModelNames;
+
+    #region constructors
+    /// <summary>
+    /// The default namer: board <c>i</c> has <c>CommandName</c> and
+    /// <c>DisplayName</c> of <c>i + 1</c> (the current behaviour).
+    /// </summary>
+    public ModelNamer() {
+        _boardModelNames = null;
+    }
+
+    /// <summary>
+    /// A namer with pre-provided board names. <paramref name="boardModelNames"/>
+    /// must have at least as many entries as there are boards, or else
+    /// rendering/selecting beyond its length throws.
+    /// </summary>
+    public ModelNamer(IEnumerable<ModelName> boardModelNames) {
+        ArgumentNullException.ThrowIfNull(boardModelNames);
+        _boardModelNames = boardModelNames.ToList();
+    }
+    #endregion
+
+    /// <summary>
+    /// The name (<c>CommandName</c> + <c>DisplayName</c>) of the board at
+    /// <paramref name="boardIndex"/>. The default namer derives
+    /// <c>(boardIndex + 1)</c> for any index; a pre-provided namer looks the
+    /// index up in its list, throwing if the index is beyond the list's length.
+    /// </summary>
+    public ModelName GetBoardModelName(int boardIndex) {
+        if (_boardModelNames is null) {
+            var name = (boardIndex + 1).ToString();
+            return new ModelName(name, name);
+        }
+        if (boardIndex < 0 || boardIndex >= _boardModelNames.Count) {
+            throw new ArgumentOutOfRangeException(nameof(boardIndex), $"Board index {boardIndex} is out of range for the {_boardModelNames.Count} pre-provided board names.");
+        }
+        return _boardModelNames[boardIndex];
+    }
+
+    /// <summary>
     /// Builds a mapping of key-commands to players, so that actions that
     /// require choosing a player (like choosing which player is ready in
     /// hotseat mode) can be done with keyboard commands.  If a player's mark is
@@ -71,18 +115,39 @@ public class ModelNamer {
         return playerIndexToKey;
     }
 
+    /// <summary>
+    /// The <c>CommandName</c> of the board at <paramref name="boardIndex"/> — what
+    /// a user types to select the board, and the board component of space
+    /// command-names.
+    /// </summary>
     public string BoardNameFromIndex(int boardIndex)
-    => (boardIndex + 1).ToString();
+    => GetBoardModelName(boardIndex).CommandName;
+
+    /// <summary>
+    /// The <c>DisplayName</c> of the board at <paramref name="boardIndex"/> — what
+    /// is shown on the board.
+    /// </summary>
+    public string BoardDisplayNameFromIndex(int boardIndex)
+    => GetBoardModelName(boardIndex).DisplayName;
 
     public bool TryGetBoardIndexByName(string boardName, int boardsCount, out sbyte boardIndex) {
-        var boardNameAsSbyte = sbyte.Parse(boardName);
-        boardIndex = (boardNameAsSbyte - 1).AsSByte;
-        if (boardIndex >= 0 && boardIndex < boardsCount) {
-            return true;
-        } else {
+        if (_boardModelNames is null) {
+            var boardNameAsSbyte = sbyte.Parse(boardName);
+            boardIndex = (boardNameAsSbyte - 1).AsSByte;
+            if (boardIndex >= 0 && boardIndex < boardsCount) {
+                return true;
+            }
             boardIndex = -1;
             return false;
         }
+        for (sbyte i = 0; i < boardsCount && i < _boardModelNames.Count; i += 1) {
+            if (string.Equals(_boardModelNames[i].CommandName, boardName, StringComparison.OrdinalIgnoreCase)) {
+                boardIndex = i;
+                return true;
+            }
+        }
+        boardIndex = -1;
+        return false;
     }
 
     public OneOf<NotFound, Result<sbyte>> GetBoardIndexByName(string boardName, int boardsCount) {
