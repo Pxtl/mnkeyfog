@@ -45,12 +45,12 @@ public class BskyGameService : BskyBotService {
         "This game is played in DMs to keep moves private. Check your DMs for the board.";
 
     private readonly ActionParser _actionParser;
-    private readonly TextBoardRenderer _textBoardRenderer;
+    private readonly GameRenderer _gameRenderer;
 
-    public BskyGameService(ILogger logger, ActionParser actionParser, TextBoardRenderer textBoardRenderer)
+    public BskyGameService(ILogger logger, ActionParser actionParser, GameRenderer gameRenderer)
         : base(logger) {
         _actionParser = actionParser;
-        _textBoardRenderer = textBoardRenderer;
+        _gameRenderer = gameRenderer;
     }
 
     /// <summary>
@@ -60,7 +60,7 @@ public class BskyGameService : BskyBotService {
     /// <param name="options">The bot options.</param>
     /// <param name="store">The session store for persistence.</param>
     /// <param name="actionParser">The action parser for incoming bot messages.</param>
-    /// <param name="textBoardRenderer">The text board renderer for board views.</param>
+    /// <param name="gameRenderer">The game renderer for board views.</param>
     /// <param name="cancellationToken">A token to observe while waiting for the login and polling to start, or <see cref="CancellationToken.None" /> to cancel never.</param>
     /// <returns>The started service.</returns>
     /// <exception cref="InvalidOperationException">Thrown if login fails.</exception>
@@ -69,9 +69,9 @@ public class BskyGameService : BskyBotService {
         BskyBotOptions options,
         IGameSessionStore store,
         ActionParser actionParser,
-        TextBoardRenderer textBoardRenderer,
+        GameRenderer gameRenderer,
         CancellationToken cancellationToken = default) {
-        var service = new BskyGameService(logger, actionParser, textBoardRenderer);
+        var service = new BskyGameService(logger, actionParser, gameRenderer);
         await service.StartAsync(options, store, cancellationToken);
         return service;
     }
@@ -114,14 +114,14 @@ public class BskyGameService : BskyBotService {
         var view = session.GetPlayerIndex(senderDid) is int idx
             ? session.GetViewFor(senderDid)
             : session.GetSpectatorView();
-        return Task.FromResult<OneOf<BoardView, BoardHidden>>(new BoardView(_textBoardRenderer.Render(view)));
+        return Task.FromResult<OneOf<BoardView, BoardHidden>>(new BoardView(_gameRenderer.Render(view)));
     }
 
     internal Task<OneOf<BoardView, BoardHidden>> RenderPublicBoardAsync(GameSession session, CancellationToken _) {
         if (session.IsSecret) {
             return Task.FromResult<OneOf<BoardView, BoardHidden>>(new BoardHidden());
         }
-        var board = _textBoardRenderer.Render(session.GetSpectatorView());
+        var board = _gameRenderer.Render(session.GetSpectatorView());
         var dids = session.PlayerDids.Keys.Take(MaxMentionsPerPost).ToList();
         var mentions = string.Join(" ", dids.Select(did => $"@{did}"));
         return Task.FromResult<OneOf<BoardView, BoardHidden>>(new BoardView(mentions.Length == 0 ? board : $"{board}\n{mentions}"));
@@ -477,7 +477,7 @@ public class BskyGameService : BskyBotService {
         if (anyViewChanged && session.IsSecret) {
             foreach (var (playerDid, _) in session.PlayerDids) {
                 var view = session.GetViewFor(playerDid);
-                var boardText = _textBoardRenderer.Render(view, maxChars: 500);
+                var boardText = _gameRenderer.Render(view, maxChars: 500);
                 await SendDmToPlayerAsync(
                     playerDid, $"Game [{session.Code}] board update:\n{boardText}", cancellationToken);
             }
