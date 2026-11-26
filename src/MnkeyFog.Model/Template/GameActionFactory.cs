@@ -8,8 +8,13 @@ namespace MnkeyFog.Model.Template;
 /// execute the move.
 /// </summary>
 public abstract record GameActionFactory {
+    /// <summary>
+    /// The <see cref="ModelName"/> of the action. The <c>CommandName</c> is what
+    /// a player types after <c>!play</c> (e.g. <c>space</c>, <c>pass</c>); the
+    /// <c>DisplayName</c> is how the action is shown in the UI.
+    /// </summary>
     [JsonIgnore()]
-    public abstract string Name { get; }
+    public abstract ModelName Name { get; }
 }
 
 public abstract record GameActionFactoryForSimple : GameActionFactory {
