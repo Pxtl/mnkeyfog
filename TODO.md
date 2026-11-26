@@ -105,6 +105,65 @@ The following items are fully approved and can be taken up immediately.
     │ 1 │   │   │   │   │
     └───┴───┴───┴───┴───┘
     ```
+- **Pass moves**.  In MNKAction, create a new ActionFactory and Action for
+  "Pass".  `PassActionFactory` will be a `GameActionFactoryForSimple`.  Full
+  `MNKTemplate` will *not* have the `PassActionFactory`, but a new base template
+  type `CasualMNKTemplate` will be added. `CasualMNKTemplate` will have the
+  `PassActionFactory`.
+  - "Pass" is a no-op move for the player.
+  - Games being played on templates with multiple actions available will need a
+    way to specify which ActionFactory the player is using, both in console
+    *and* in Bsky.
+  - It may be appropriate to have the `GameTemplate` offer some way to indicate
+    the default action, so that `BSky` can assume an action when the player has
+    not provided one.
+  - `GameActionFactory.Name` shall become a ModelName, with the commandname of
+    the existing `MNKAction` be "space". So the command becomes `!play space <x>
+    <y>`, or `!play pass` to pass.  The games `KriegspielTicTacToe`,
+    `BasicTicTacToe`, and `FreestyleGomoku` shall remain on `MNKTemplate` while
+    all other templates shall be on `CasualMNKTemplate`.
+
+- **BoardRenderer Constructor**.  BoardRenderer should take both a namer *and* a
+  BoardRendererConfiguration during construction.
+
+- **ModelNamer for Players**.  Much like rows, columns, and boards, Player Names
+  shall be managed by the ModelNamer.  Currently, most Player-related
+  constructions take a Mark or a list of Marks.  The Mark shall instead be the
+  DisplayName of a Player.Name, while the CommandName shall be the name provided
+  during construction of the game (BSky or CLI).  Default (null) implementation
+  shall be that DisplayName = CommandName.
+
+- **Emoji Styling**.  Depends on "ModelNamer for PLayers" & "BoardRenderer
+  Constructor" and "Row/Column BoardRenderer Mode". BSky BoardRenderer shall
+  take `BoardRendererConfiguration` and namer constructor parameters to produce
+  boards that look like this:
+  
+  Use fullwidth text for rows & space, number-buttons for columns.  Small black
+  square for blank spaces, Full black square for lines between spaces if
+  gridding.
+
+  ```
+  　0️⃣1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣🔟
+  Ａ▪️⭕▪️▪️▪️▪️▪️❎▪️▪️▪️
+  Ｂ▪️▪️▪️▪️💠▪️▪️▪️🟫▪️▪️
+  Ｃ▪️▪️⭐▪️▪️▪️▪️▪️▪️▪️🩷
+  Ｄ▪️▪️▪️▪️▪️💧▪️▪️▪️▪️▪️
+  Ｅ▪️✴️▪️▪️▪️▪️▪️▪️🔳▪️▪️
+  Ｆ▪️▪️▪️▪️🌀▪️▪️▪️▪️▪️▪️
+  Ｇ▪️▪️▪️▪️▪️▪️🔘▪️▪️▪️❇️
+  Ｈ▪️🛑▪️▪️▪️▪️▪️▪️▪️▪️▪️
+  Ｉ▪️▪️▪️▪️🔶▪️▪️▪️🧿▪️▪️
+  Ｊ▪️▪️▪️▪️▪️▪️▪️▪️▪️🟣▪️
+  Ｋ▪️▪️▪️▪️▪️▪️▪️▪️▪️▪️▪️
+  ```
+
+  List in planned player order:
+
+  　❎⭕💠⭐🔳🔶❇️🌀🟣🩷🛑🟫✴️🔘💧🧿
+
+  Upper limit for size for this mode shall be 11.
+
+  
 
 ## Feasible Items
 
