@@ -15,7 +15,9 @@ public class BoardRendererTests {
         var currentPlayer = state.PlayersState.PlayersAvailableForTurn.First();
         state.EndTurn(currentPlayer.Index, out _);
 
-        var actual = new BoardRenderer().DrawBoards(new GameView(state, currentPlayer.Index));
+        var gameView = new GameView(state, currentPlayer.Index);
+        var actual = new BoardRenderer()
+            .DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn);
         var expected = @"
   ┌───┬───┬───┐
   │   │   │   │
@@ -54,7 +56,9 @@ public class BoardRendererTests {
             .NormalizeString()
             .RemoveStartingBreak();
 
-        var actual = new BoardRenderer().DrawBoards(new GameView(state, currentPlayer.Index));
+        var gameView = new GameView(state, currentPlayer.Index);
+        var actual = new BoardRenderer()
+            .DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn);
         actual.TrimEnd().Should().Be(expected);
     }
 
@@ -71,7 +75,9 @@ public class BoardRendererTests {
 
         var currentPlayer = state.PlayersState.GetPlayer("X");
         // 0 means wrap as tight as possible.
-        var actual = new BoardRenderer().DrawBoards(new GameView(state, currentPlayer.Index));
+        var gameView = new GameView(state, currentPlayer.Index);
+        var actual = new BoardRenderer()
+            .DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn);
 
         var expected = @"
   ┌───┬───┬───┐
@@ -104,7 +110,9 @@ public class BoardRendererTests {
         state.GetView(otherPlayer).Attempt(new MNKAction(0, 0, 0));
         state.EndRound(out var _);
 
-        var actual = new BoardRenderer().DrawBoards(new GameView(state, currentPlayer.Index));
+        var gameView = new GameView(state, currentPlayer.Index);
+        var actual = new BoardRenderer()
+            .DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn);
 
         var expected = @"
   ┌───┬───┬───┐
@@ -137,8 +145,9 @@ public class BoardRendererTests {
         state.GetView(otherPlayer).Attempt(new MNKAction(0, 0, 0));
         state.EndRound(out var _);
 
+        var gameView = new GameView(state, currentPlayer.Index);
         var actual = new BoardRenderer(BoardRendererConfiguration.Borderless)
-            .DrawBoards(new GameView(state, currentPlayer.Index));
+            .DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn);
 
         var expected = @"
    7  8  9 
@@ -168,8 +177,9 @@ public class BoardRendererTests {
         state.GetView(otherPlayer).Attempt(new MNKAction(0, 0, 0));
         state.EndRound(out var _);
 
+        var gameView = new GameView(state, currentPlayer.Index);
         var actual = new BoardRenderer(BoardRendererConfiguration.HashPipes)
-            .DrawBoards(new GameView(state, currentPlayer.Index));
+            .DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn);
 
         var expected = @"
    7 │ 8 │ 9 
@@ -196,7 +206,9 @@ public class BoardRendererTests {
         var currentPlayer = state.PlayersState.PlayersAvailableForTurn.First();
         state.EndTurn(currentPlayer.Index, out _);
 
-        var actual = new BoardRenderer().DrawBoards(new GameView(state, currentPlayer.Index));
+        var gameView = new GameView(state, currentPlayer.Index);
+        var actual = new BoardRenderer()
+            .DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn);
         var expected = @"
   ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐
   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │
@@ -269,7 +281,9 @@ public class BoardRendererTests {
 
         var currentPlayer = state.PlayersState.PlayersAvailableForTurn.First();
 
-        var actual = new BoardRenderer().DrawBoards(new GameView(state, currentPlayer.Index));
+        var gameView = new GameView(state, currentPlayer.Index);
+        var actual = new BoardRenderer()
+            .DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn);
         var expected = @"
   ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐
   │A26│B26│C26│D26│E26│F26│G26│H26│I26│J26│K26│L26│M26│N26│O26│P26│Q26│R26│S26│T26│U26│V26│W26│X26│Y26│Z26│
@@ -345,7 +359,9 @@ public class BoardRendererTests {
         state.EndTurn(currentPlayer.Index, out _);
 
         // wrap halfway through 3rd board
-        var actual = new BoardRenderer().DrawBoards(new GameView(state, currentPlayer.Index), maxRenderWidth: 42);
+        var gameView = new GameView(state, currentPlayer.Index);
+        var actual = new BoardRenderer()
+            .DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn, maxRenderWidth: 42);
         var expected = @"
  1┌───┬───┬───┐ 2┌───┬───┬───┐
   │   │   │   │  │   │   │   │
@@ -382,7 +398,9 @@ public class BoardRendererTests {
         state.EndTurn(currentPlayer.Index, out _);
 
         // 0 means wrap as tight as possible.
-        var actual = new BoardRenderer().DrawBoards(new GameView(state, currentPlayer.Index), maxRenderWidth: 0);
+        var gameView = new GameView(state, currentPlayer.Index);
+        var actual = new BoardRenderer()
+            .DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn, maxRenderWidth: 0);
         var expected = @"
  1┌───┬───┬───┐
   │   │   │   │
@@ -424,7 +442,9 @@ public class BoardRendererTests {
 
         var currentPlayer = state.PlayersState.GetPlayer("X");
 
-        var actual = new BoardRenderer().DrawBoards(new GameView(state, currentPlayer.Index), maxRenderWidth: 999999);
+        var gameView = new GameView(state, currentPlayer.Index);
+        var actual = new BoardRenderer()
+            .DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn, maxRenderWidth: 999999);
 
         var expected = @"
  1┌───┬───┬───┐ 2┌───┬───┬───┐ 3┌───┬───┬───┐

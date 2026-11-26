@@ -96,7 +96,7 @@ public class GameStateTests {
         result = playerOView.Attempt(new MNKAction(0, 1, 1));
 
         //DEBUG
-        Console.WriteLine(new BoardRenderer().DrawBoards(state.GetSpectatorView(), 120));
+        Console.WriteLine(new BoardRenderer().DrawBoards(state.GetSpectatorView(), doShowSpaceCommandName: false, maxRenderWidth: 120));
         Console.WriteLine(state.GameStateText);
 
         state.EndRound(out _);

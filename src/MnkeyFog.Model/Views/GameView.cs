@@ -22,7 +22,7 @@ public record GameView
 
         var boardViewsArray = new BoardView[gameState.Boards.Count];
         for (sbyte i = 0; i < gameState.Boards.Count; i += 1) {
-            boardViewsArray[i] = new BoardView(gameState.Boards[i], PlayerIndex, i);
+            boardViewsArray[i] = new BoardView(gameState.Boards[i], PlayerIndex, i, doShowAll: gameState.IsGameOver);
         }
         Boards = boardViewsArray;
         PlayersState = gameState.PlayersState;

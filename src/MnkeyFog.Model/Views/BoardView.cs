@@ -2,7 +2,12 @@ namespace MnkeyFog.Model.Views;
 
 public record BoardView
 : GameObjectView {
-    public BoardView(Board board, int? playerIndex, sbyte boardIndex)
+    /// <summary>
+    /// Creates a view of <paramref name="board"/> for <paramref name="playerIndex"/>.
+    /// When <paramref name="doShowAll"/> is true, every mark is shown regardless
+    /// of the viewing player (no fog of war) — e.g. a game-over or spectator view.
+    /// </summary>
+    public BoardView(Board board, int? playerIndex, sbyte boardIndex, bool doShowAll)
     : base(playerIndex) {
         BoardIndex = boardIndex;
 
@@ -11,7 +16,7 @@ public record BoardView
         for (sbyte row = 0; row < board.RowCount; row += 1) {
             for (sbyte col = 0; col < board.ColumnCount; col += 1) {
                 var space = board.Spaces[col, row];
-                var mark = space.IsKnownToPlayerIndex(PlayerIndex)
+                var mark = (doShowAll || space.IsKnownToPlayerIndex(playerIndex))
                     ? space.MarkIndex
                     : null;
                 SpaceDTOs[col, row] = new SpaceViewDTO(mark);

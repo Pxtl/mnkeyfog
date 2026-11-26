@@ -205,9 +205,9 @@ public class ModelNamerTests {
     }
     #endregion
 
-    #region GetSpaceCommandName
+    #region GetSpaceBody
     [Fact]
-    public void GetSpaceCommandName_Empty3x3BoardYourTurnIsAsExpected() {
+    public void GetSpaceBody_Empty3x3BoardYourTurnIsAsExpected() {
         var players = new PlayerInfo[] { new("X"), new("O") };
         var playerXIndex = 0;
         var gameState = new GameState(
@@ -216,6 +216,7 @@ public class ModelNamerTests {
             isRandomPlayerOrder: false
         );
 
+        var gameView = new GameView(gameState, playerXIndex);
         var expected = new string[3, 3] {
             {"17", "18", "19"},
             {"14", "15", "16"},
@@ -224,14 +225,14 @@ public class ModelNamerTests {
 
         for (sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for (sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = _namer.SpaceCommandName(new GameView(gameState, playerXIndex), 0, col, row);
+                var actual = _namer.GetSpaceBody(gameView, 0, col, row, gameView.CanTakeTurn);
                 actual.Should().Be(expected[row, col]);
             }
         }
     }
 
     [Fact]
-    public void GetSpaceCommandName_Empty3x3BoardNotYourTurnIsBlank() {
+    public void GetSpaceBody_Empty3x3BoardNotYourTurnIsBlank() {
         var players = new PlayerInfo[] { new("X"), new("O") };
         var playerOIndex = 1;
         var gameState = new GameState(
@@ -240,18 +241,19 @@ public class ModelNamerTests {
             isRandomPlayerOrder: false
         );
 
+        var gameView = new GameView(gameState, playerOIndex);
         var expected = " ";
 
         for (sbyte row = 0; row < gameState.Boards[0].RowCount; row += 1) {
             for (sbyte col = 0; col < gameState.Boards[0].RowCount; col += 1) {
-                var actual = _namer.SpaceCommandName(new GameView(gameState, playerOIndex), 0, col, row);
+                var actual = _namer.GetSpaceBody(gameView, 0, col, row, gameView.CanTakeTurn);
                 actual.Should().Be(expected);
             }
         }
     }
 
     [Fact]
-    public void GetSpaceCommandName_SecondRound3x3BoardYourTurnIsAsExpected() {
+    public void GetSpaceBody_SecondRound3x3BoardYourTurnIsAsExpected() {
         var players = new PlayerInfo[] { new("X"), new("O") };
         var playerXIndex = 0;
         var playerOIndex = 1;
@@ -264,6 +266,7 @@ public class ModelNamerTests {
         gameState.GetView(playerOIndex).Attempt(new MNKAction(0, 1, 1));
         gameState.EndRound(out _);
 
+        var gameView = new GameView(gameState, playerXIndex);
         var expected = new string[3, 3] {
             {"7", "8", "9"},
             {"4", "X", "6"},
@@ -272,14 +275,14 @@ public class ModelNamerTests {
 
         for (sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for (sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = _namer.SpaceCommandName(new GameView(gameState, playerXIndex), 0, col, row);
+                var actual = _namer.GetSpaceBody(gameView, 0, col, row, gameView.CanTakeTurn);
                 actual.Should().Be(expected[row, col]);
             }
         }
     }
 
     [Fact]
-    public void GetSpaceCommandName_NonKriegspielModeCanSeeOtherPlayer() {
+    public void GetSpaceBody_NonKriegspielModeCanSeeOtherPlayer() {
         var players = new PlayerInfo[] { new("X"), new("O") };
         var playerXIndex = 0;
         var playerOIndex = 1;
@@ -291,6 +294,7 @@ public class ModelNamerTests {
 
         gameState.GetView(playerXIndex).Attempt(new MNKAction(0, 1, 1));
 
+        var gameView = new GameView(gameState, playerOIndex);
         var expected = new string[3, 3] {
             {"7", "8", "9"},
             {"4", "X", "6"},
@@ -299,14 +303,14 @@ public class ModelNamerTests {
 
         for (sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for (sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = _namer.SpaceCommandName(new GameView(gameState, playerOIndex), 0, col, row);
+                var actual = _namer.GetSpaceBody(gameView, 0, col, row, gameView.CanTakeTurn);
                 actual.Should().Be(expected[row, col]);
             }
         }
     }
 
     [Fact]
-    public void GetSpaceCommandName_MoveSameSpaceCanSeeRevealedSpace() {
+    public void GetSpaceBody_MoveSameSpaceCanSeeRevealedSpace() {
         var players = new PlayerInfo[] { new("X"), new("O") };
         var playerXIndex = 0;
         var playerOIndex = 1;
@@ -315,24 +319,19 @@ public class ModelNamerTests {
             new MNKTemplate([MNKBoardRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
             isRandomPlayerOrder: false
         );
-        var playersIndexed = players.ToPlayersIndexed().ToList();
         //round 1
         gameState.GetView(playerXIndex).Attempt(new MNKAction(0, 1, 1));
         gameState.GetView(playerOIndex).Attempt(new MNKAction(0, 1, 1));
         gameState.EndRound(out _);
 
+        var gameView = new GameView(gameState, playerOIndex);
         var expected = players[playerXIndex].Mark;
-        var actual = _namer.SpaceCommandName(
-            new GameView(gameState, 1),
-            boardIndex: 0,
-            col: 1,
-            row: 1
-        );
+        var actual = _namer.GetSpaceBody(gameView, boardIndex: 0, col: 1, row: 1, gameView.CanTakeTurn);
         actual.Should().Be(expected);
     }
 
     [Fact]
-    public void GetSpaceCommandName_MoveDifferentSpaceCantSeeOtherPlayer() {
+    public void GetSpaceBody_MoveDifferentSpaceCantSeeOtherPlayer() {
         var players = new PlayerInfo[] { new("X"), new("O") };
         var playerXIndex = 0;
         var playerOIndex = 1;
@@ -346,13 +345,14 @@ public class ModelNamerTests {
         gameState.GetView(playerOIndex).Attempt(new MNKAction(0, 0, 0));
         gameState.EndRound(out _);
 
+        var gameView = new GameView(gameState, playerOIndex);
         var expected = " ";
-        var actual = _namer.SpaceCommandName(new GameView(gameState, playerOIndex), boardIndex: 0, col: 1, row: 1);
+        var actual = _namer.GetSpaceBody(gameView, boardIndex: 0, col: 1, row: 1, gameView.CanTakeTurn);
         actual.Should().Be(expected);
     }
 
     [Fact]
-    public void GetSpaceCommandName_ThirdRound3x3SpectatorViewIsAsExpected() {
+    public void GetSpaceBody_ThirdRound3x3SpectatorViewIsAsExpected() {
         var players = new PlayerInfo[] { new("X"), new("O") };
         var playerXIndex = 0;
         var playerOIndex = 1;
@@ -372,6 +372,7 @@ public class ModelNamerTests {
         gameState.GetView(playerOIndex).Attempt(new MNKAction(0, 2, 2));
         gameState.EndRound(out _);
 
+        var gameView = new GameView(gameState, null);
         var expected = new string[3, 3] {
             {"X", " ", " "},
             {" ", "X", " "},
@@ -380,14 +381,14 @@ public class ModelNamerTests {
 
         for (sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for (sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = _namer.SpaceCommandName(new GameView(gameState, null), 0, col, row);
+                var actual = _namer.GetSpaceBody(gameView, 0, col, row, gameView.CanTakeTurn);
                 actual.Should().Be(expected[row, col]);
             }
         }
     }
 
     [Fact]
-    public void GetSpaceCommandName_Empty4x4BoardYourTurnIsAsExpected() {
+    public void GetSpaceBody_Empty4x4BoardYourTurnIsAsExpected() {
         var players = new PlayerInfo[] { new("X"), new("O") };
         var playerXIndex = 0;
         var gameState = new GameState(
@@ -396,6 +397,7 @@ public class ModelNamerTests {
             isRandomPlayerOrder: false
         );
 
+        var gameView = new GameView(gameState, playerXIndex);
         var expected = new string[4, 4] {
             {"A4", "B4", "C4", "D4"},
             {"A3", "B3", "C3", "D3"},
@@ -405,10 +407,59 @@ public class ModelNamerTests {
 
         for (sbyte row = 0; row < expected.GetLength(0); row += 1) {
             for (sbyte col = 0; col < expected.GetLength(0); col += 1) {
-                var actual = _namer.SpaceCommandName(new GameView(gameState, playerXIndex), 0, col, row);
+                var actual = _namer.GetSpaceBody(gameView, 0, col, row, gameView.CanTakeTurn);
                 actual.Should().Be(expected[row, col]);
             }
         }
+    }
+
+    #endregion
+
+    #region SpaceCommandName
+    [Fact]
+    public void SpaceCommandName_ReturnsSpaceNameForEmptySpaces() {
+        var players = new PlayerInfo[] { new("X"), new("O") };
+        var playerXIndex = 0;
+        var gameState = new GameState(
+            players,
+            new MNKTemplate([MNKBoardRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
+            isRandomPlayerOrder: false
+        );
+
+        var gameView = new GameView(gameState, playerXIndex);
+        var expected = new string[3, 3] {
+            {"7", "8", "9"},
+            {"4", "5", "6"},
+            {"1", "2", "3"}
+        };
+
+        for (sbyte row = 0; row < expected.GetLength(0); row += 1) {
+            for (sbyte col = 0; col < expected.GetLength(0); col += 1) {
+                var actual = _namer.SpaceCommandName(gameView, 0, col, row);
+                actual.Should().Be(expected[row, col]);
+            }
+        }
+    }
+
+    [Fact]
+    public void SpaceCommandName_ReturnsSpaceNameForOccupiedSpace() {
+        var players = new PlayerInfo[] { new("X"), new("O") };
+        var playerXIndex = 0;
+        var playerOIndex = 1;
+        var gameState = new GameState(
+            players,
+            new MNKTemplate([MNKBoardRuleset.CreateBoardBuilder(3, 3)], isSynchronousMode: false, isKriegspiel: true),
+            isRandomPlayerOrder: false
+        );
+        gameState.GetView(playerXIndex).Attempt(new MNKAction(0, 1, 1));
+        gameState.GetView(playerOIndex).Attempt(new MNKAction(0, 1, 1));
+        gameState.EndRound(out _);
+
+        var gameView = new GameView(gameState, playerXIndex);
+        // The space command name for an occupied space is still the space name
+        // (e.g. "5"), not the occupying mark ("X").
+        var actual = _namer.SpaceCommandName(gameView, boardIndex: 0, col: 1, row: 1);
+        actual.Should().Be("5");
     }
 
     #endregion
