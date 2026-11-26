@@ -50,7 +50,8 @@ public class ModelNamer {
     public ModelNamer(
         IEnumerable<ModelName> boardModelNames,
         IEnumerable<ModelName> columnModelNames,
-        IEnumerable<ModelName> rowModelNames) {
+        IEnumerable<ModelName> rowModelNames
+    ) {
         ArgumentNullException.ThrowIfNull(boardModelNames);
         ArgumentNullException.ThrowIfNull(columnModelNames);
         ArgumentNullException.ThrowIfNull(rowModelNames);
@@ -59,36 +60,6 @@ public class ModelNamer {
         _rowModelNames = rowModelNames.ToList();
     }
 
-    private ModelNamer(IEnumerable<ModelName>? columnModelNames, IEnumerable<ModelName>? rowModelNames) {
-        _boardModelNames = null;
-        _columnModelNames = columnModelNames?.ToList();
-        _rowModelNames = rowModelNames?.ToList();
-    }
-
-    /// <summary>
-    /// A namer sized for a board of <paramref name="rowCount"/> rows and
-    /// <paramref name="columnCount"/> columns. Row names are the 1-based-from-
-    /// bottom numbers (<c>"1"</c>..<c>"rowCount"</c>), not zero-padded (unlike the
-    /// default namer, so a 10-row board has <c>"9"</c>, not <c>"09"</c>); column
-    /// names are the letters <c>"A"</c>..<c>"Z"</c>; board names are derived
-    /// (numeric).
-    /// </summary>
-    public static ModelNamer CreateForBoard(int rowCount, int columnCount) {
-        // Row names are stored 0-based from the top; to match the default
-        // namer (1-based-from-bottom), the top row is "rowCount" and the bottom
-        // row is "1".
-        var rowNames = new List<ModelName>();
-        for (var i = 0; i < rowCount; i += 1) {
-            var name = (rowCount - i).ToString();
-            rowNames.Add(new ModelName(name, name));
-        }
-        var colNames = new List<ModelName>();
-        for (var i = 0; i < columnCount; i += 1) {
-            var letter = ((char)('A' + i)).ToString();
-            colNames.Add(new ModelName(letter, letter));
-        }
-        return new ModelNamer(colNames, rowNames);
-    }
     #endregion
 
     /// <summary>
@@ -110,13 +81,19 @@ public class ModelNamer {
 
     /// <summary>
     /// The name (<c>CommandName</c> + <c>DisplayName</c>) of the column at
-    /// <paramref name="colIndex"/> (0-based from the left). The default namer
-    /// derives the letter <c>'A' + colIndex</c>; a pre-provided namer looks the
-    /// index up in its list, throwing if beyond the list's length.
+    /// <paramref name="colIndex"/> (0-based from the left) on a board with
+    /// <paramref name="columnCount"/> columns. The default namer derives the
+    /// base-26 (A=0, B=1, ..., Z=25) letters of <paramref name="colIndex"/>,
+    /// left-padded with <c>'A'</c> to the width needed for
+    /// <paramref name="columnCount"/> columns (1 letter for up to 26 columns, 2
+    /// for up to 676, and so on) — the letter analogue of the default namer's
+    /// zero-padded row numbers; a pre-provided namer looks <paramref
+    /// name="colIndex"/> up in its list (0-based from the left), throwing if
+    /// beyond the list's length.
     /// </summary>
-    public ModelName GetColumnModelName(int colIndex) {
+    public ModelName GetColumnModelName(int colIndex, int columnCount) {
         if (_columnModelNames is null) {
-            var name = ((char)('A' + colIndex)).ToString();
+            var name = ToAPaddedColumnLetters(colIndex, columnCount);
             return new ModelName(name, name);
         }
         if (colIndex < 0 || colIndex >= _columnModelNames.Count) {
@@ -126,25 +103,53 @@ public class ModelNamer {
     }
 
     /// <summary>
-    /// The name (<c>CommandName</c> + <c>DisplayName</c>) of the row at
-    /// <paramref name="rowFromTop"/> (0-based from the top) on a board with
-    /// <paramref name="rowCount"/> rows. The default namer derives the
-    /// 1-based-from-bottom row number (<c>rowCount - rowFromTop</c>), zero-padded
-    /// to the board's width; a pre-provided namer looks <paramref
-    /// name="rowFromTop"/> up in its list (0-based from the top), throwing if
-    /// beyond the list's length.
+    /// The default (no pre-provided column names) column name for
+    /// <paramref name="colIndex"/> (0-based from the left) on a board with
+    /// <paramref name="columnCount"/> columns: the base-26 (A=0, B=1, ..., Z=25)
+    /// letters of <paramref name="colIndex"/>, left-padded with <c>'A'</c> to the
+    /// width needed for <paramref name="columnCount"/> columns.
     /// </summary>
-    public ModelName GetRowModelName(int rowFromTop, int rowCount) {
+    private static string ToAPaddedColumnLetters(int colIndex, int columnCount) {
+        // Width is the number of base-26 digits of the largest column index
+        // (columnCount - 1): 1 for up to 26 columns, 2 for up to 676, and so on.
+        var width = 1;
+        var maxIndex = columnCount - 1;
+        while (maxIndex >= 26) {
+            maxIndex /= 26;
+            width += 1;
+        }
+        var chars = new char[width];
+        for (var i = width - 1; i >= 0; i -= 1) {
+            chars[i] = (char)('A' + (colIndex % 26));
+            colIndex /= 26;
+        }
+        return new string(chars);
+    }
+
+    /// <summary>
+    /// The name (<c>CommandName</c> + <c>DisplayName</c>) of the row at
+    /// <paramref name="rowIndex"/> (0-based from the top) on a board with
+    /// <paramref name="rowCount"/> rows.
+    /// <para>
+    /// <paramref name="rowIndex"/> is 0-based from the top (the top row is 0).
+    /// For the default namer, the row's <c>CommandName</c> and <c>DisplayName</c>
+    /// are the 1-based-from-bottom row number (<c>rowCount - rowIndex</c>),
+    /// zero-padded to the width of <paramref name="rowCount"/>; for a
+    /// pre-provided namer, <paramref name="rowIndex"/> indexes the list directly
+    /// (0-based from the top), throwing if beyond the list's length.
+    /// </para>
+    /// </summary>
+    public ModelName GetRowModelName(int rowIndex, int rowCount) {
         if (_rowModelNames is null) {
-            var number = rowCount - rowFromTop;
+            var number = rowCount - rowIndex;
             var width = (int)Math.Log10(rowCount) + 1;
             var name = number.ToString().PadLeft(width, '0');
             return new ModelName(name, name);
         }
-        if (rowFromTop < 0 || rowFromTop >= _rowModelNames.Count) {
-            throw new ArgumentOutOfRangeException(nameof(rowFromTop), $"Row index {rowFromTop} is out of range for the {_rowModelNames.Count} pre-provided row names.");
+        if (rowIndex < 0 || rowIndex >= _rowModelNames.Count) {
+            throw new ArgumentOutOfRangeException(nameof(rowIndex), $"Row index {rowIndex} is out of range for the {_rowModelNames.Count} pre-provided row names.");
         }
-        return _rowModelNames[rowFromTop];
+        return _rowModelNames[rowIndex];
     }
 
     /// <summary>

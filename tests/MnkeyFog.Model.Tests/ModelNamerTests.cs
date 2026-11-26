@@ -540,9 +540,9 @@ public class ModelNamerTests {
     public void GetColumnModelName_DefaultNamer_IsLetter() {
         var namer = new ModelNamer();
 
-        namer.GetColumnModelName(0).Should().Be(new ModelName("A", "A"));
-        namer.GetColumnModelName(1).Should().Be(new ModelName("B", "B"));
-        namer.GetColumnModelName(25).Should().Be(new ModelName("Z", "Z"));
+        namer.GetColumnModelName(0, 26).Should().Be(new ModelName("A", "A"));
+        namer.GetColumnModelName(1, 26).Should().Be(new ModelName("B", "B"));
+        namer.GetColumnModelName(25, 26).Should().Be(new ModelName("Z", "Z"));
     }
 
     [Fact]
@@ -552,8 +552,8 @@ public class ModelNamerTests {
             columnModelNames: new[] { new ModelName("L", "λ"), new ModelName("M", "μ") },
             rowModelNames: new[] { new ModelName("1", "1") });
 
-        namer.GetColumnModelName(0).Should().Be(new ModelName("L", "λ"));
-        namer.GetColumnModelName(1).Should().Be(new ModelName("M", "μ"));
+        namer.GetColumnModelName(0, 2).Should().Be(new ModelName("L", "λ"));
+        namer.GetColumnModelName(1, 2).Should().Be(new ModelName("M", "μ"));
     }
 
     [Fact]
@@ -563,8 +563,24 @@ public class ModelNamerTests {
             columnModelNames: new[] { new ModelName("L", "λ") },
             rowModelNames: new[] { new ModelName("1", "1") });
 
-        var action = () => namer.GetColumnModelName(1);
+        var action = () => namer.GetColumnModelName(1, 1);
         action.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void GetColumnModelName_DefaultNamer_APaddedForLargeBoards() {
+        var namer = new ModelNamer();
+
+        // 27-column board: width 2, A-padded (A=0).
+        namer.GetColumnModelName(0, 27).Should().Be(new ModelName("AA", "AA"));
+        namer.GetColumnModelName(1, 27).Should().Be(new ModelName("AB", "AB"));
+        namer.GetColumnModelName(25, 27).Should().Be(new ModelName("AZ", "AZ"));
+        namer.GetColumnModelName(26, 27).Should().Be(new ModelName("BA", "BA"));
+        // 676-column board: width 2, last column is "ZZ".
+        namer.GetColumnModelName(675, 676).Should().Be(new ModelName("ZZ", "ZZ"));
+        // 677-column board: width 3, first is "AAA", last is "BAA".
+        namer.GetColumnModelName(0, 677).Should().Be(new ModelName("AAA", "AAA"));
+        namer.GetColumnModelName(676, 677).Should().Be(new ModelName("BAA", "BAA"));
     }
 
     [Fact]
@@ -600,16 +616,6 @@ public class ModelNamerTests {
 
         var action = () => namer.GetRowModelName(1, 1);
         action.Should().Throw<ArgumentOutOfRangeException>();
-    }
-
-    [Fact]
-    public void CreateForBoard_CreatesOneDigitRowAndOneLetterColumnNames() {
-        var namer = ModelNamer.CreateForBoard(rowCount: 3, columnCount: 4);
-
-        namer.GetRowModelName(0, 3).Should().Be(new ModelName("3", "3"));
-        namer.GetRowModelName(2, 3).Should().Be(new ModelName("1", "1"));
-        namer.GetColumnModelName(0).Should().Be(new ModelName("A", "A"));
-        namer.GetColumnModelName(3).Should().Be(new ModelName("D", "D"));
     }
 
     [Fact]
