@@ -534,5 +534,103 @@ public class ModelNamerTests {
         i2.Should().Be(-1);
     }
     #endregion
+
+    #region RowAndColumnModelNames
+    [Fact]
+    public void GetColumnModelName_DefaultNamer_IsLetter() {
+        var namer = new ModelNamer();
+
+        namer.GetColumnModelName(0).Should().Be(new ModelName("A", "A"));
+        namer.GetColumnModelName(1).Should().Be(new ModelName("B", "B"));
+        namer.GetColumnModelName(25).Should().Be(new ModelName("Z", "Z"));
+    }
+
+    [Fact]
+    public void GetColumnModelName_CustomNamer_IsPreProvided() {
+        var namer = new ModelNamer(
+            boardModelNames: new[] { new ModelName("1", "1") },
+            columnModelNames: new[] { new ModelName("L", "λ"), new ModelName("M", "μ") },
+            rowModelNames: new[] { new ModelName("1", "1") });
+
+        namer.GetColumnModelName(0).Should().Be(new ModelName("L", "λ"));
+        namer.GetColumnModelName(1).Should().Be(new ModelName("M", "μ"));
+    }
+
+    [Fact]
+    public void GetColumnModelName_CustomNamer_OutOfRangeThrows() {
+        var namer = new ModelNamer(
+            boardModelNames: new[] { new ModelName("1", "1") },
+            columnModelNames: new[] { new ModelName("L", "λ") },
+            rowModelNames: new[] { new ModelName("1", "1") });
+
+        var action = () => namer.GetColumnModelName(1);
+        action.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void GetRowModelName_DefaultNamer_IsOneBasedFromBottomZeroPadded() {
+        var namer = new ModelNamer();
+
+        // 5-row board: top row (0) -> "5", bottom row (4) -> "1" (1 digit).
+        namer.GetRowModelName(0, 5).Should().Be(new ModelName("5", "5"));
+        namer.GetRowModelName(4, 5).Should().Be(new ModelName("1", "1"));
+        // 26-row board: top row (0) -> "26", bottom row (25) -> "01" (2 digits).
+        namer.GetRowModelName(0, 26).Should().Be(new ModelName("26", "26"));
+        namer.GetRowModelName(25, 26).Should().Be(new ModelName("01", "01"));
+    }
+
+    [Fact]
+    public void GetRowModelName_CustomNamer_IsPreProvided() {
+        var namer = new ModelNamer(
+            boardModelNames: new[] { new ModelName("1", "1") },
+            columnModelNames: new[] { new ModelName("A", "A") },
+            rowModelNames: new[] { new ModelName("T", "top"), new ModelName("B", "bot") });
+
+        // 0-based from the top.
+        namer.GetRowModelName(0, 2).Should().Be(new ModelName("T", "top"));
+        namer.GetRowModelName(1, 2).Should().Be(new ModelName("B", "bot"));
+    }
+
+    [Fact]
+    public void GetRowModelName_CustomNamer_OutOfRangeThrows() {
+        var namer = new ModelNamer(
+            boardModelNames: new[] { new ModelName("1", "1") },
+            columnModelNames: new[] { new ModelName("A", "A") },
+            rowModelNames: new[] { new ModelName("1", "1") });
+
+        var action = () => namer.GetRowModelName(1, 1);
+        action.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void CreateForBoard_CreatesOneDigitRowAndOneLetterColumnNames() {
+        var namer = ModelNamer.CreateForBoard(rowCount: 3, columnCount: 4);
+
+        namer.GetRowModelName(0, 3).Should().Be(new ModelName("3", "3"));
+        namer.GetRowModelName(2, 3).Should().Be(new ModelName("1", "1"));
+        namer.GetColumnModelName(0).Should().Be(new ModelName("A", "A"));
+        namer.GetColumnModelName(3).Should().Be(new ModelName("D", "D"));
+    }
+
+    [Fact]
+    public void SpaceCommandName_UsesPreProvidedRowAndColumnNames() {
+        var players = new PlayerInfo[] { new("X"), new("O") };
+        var gameState = new GameState(
+            players,
+            new MNKTemplate([MNKBoardRuleset.CreateBoardBuilder(4, 4)], isSynchronousMode: false, isKriegspiel: true),
+            isRandomPlayerOrder: false
+        );
+        var gameView = new GameView(gameState, 0);
+        var namer = new ModelNamer(
+            boardModelNames: new[] { new ModelName("1", "1") },
+            columnModelNames: new[] { new ModelName("L", "L"), new ModelName("M", "M"), new ModelName("N", "N"), new ModelName("O", "O") },
+            rowModelNames: new[] { new ModelName("T", "T"), new ModelName("S", "S"), new ModelName("R", "R"), new ModelName("Q", "Q") });
+
+        // col 0, row 0 -> column "L" + row "T".
+        namer.SpaceCommandName(gameView, 0, 0, 0).Should().Be("LT");
+        // col 1, row 1 -> column "M" + row "S".
+        namer.SpaceCommandName(gameView, 0, 1, 1).Should().Be("MS");
+    }
+    #endregion
 }
 

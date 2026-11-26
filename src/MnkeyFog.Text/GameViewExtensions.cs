@@ -134,10 +134,10 @@ public static class GameViewExtensions {
         (IsSpaceNamingNumpadLayout(board) //space name component
             ? GetSpaceNameAsInt(board, col, row).ToString()
             : (
-                // letter component.  Can be only length 1 because max board size is 26.
-                ((char)('A' + col)).ToString()
-                // number component, zero-padded to SpaceNameLength without the letter component.
-                + (board.RowCount - row).ToString(new string('0', gameView.SpaceNameLength(board) - 1))
+                // Column component (a letter by default; the max is 26 columns).
+                namer.GetColumnModelName(col).CommandName
+                // Row component (a number by default, zero-padded to the board's width).
+                + namer.GetRowModelName(row, board.RowCount).CommandName
             )
         );
 

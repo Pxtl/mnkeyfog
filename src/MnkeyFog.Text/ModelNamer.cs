@@ -16,6 +16,8 @@ public class ModelNamer {
     /// <c>i + 1</c> (works for any board index).
     /// </summary>
     private readonly IReadOnlyList<ModelName>? _boardModelNames;
+    private readonly IReadOnlyList<ModelName>? _columnModelNames;
+    private readonly IReadOnlyList<ModelName>? _rowModelNames;
 
     #region constructors
     /// <summary>
@@ -24,6 +26,8 @@ public class ModelNamer {
     /// </summary>
     public ModelNamer() {
         _boardModelNames = null;
+        _columnModelNames = null;
+        _rowModelNames = null;
     }
 
     /// <summary>
@@ -34,6 +38,56 @@ public class ModelNamer {
     public ModelNamer(IEnumerable<ModelName> boardModelNames) {
         ArgumentNullException.ThrowIfNull(boardModelNames);
         _boardModelNames = boardModelNames.ToList();
+        _columnModelNames = null;
+        _rowModelNames = null;
+    }
+
+    /// <summary>
+    /// A namer with pre-provided board, column, and row names. Each list must
+    /// have at least as many entries as there are boards/columns/rows, or else
+    /// rendering beyond its length throws.
+    /// </summary>
+    public ModelNamer(
+        IEnumerable<ModelName> boardModelNames,
+        IEnumerable<ModelName> columnModelNames,
+        IEnumerable<ModelName> rowModelNames) {
+        ArgumentNullException.ThrowIfNull(boardModelNames);
+        ArgumentNullException.ThrowIfNull(columnModelNames);
+        ArgumentNullException.ThrowIfNull(rowModelNames);
+        _boardModelNames = boardModelNames.ToList();
+        _columnModelNames = columnModelNames.ToList();
+        _rowModelNames = rowModelNames.ToList();
+    }
+
+    private ModelNamer(IEnumerable<ModelName>? columnModelNames, IEnumerable<ModelName>? rowModelNames) {
+        _boardModelNames = null;
+        _columnModelNames = columnModelNames?.ToList();
+        _rowModelNames = rowModelNames?.ToList();
+    }
+
+    /// <summary>
+    /// A namer sized for a board of <paramref name="rowCount"/> rows and
+    /// <paramref name="columnCount"/> columns. Row names are the 1-based-from-
+    /// bottom numbers (<c>"1"</c>..<c>"rowCount"</c>), not zero-padded (unlike the
+    /// default namer, so a 10-row board has <c>"9"</c>, not <c>"09"</c>); column
+    /// names are the letters <c>"A"</c>..<c>"Z"</c>; board names are derived
+    /// (numeric).
+    /// </summary>
+    public static ModelNamer CreateForBoard(int rowCount, int columnCount) {
+        // Row names are stored 0-based from the top; to match the default
+        // namer (1-based-from-bottom), the top row is "rowCount" and the bottom
+        // row is "1".
+        var rowNames = new List<ModelName>();
+        for (var i = 0; i < rowCount; i += 1) {
+            var name = (rowCount - i).ToString();
+            rowNames.Add(new ModelName(name, name));
+        }
+        var colNames = new List<ModelName>();
+        for (var i = 0; i < columnCount; i += 1) {
+            var letter = ((char)('A' + i)).ToString();
+            colNames.Add(new ModelName(letter, letter));
+        }
+        return new ModelNamer(colNames, rowNames);
     }
     #endregion
 
@@ -52,6 +106,45 @@ public class ModelNamer {
             throw new ArgumentOutOfRangeException(nameof(boardIndex), $"Board index {boardIndex} is out of range for the {_boardModelNames.Count} pre-provided board names.");
         }
         return _boardModelNames[boardIndex];
+    }
+
+    /// <summary>
+    /// The name (<c>CommandName</c> + <c>DisplayName</c>) of the column at
+    /// <paramref name="colIndex"/> (0-based from the left). The default namer
+    /// derives the letter <c>'A' + colIndex</c>; a pre-provided namer looks the
+    /// index up in its list, throwing if beyond the list's length.
+    /// </summary>
+    public ModelName GetColumnModelName(int colIndex) {
+        if (_columnModelNames is null) {
+            var name = ((char)('A' + colIndex)).ToString();
+            return new ModelName(name, name);
+        }
+        if (colIndex < 0 || colIndex >= _columnModelNames.Count) {
+            throw new ArgumentOutOfRangeException(nameof(colIndex), $"Column index {colIndex} is out of range for the {_columnModelNames.Count} pre-provided column names.");
+        }
+        return _columnModelNames[colIndex];
+    }
+
+    /// <summary>
+    /// The name (<c>CommandName</c> + <c>DisplayName</c>) of the row at
+    /// <paramref name="rowFromTop"/> (0-based from the top) on a board with
+    /// <paramref name="rowCount"/> rows. The default namer derives the
+    /// 1-based-from-bottom row number (<c>rowCount - rowFromTop</c>), zero-padded
+    /// to the board's width; a pre-provided namer looks <paramref
+    /// name="rowFromTop"/> up in its list (0-based from the top), throwing if
+    /// beyond the list's length.
+    /// </summary>
+    public ModelName GetRowModelName(int rowFromTop, int rowCount) {
+        if (_rowModelNames is null) {
+            var number = rowCount - rowFromTop;
+            var width = (int)Math.Log10(rowCount) + 1;
+            var name = number.ToString().PadLeft(width, '0');
+            return new ModelName(name, name);
+        }
+        if (rowFromTop < 0 || rowFromTop >= _rowModelNames.Count) {
+            throw new ArgumentOutOfRangeException(nameof(rowFromTop), $"Row index {rowFromTop} is out of range for the {_rowModelNames.Count} pre-provided row names.");
+        }
+        return _rowModelNames[rowFromTop];
     }
 
     /// <summary>
