@@ -62,7 +62,7 @@ public static class GameViewExtensions {
     public static IEnumerable<string> GetSpaceNames(this GameView gameView, ModelNamer namer)
     => gameView.Boards.SelectMany(b => b
         .AsSpaceViewEnumerable()
-        .Select(s => gameView.GetSpaceName(b.GetBoardName(namer), s.Col, s.Row, namer))
+        .Select(s => gameView.GetSpaceName(b.GetBoardName(namer).CommandName, s.Col, s.Row, namer))
     ); //zero-pad.
 
     public static bool TryGetCoordinatesFromSpaceName(this GameView gameView, string spaceName, ModelNamer namer, out sbyte boardIndex, out sbyte resultCol, out sbyte resultRow) {
@@ -129,7 +129,7 @@ public static class GameViewExtensions {
     /// For the given space on the given board, generate the space's name.
     /// </summary>
     public static string GetSpaceName(this GameView gameView, BoardView board, sbyte col, sbyte row, ModelNamer namer)
-    => (gameView.BoardsCount > 1 ? board.GetBoardName(namer) : "") //board name component
+    => (gameView.BoardsCount > 1 ? board.GetBoardName(namer).CommandName : "") //board name component
         +
         (IsSpaceNamingNumpadLayout(board) //space name component
             ? GetSpaceNameAsInt(board, col, row).ToString()
