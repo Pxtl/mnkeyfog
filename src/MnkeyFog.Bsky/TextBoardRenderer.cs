@@ -13,6 +13,12 @@ namespace MnkeyFog.Bsky;
 /// (so players can type the name of the space to move).
 /// </summary>
 public class TextBoardRenderer {
+    /// <summary>
+    /// BSky renders emoji in a fixed-width layout of ~14-16 characters per line,
+    /// so the board's pipe-drawing is budgeted to that width.
+    /// </summary>
+    private const int MaxRenderWidth = 15;
+
     private readonly BoardRenderer _renderer;
 
     public TextBoardRenderer(ModelNamer namer) {
@@ -44,7 +50,7 @@ public class TextBoardRenderer {
 
         // Board(s) — shared pipe-drawing from MnkeyFog.Text.  Show space
         // command names on empty cells so players can type the name to move.
-        sb.Append(_renderer.DrawBoards(gameView, doShowSpaceCommandName: true, maxRenderWidth: int.MaxValue));
+        sb.Append(_renderer.DrawBoards(gameView, doShowSpaceCommandName: true, maxRenderWidth: MaxRenderWidth));
 
         // Footer: scores.
         var scoreSummary = RenderScores(gameView);

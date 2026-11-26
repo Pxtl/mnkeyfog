@@ -2,19 +2,21 @@ namespace MnkeyFog.Model.Views;
 
 public record BoardView
 : GameObjectView {
-    public BoardView(Board board, int? playerIndex, sbyte boardIndex, bool isGameOver)
+    /// <summary>
+    /// Creates a view of <paramref name="board"/> for <paramref name="playerIndex"/>.
+    /// When <paramref name="doShowAll"/> is true, every mark is shown regardless
+    /// of the viewing player (no fog of war) — e.g. a game-over or spectator view.
+    /// </summary>
+    public BoardView(Board board, int? playerIndex, sbyte boardIndex, bool doShowAll)
     : base(playerIndex) {
         BoardIndex = boardIndex;
 
         IsDone = board.IsDone;
-        // When the game is over, every mark is visible to every player (no fog
-        // of war) — the same omniscient visibility as a null/spectator index.
-        int? markVisibilityPlayerIndex = isGameOver ? null : playerIndex;
         SpaceDTOs = new SpaceViewDTO[board.ColumnCount, board.RowCount];
         for (sbyte row = 0; row < board.RowCount; row += 1) {
             for (sbyte col = 0; col < board.ColumnCount; col += 1) {
                 var space = board.Spaces[col, row];
-                var mark = space.IsKnownToPlayerIndex(markVisibilityPlayerIndex)
+                var mark = (doShowAll || space.IsKnownToPlayerIndex(playerIndex))
                     ? space.MarkIndex
                     : null;
                 SpaceDTOs[col, row] = new SpaceViewDTO(mark);
