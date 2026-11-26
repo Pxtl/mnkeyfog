@@ -4,7 +4,7 @@ using MnkeyFog.Model.MNKGame;
 namespace MnkeyFog.Model;
 
 public static partial class GameTemplates {
-    public static GameTemplate FogTicTacToe { get; } = new MNKTemplate(
+    public static GameTemplate FogTicTacToe { get; } = new CasualMNKTemplate(
         "fog-tictactoe",
         "Zach Weinersmith's Kriegspiel Tic-Tac-Toe, but with more players and synchronous play. Play continues until all spaces are full.",
         [2, 3, 4], //legal player-counts
