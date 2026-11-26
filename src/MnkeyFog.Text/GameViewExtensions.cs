@@ -10,7 +10,7 @@ public static class GameViewExtensions {
     #region Board Names
     public static IEnumerable<string> GetAllBoardNames(this GameView gameView, ModelNamer namer) {
         for (var i = 0; i < gameView.Boards.Count; i += 1) {
-            yield return namer.BoardNameFromIndex(i);
+            yield return namer.GetBoardModelName(i).CommandName;
         }
     }
 
@@ -23,7 +23,7 @@ public static class GameViewExtensions {
     /// <see cref="BoardIsDone"/> if the board is finished.
     /// </returns>
     public static OneOf<Result<BoardView>, InvalidCommand, BoardIsDone> AttemptBoard(this GameView gameView, string boardName, ModelNamer namer)
-    => namer.GetBoardIndexByName(boardName, gameView.Boards.Count).Match(
+    => namer.GetBoardIndexByCommandName(boardName, gameView.Boards.Count).Match(
         notFound => new InvalidCommand(boardName),
         indexResult => gameView.AttemptBoard(indexResult.Value, namer)
     );
@@ -32,7 +32,7 @@ public static class GameViewExtensions {
         if (gameView.BoardsCount == 1) {
             return gameView.Boards.Single();
         }
-        var boardIndex = namer.GetBoardIndexByName(boardName, gameView.BoardsCount).Match(
+        var boardIndex = namer.GetBoardIndexByCommandName(boardName, gameView.BoardsCount).Match(
             notFound => throw new ArgumentException($"That is not a valid board: '{boardName}", nameof(boardName)),
             result => result.Value
         );
@@ -54,7 +54,7 @@ public static class GameViewExtensions {
                 ? OneOf<Result<BoardView>, InvalidCommand, BoardIsDone>.FromT2(new BoardIsDone())
                 : new Result<BoardView>(gameView.GetBoardViewByIndex(boardIndex))
             )
-        : new InvalidCommand(namer.BoardNameFromIndex(boardIndex));
+        : new InvalidCommand(namer.GetBoardModelName(boardIndex).CommandName);
 
     #endregion
 
@@ -67,7 +67,7 @@ public static class GameViewExtensions {
 
     public static bool TryGetCoordinatesFromSpaceName(this GameView gameView, string spaceName, ModelNamer namer, out sbyte boardIndex, out sbyte resultCol, out sbyte resultRow) {
         if (gameView.TryGetCoordinatesFromSpaceName(spaceName, namer, out string boardName, out resultCol, out resultRow)) {
-            if (namer.TryGetBoardIndexByName(boardName, gameView.BoardsCount, out boardIndex)) {
+            if (namer.TryGetBoardIndexByCommandName(boardName, gameView.BoardsCount, out boardIndex)) {
                 return true;
             } else {
                 return false;

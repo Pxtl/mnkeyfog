@@ -115,22 +115,7 @@ public class ModelNamer {
         return playerIndexToKey;
     }
 
-    /// <summary>
-    /// The <c>CommandName</c> of the board at <paramref name="boardIndex"/> — what
-    /// a user types to select the board, and the board component of space
-    /// command-names.
-    /// </summary>
-    public string BoardNameFromIndex(int boardIndex)
-    => GetBoardModelName(boardIndex).CommandName;
-
-    /// <summary>
-    /// The <c>DisplayName</c> of the board at <paramref name="boardIndex"/> — what
-    /// is shown on the board.
-    /// </summary>
-    public string BoardDisplayNameFromIndex(int boardIndex)
-    => GetBoardModelName(boardIndex).DisplayName;
-
-    public bool TryGetBoardIndexByName(string boardName, int boardsCount, out sbyte boardIndex) {
+    public bool TryGetBoardIndexByCommandName(string boardName, int boardsCount, out sbyte boardIndex) {
         if (_boardModelNames is null) {
             var boardNameAsSbyte = sbyte.Parse(boardName);
             boardIndex = (boardNameAsSbyte - 1).AsSByte;
@@ -150,8 +135,8 @@ public class ModelNamer {
         return false;
     }
 
-    public OneOf<NotFound, Result<sbyte>> GetBoardIndexByName(string boardName, int boardsCount) {
-        if (TryGetBoardIndexByName(boardName, boardsCount, out var boardIndex)) {
+    public OneOf<NotFound, Result<sbyte>> GetBoardIndexByCommandName(string boardName, int boardsCount) {
+        if (TryGetBoardIndexByCommandName(boardName, boardsCount, out var boardIndex)) {
             return new Result<sbyte>(boardIndex);
         } else {
             return new NotFound();
