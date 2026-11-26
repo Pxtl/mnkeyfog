@@ -10,27 +10,12 @@ own branch from main.
 
 # Dev Environment
 
-Codebase is using dotnet 10.0.  Use `dotnet build` to compile, and 
-
-```sh
-dotnet run --project mnkeyfog/tests/MnkeyFog.Model.Tests
-```
-
+Codebase is using dotnet 10.0.  Use `dotnet build` to compile, and `dotnet test`
 to run unit test suite.
 
 # Testing
 
-Unit tests are in `tests/MnkeyFog.Model.Tests`.
-
-Do not attempt automated testing on the command-line tool. Test improvement can
-be achieved by codifying more logic into model.
-
-## Testing Warning about Out Of Memory
-
-Note that in the event of a stack overflow, `dotnet test` can start failing with
-OOM.  In that case, clear `/tmp`.  Also `dotnet run` the test project reduces
-likelihood of OOM and still runs the tests.  You may have to use `top` and
-`kill` to clear out orphaned dotnet processes.
+Unit tests are in `tests`.
 
 # Refactoring
 
@@ -44,4 +29,6 @@ Do not modify `MnkeyFog.Model` internals without maintainer approval; see
 
 # Scratch space
 
-Create any needed working files such as to-do lists within the `temp` dir, which is gitignored.
+Create any needed working files such as experiments within the `temp/` dir, which
+is `.gitignore`d.  Create personal notes for future reference in `MEMORY.md`, which
+is also gitignored.
