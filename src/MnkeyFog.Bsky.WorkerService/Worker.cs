@@ -1,4 +1,5 @@
 using MnkeyFog.Bsky;
+using MnkeyFog.Text;
 
 namespace MnkeyFog.Bsky.WorkerService;
 
@@ -11,10 +12,10 @@ public class Worker(
     BskyBotOptions options,
     IGameSessionStore store,
     ActionParser actionParser,
-    TextBoardRenderer textBoardRenderer) : BackgroundService {
+    GameRenderer gameRenderer) : BackgroundService {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         await using var bot = await BskyGameService.CreateAsync(
-            logger, options, store, actionParser, textBoardRenderer, stoppingToken);
+            logger, options, store, actionParser, gameRenderer, stoppingToken);
         try {
             await Task.Delay(Timeout.Infinite, stoppingToken);
         } catch (OperationCanceledException) {
