@@ -21,7 +21,7 @@ public class GameRendererTests {
     [Fact]
     public void Render_OrdersGameName_Event_Board_ActivePlayers() {
         var state = MakeState();
-        var actual = new GameRenderer(new ModelNamer()).Render(new GameView(state, null));
+        var actual = new GameRenderer(new BoardRenderer(new ModelNamer())).Render(new GameView(state, null));
 
         actual.Should().StartWith("mnk");
         actual.Should().Contain("Turn:");
@@ -42,7 +42,7 @@ public class GameRendererTests {
     public void Render_ResignedPlayer_IsListedAsResigned() {
         var state = MakeState();
         state.ResignPlayer(1);
-        var actual = new GameRenderer(new ModelNamer()).Render(new GameView(state, null));
+        var actual = new GameRenderer(new BoardRenderer(new ModelNamer())).Render(new GameView(state, null));
 
         actual.Should().Contain("Resigned: O");
     }

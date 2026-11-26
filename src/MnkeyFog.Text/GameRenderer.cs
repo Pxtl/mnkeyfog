@@ -23,8 +23,8 @@ public class GameRenderer {
 
     private readonly BoardRenderer _renderer;
 
-    public GameRenderer(ModelNamer namer) {
-        _renderer = new BoardRenderer(namer);
+    public GameRenderer(BoardRenderer renderer) {
+        _renderer = renderer;
     }
 
     /// <summary>
