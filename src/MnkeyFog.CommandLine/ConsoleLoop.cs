@@ -269,7 +269,7 @@ internal class ConsoleLoop {
             }
         } else {
             var gameView = state.GetView(player);
-            var availableBoardCommands = gameView.GetAllBoardNames();
+            var availableBoardCommands = gameView.GetAllBoardNames(_namer);
             var boardCommand = InputUtility.ReadCommandInputWithAddedStandardPlayerCommands(
                 "Press numeric key(s) to pick a board, 'r' to resign, or 'q' to save game and quit.",
                 availableBoardCommands

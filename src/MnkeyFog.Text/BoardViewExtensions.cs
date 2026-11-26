@@ -5,13 +5,14 @@ namespace MnkeyFog.Text;
 /// </summary>
 public static class BoardViewExtensions {
     /// <summary>
-    /// The name of the board as used in the UI.  Typically it's BoardIndex+1
-    /// converted to string.
+    /// The board's <see cref="ModelName"/> — its <c>CommandName</c> (what a user
+    /// types to select the board / the board component of space command-names)
+    /// and its <c>DisplayName</c> (what is shown). Callers pick the field they
+    /// need.
     /// </summary>
-    public static string GetBoardName(this BoardView boardView, ModelNamer namer) {
-        return namer.BoardNameFromIndex(boardView.BoardIndex);
-    }
+    public static ModelName GetBoardName(this BoardView boardView, ModelNamer namer)
+    => namer.GetBoardModelName(boardView.BoardIndex);
 
     public static string GetSpaceName(this BoardView boardView, ModelNamer namer, GameView gameView, sbyte col, sbyte row)
-    => gameView.GetSpaceName(boardView.GetBoardName(namer), col, row, namer);
+    => gameView.GetSpaceName(boardView.GetBoardName(namer).CommandName, col, row, namer);
 }

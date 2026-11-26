@@ -34,6 +34,39 @@ public class BoardRendererTests {
     }
 
     [Fact]
+    public void DrawBoards_MultiBoard_UsesDisplayNameForBoardLeader() {
+        var boardBuilder = MNKBoardRuleset.CreateBoardBuilder(3, 3);
+        var namer = new ModelNamer(new[] {
+            new ModelName("P", "U"),
+            new ModelName("Q", "V")
+        });
+        // Wrap the board name in brackets so the board leader can be found
+        // unambiguously (space command-names use the CommandName, not the
+        // DisplayName).
+        var config = new BoardRendererConfiguration(
+            3, null, null,
+            null, null, null,
+            null, null, null,
+            null, null, null,
+            "  ", " ✓", boardName => $"[{boardName}]"
+        );
+        var state = new GameState(
+            (new[] { 'X', 'O' }).ToPlayersArray(),
+            new MNKTemplate([boardBuilder, boardBuilder], isSynchronousMode: false, isKriegspiel: true),
+            isRandomPlayerOrder: false
+        );
+        var currentPlayer = state.PlayersState.PlayersAvailableForTurn.First();
+        state.EndTurn(currentPlayer.Index, out _);
+
+        var actual = new BoardRenderer(namer, config).DrawBoards(new GameView(state, currentPlayer.Index), doShowSpaceCommandName: false);
+
+        // The board leader (name shown above the board) uses the DisplayName
+        // ("U"), not the CommandName ("P").
+        actual.Should().Contain("[U]");
+        actual.Should().NotContain("[P]");
+    }
+
+    [Fact]
     public void DrawBoards_3x3WithOneMove_ReturnsBoardGridStringWithMove() {
         var boardBuilder = MNKBoardRuleset.CreateBoardBuilder(3, 3);
         var state = new GameState(

@@ -8,9 +8,9 @@ using OneOf.Types;
 /// </summary>
 public static class GameViewExtensions {
     #region Board Names
-    public static IEnumerable<string> GetAllBoardNames(this GameView gameView) {
-        for (var i = 1; i <= gameView.Boards.Count; i += 1) {
-            yield return i.ToString();
+    public static IEnumerable<string> GetAllBoardNames(this GameView gameView, ModelNamer namer) {
+        for (var i = 0; i < gameView.Boards.Count; i += 1) {
+            yield return namer.GetBoardModelName(i).CommandName;
         }
     }
 
@@ -23,7 +23,7 @@ public static class GameViewExtensions {
     /// <see cref="BoardIsDone"/> if the board is finished.
     /// </returns>
     public static OneOf<Result<BoardView>, InvalidCommand, BoardIsDone> AttemptBoard(this GameView gameView, string boardName, ModelNamer namer)
-    => namer.GetBoardIndexByName(boardName, gameView.Boards.Count).Match(
+    => namer.GetBoardIndexByCommandName(boardName, gameView.Boards.Count).Match(
         notFound => new InvalidCommand(boardName),
         indexResult => gameView.AttemptBoard(indexResult.Value, namer)
     );
@@ -32,7 +32,7 @@ public static class GameViewExtensions {
         if (gameView.BoardsCount == 1) {
             return gameView.Boards.Single();
         }
-        var boardIndex = namer.GetBoardIndexByName(boardName, gameView.BoardsCount).Match(
+        var boardIndex = namer.GetBoardIndexByCommandName(boardName, gameView.BoardsCount).Match(
             notFound => throw new ArgumentException($"That is not a valid board: '{boardName}", nameof(boardName)),
             result => result.Value
         );
@@ -54,7 +54,7 @@ public static class GameViewExtensions {
                 ? OneOf<Result<BoardView>, InvalidCommand, BoardIsDone>.FromT2(new BoardIsDone())
                 : new Result<BoardView>(gameView.GetBoardViewByIndex(boardIndex))
             )
-        : new InvalidCommand(namer.BoardNameFromIndex(boardIndex));
+        : new InvalidCommand(namer.GetBoardModelName(boardIndex).CommandName);
 
     #endregion
 
@@ -62,12 +62,12 @@ public static class GameViewExtensions {
     public static IEnumerable<string> GetSpaceNames(this GameView gameView, ModelNamer namer)
     => gameView.Boards.SelectMany(b => b
         .AsSpaceViewEnumerable()
-        .Select(s => gameView.GetSpaceName(b.GetBoardName(namer), s.Col, s.Row, namer))
+        .Select(s => gameView.GetSpaceName(b.GetBoardName(namer).CommandName, s.Col, s.Row, namer))
     ); //zero-pad.
 
     public static bool TryGetCoordinatesFromSpaceName(this GameView gameView, string spaceName, ModelNamer namer, out sbyte boardIndex, out sbyte resultCol, out sbyte resultRow) {
         if (gameView.TryGetCoordinatesFromSpaceName(spaceName, namer, out string boardName, out resultCol, out resultRow)) {
-            if (namer.TryGetBoardIndexByName(boardName, gameView.BoardsCount, out boardIndex)) {
+            if (namer.TryGetBoardIndexByCommandName(boardName, gameView.BoardsCount, out boardIndex)) {
                 return true;
             } else {
                 return false;
@@ -129,7 +129,7 @@ public static class GameViewExtensions {
     /// For the given space on the given board, generate the space's name.
     /// </summary>
     public static string GetSpaceName(this GameView gameView, BoardView board, sbyte col, sbyte row, ModelNamer namer)
-    => (gameView.BoardsCount > 1 ? board.GetBoardName(namer) : "") //board name component
+    => (gameView.BoardsCount > 1 ? board.GetBoardName(namer).CommandName : "") //board name component
         +
         (IsSpaceNamingNumpadLayout(board) //space name component
             ? GetSpaceNameAsInt(board, col, row).ToString()
