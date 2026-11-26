@@ -22,3 +22,7 @@ comments.
 
 Clean history is not necessary in PRs, as long as commit messages are reasonably
 informative.  Linearizing the history is appreciated.
+
+LLMs/Agents should include model metadata (provider URL and model ID) where
+available in commit message body. "pi coding agent" agents can use
+[pi-introspect](https://pi.dev/packages/pi-introspect) to obtain this info.
