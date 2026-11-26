@@ -132,7 +132,7 @@ internal class ConsoleLoop {
                 );
             } else {
                 Console.Out.WriteLine(state.GameStateText);
-                var boardRenderer = new BoardRenderer(_namer);
+                var boardRenderer = new BoardRenderer(_namer, BoardRendererConfiguration.FullPipes);
                 Console.Out.WriteLine(boardRenderer.DrawBoards(state.GetSpectatorView(), doShowSpaceCommandName: false, maxRenderWidth: Console.BufferWidth));
                 isGameOver = true;
             }
@@ -148,7 +148,7 @@ internal class ConsoleLoop {
             Console.Out.WriteLine(state.GameStateText);
             Console.Out.WriteLine($"Player {player.Info}, take your turn.");
             var gameView = state.GetView(player);
-            var boardRenderer = new BoardRenderer(_namer);
+            var boardRenderer = new BoardRenderer(_namer, BoardRendererConfiguration.FullPipes);
             Console.Out.WriteLine(boardRenderer.DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn, maxRenderWidth: Console.BufferWidth));
             playActionResult = DoPlayerAction(ref state, player, sharedStateFilePath);
             Console.Out.WriteLine(playActionResult.GetResultText(state.PlayersState));
@@ -156,7 +156,7 @@ internal class ConsoleLoop {
         var isViewChanged = playActionResult.IsViewChanged;
         if (isViewChanged) {
             var gameView = state.GetView(player);
-            var boardRenderer = new BoardRenderer(_namer);
+            var boardRenderer = new BoardRenderer(_namer, BoardRendererConfiguration.FullPipes);
             Console.Out.WriteLine(boardRenderer.DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn, maxRenderWidth: Console.BufferWidth));
         }
     }
