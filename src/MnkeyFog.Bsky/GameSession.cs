@@ -84,8 +84,6 @@ public sealed class GameSession {
             for (var i = 0; i < GameState.PlayersState.PlayerInfos.Count; i++) {
                 if (!claimedIndices.Contains(i)) {
                     _playerByDid[did] = i;
-                    // The CommandName (the handle) is assigned by the message
-                    // flow (HandleJoinAsync) after it resolves the handle.
                     return new Result<PlayerInfo>(GameState.PlayersState.PlayerInfos[i]);
                 }
             }

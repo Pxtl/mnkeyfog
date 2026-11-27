@@ -461,6 +461,26 @@ public class ModelNamerTests {
         var action = () => namer.GetPlayerMark(1, playersState);
         action.Should().Throw<ArgumentOutOfRangeException>();
     }
+
+    [Fact]
+    public void GetPlayerDisplayName_CommandNameEqualsMark_ReturnsMark() {
+        var players = new PlayerInfo[] { new("X"), new("O") };
+        var playersState = new PlayersState(players, RoundRobinPlayManager.Instance);
+
+        _namer.GetPlayerDisplayName(0, playersState).Should().Be("X");
+        _namer.GetPlayerDisplayName(1, playersState).Should().Be("O");
+    }
+
+    [Fact]
+    public void GetPlayerDisplayName_CommandNameDiffersFromMark_ReturnsCombined() {
+        var players = new PlayerInfo[] { new("alice"), new("bob") };
+        var playersState = new PlayersState(players, RoundRobinPlayManager.Instance);
+
+        // Multi-char CommandName → default Mark is the index, so it differs from
+        // the CommandName and the display is "CommandName(Mark)".
+        _namer.GetPlayerDisplayName(0, playersState).Should().Be("alice(0)");
+        _namer.GetPlayerDisplayName(1, playersState).Should().Be("bob(1)");
+    }
     #endregion
 
     #region SpaceCommandName

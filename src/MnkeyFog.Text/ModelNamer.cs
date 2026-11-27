@@ -178,6 +178,17 @@ public class ModelNamer {
     }
 
     /// <summary>
+    /// The combined display name of the player at <paramref name="playerIndex"/>: the Mark alone
+    /// when it equals the player's <c>CommandName</c>, otherwise
+    /// <c>"CommandName(Mark)"</c>.
+    /// </summary>
+    public string GetPlayerDisplayName(int playerIndex, PlayersState playersState) {
+        var mark = GetPlayerMark(playerIndex, playersState);
+        var commandName = playersState.PlayerInfos[playerIndex].CommandName;
+        return commandName == mark ? mark : $"{commandName}({mark})";
+    }
+
+    /// <summary>
     /// Builds a mapping of key-commands to players, so that actions that
     /// require choosing a player (like choosing which player is ready in
     /// hotseat mode) can be done with keyboard commands.  If a player's mark is

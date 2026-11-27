@@ -287,7 +287,7 @@ public class BskyGameService : BskyBotService {
         var result = session.Join(senderDid);
         await result.Match(
             async player => {
-                GameStore.JoinWithIndex(session.Code, senderDid);
+                GameStore.JoinGame(session.Code, senderDid);
                 // The joiner's CommandName is their handle (typeable identity),
                 // resolved from their DID. Set before saving so it persists.
                 var handle = await GetHandleAsync(senderDid, cancellationToken);
@@ -560,8 +560,8 @@ public class BskyGameService : BskyBotService {
     internal static string FormatGameLine(GameSession session, string did, ModelNamer namer) {
         var players = session.GameState.PlayersState;
         var playerIndex = session.GetPlayerIndex(did);
-        var playerMark = playerIndex is not null
-            ? $" player {players.PlayerInfos[playerIndex.Value].CommandName}({namer.GetPlayerMark(playerIndex.Value, players)})"
+        var playerDisplay = playerIndex is not null
+            ? $" player {namer.GetPlayerDisplayName(playerIndex.Value, players)}"
             : "";
         var stateText = session.GameState.IsGameOver
             ? "ended"
@@ -569,7 +569,7 @@ public class BskyGameService : BskyBotService {
                 ? $"your turn (round {players.RoundIndex + 1}, move {playerIndex.Value + 1})"
                 : "in progress";
         var elapsed = FormatElapsed(DateTimeOffset.UtcNow - session.StartedAt);
-        return $"[{session.Code}] {session.GameState.GameTemplate.CommandName} — {stateText}{playerMark}, started {elapsed}";
+        return $"[{session.Code}] {session.GameState.GameTemplate.CommandName} — {stateText}{playerDisplay}, started {elapsed}";
     }
 
     private static string FormatElapsed(TimeSpan span) {
