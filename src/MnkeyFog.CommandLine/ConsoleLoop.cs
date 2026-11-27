@@ -34,7 +34,7 @@ internal class ConsoleLoop {
         Console.Out.WriteLine($"Game is {state.GameTemplate.CommandName}.");
         Console.Out.WriteLine($"Description: {state.GameTemplate.Description}");
         foreach (var aiPlayer in aiPlayers) {
-            Console.Out.WriteLine($"AI Player {aiPlayer.Key.Mark}: {aiPlayer.Value.Description}.");
+            Console.Out.WriteLine($"AI Player {aiPlayer.Key.CommandName}: {aiPlayer.Value.Description}.");
         }
 
         bool isGameOver = false;
@@ -241,10 +241,10 @@ internal class ConsoleLoop {
             var playerDisplayList = playerState.PlayersAvailableForTurn
                 .Select(p => {
                     var altKey = playerIndexToCommand[p.Index];
-                    var keyDisplay = altKey.Equals(p.Info.Mark, StringComparison.OrdinalIgnoreCase)
+                    var keyDisplay = altKey.Equals(p.Info.CommandName, StringComparison.OrdinalIgnoreCase)
                         ? ""
                         : $" ({altKey})";
-                    return $"Player {p.Info.Mark}{keyDisplay}";
+                    return $"Player {p.Info.CommandName}{keyDisplay}";
                 });
 
             var prompt = "Who will take the next turn? Press the player's key to take their turn (or press 'q' to quit the game for everyone)."

@@ -26,7 +26,7 @@ public class ModelNamerTests {
 
         Assert.Equal(4, result.Count);
         foreach (var player in players) {
-            Assert.Equal(player.Mark, result[player.Index]);
+            Assert.Equal(player.CommandName, result[player.Index]);
         }
     }
 
@@ -37,7 +37,7 @@ public class ModelNamerTests {
         var result = _namer.BuildPlayerToCommandNameMap(players);
 
         foreach (var player in players) {
-            Assert.Equal(player.Info.Mark, result[player.Index]);
+            Assert.Equal(player.Info.CommandName, result[player.Index]);
         }
     }
 
@@ -48,7 +48,7 @@ public class ModelNamerTests {
         var result = _namer.BuildPlayerToCommandNameMap(players);
 
         foreach (var player in players) {
-            Assert.Equal(player.Info.Mark, result[player.Index]);
+            Assert.Equal(player.Info.CommandName, result[player.Index]);
         }
     }
 
@@ -57,11 +57,11 @@ public class ModelNamerTests {
         var players = (new[] { ".", "!", "?", ":", ";" }).ToPlayersIndexed();
 
         var expected = new Dictionary<int, string> {
-            [players.Single(p => p.Mark == ".").Index] = "1",
-            [players.Single(p => p.Mark == "!").Index] = "2",
-            [players.Single(p => p.Mark == "?").Index] = "3",
-            [players.Single(p => p.Mark == ":").Index] = "4",
-            [players.Single(p => p.Mark == ";").Index] = "5"
+            [players.Single(p => p.CommandName == ".").Index] = "1",
+            [players.Single(p => p.CommandName == "!").Index] = "2",
+            [players.Single(p => p.CommandName == "?").Index] = "3",
+            [players.Single(p => p.CommandName == ":").Index] = "4",
+            [players.Single(p => p.CommandName == ";").Index] = "5"
         };
         var actual = _namer.BuildPlayerToCommandNameMap(players);
         actual.Should().BeEquivalentTo(expected);
@@ -72,10 +72,10 @@ public class ModelNamerTests {
         var players = (new[] { "A", ".", "!", "1" }).ToPlayersIndexed();
 
         var expected = new Dictionary<int, string> {
-            [players.Single(p => p.Mark == "A").Index] = "A",
-            [players.Single(p => p.Mark == ".").Index] = "2",
-            [players.Single(p => p.Mark == "!").Index] = "3",
-            [players.Single(p => p.Mark == "1").Index] = "1"
+            [players.Single(p => p.CommandName == "A").Index] = "A",
+            [players.Single(p => p.CommandName == ".").Index] = "2",
+            [players.Single(p => p.CommandName == "!").Index] = "3",
+            [players.Single(p => p.CommandName == "1").Index] = "1"
         };
         var actual = _namer.BuildPlayerToCommandNameMap(players);
         actual.Should().BeEquivalentTo(expected);
@@ -86,17 +86,17 @@ public class ModelNamerTests {
         var players = (new[] { "1", "2", "3", "4", "5", ".", "!", "?", ":", ";", "/" }).ToPlayersIndexed();
 
         var expected = new Dictionary<int, string> {
-            [players.Single(p => p.Mark == "1").Index] = "1",
-            [players.Single(p => p.Mark == "2").Index] = "2",
-            [players.Single(p => p.Mark == "3").Index] = "3",
-            [players.Single(p => p.Mark == "4").Index] = "4",
-            [players.Single(p => p.Mark == "5").Index] = "5",
-            [players.Single(p => p.Mark == ".").Index] = "6",
-            [players.Single(p => p.Mark == "!").Index] = "7",
-            [players.Single(p => p.Mark == "?").Index] = "8",
-            [players.Single(p => p.Mark == ":").Index] = "9",
-            [players.Single(p => p.Mark == ";").Index] = "A",
-            [players.Single(p => p.Mark == "/").Index] = "B",
+            [players.Single(p => p.CommandName == "1").Index] = "1",
+            [players.Single(p => p.CommandName == "2").Index] = "2",
+            [players.Single(p => p.CommandName == "3").Index] = "3",
+            [players.Single(p => p.CommandName == "4").Index] = "4",
+            [players.Single(p => p.CommandName == "5").Index] = "5",
+            [players.Single(p => p.CommandName == ".").Index] = "6",
+            [players.Single(p => p.CommandName == "!").Index] = "7",
+            [players.Single(p => p.CommandName == "?").Index] = "8",
+            [players.Single(p => p.CommandName == ":").Index] = "9",
+            [players.Single(p => p.CommandName == ";").Index] = "A",
+            [players.Single(p => p.CommandName == "/").Index] = "B",
         };
         var actual = _namer.BuildPlayerToCommandNameMap(players);
         actual.Should().BeEquivalentTo(expected);
@@ -127,7 +127,7 @@ public class ModelNamerTests {
 
         var result = _namer.BuildPlayerToCommandNameMap(playerInfos);
 
-        var originalX = playerInfos.First(p => p.Mark == "X");
+        var originalX = playerInfos.First(p => p.CommandName == "X");
         Assert.True(result.ContainsKey(originalX.Index));
         Assert.Equal("X", result[originalX.Index]);
     }
@@ -146,7 +146,7 @@ public class ModelNamerTests {
         var result = _namer.BuildPlayerToCommandNameMap(players);
 
         foreach (var player in players) {
-            Assert.Equal(player.Info.Mark, result[player.Index]);
+            Assert.Equal(player.Info.CommandName, result[player.Index]);
         }
     }
 
@@ -162,10 +162,10 @@ public class ModelNamerTests {
         }.ToPlayersIndexed();
 
         var expected = new Dictionary<int, string> {
-            [playerInfos.Single(p => p.Mark == "X").Index] = "X",
-            [playerInfos.Single(p => p.Mark == "O").Index] = "O",
-            [playerInfos.Single(p => p.Mark == ".").Index] = "1",
-            [playerInfos.Single(p => p.Mark == "!").Index] = "2"
+            [playerInfos.Single(p => p.CommandName == "X").Index] = "X",
+            [playerInfos.Single(p => p.CommandName == "O").Index] = "O",
+            [playerInfos.Single(p => p.CommandName == ".").Index] = "1",
+            [playerInfos.Single(p => p.CommandName == "!").Index] = "2"
         };
         var actual = _namer.BuildPlayerToCommandNameMap(playerInfos);
 
@@ -325,7 +325,7 @@ public class ModelNamerTests {
         gameState.EndRound(out _);
 
         var gameView = new GameView(gameState, playerOIndex);
-        var expected = players[playerXIndex].Mark;
+        var expected = players[playerXIndex].CommandName;
         var actual = _namer.GetSpaceBody(gameView, boardIndex: 0, col: 1, row: 1, gameView.CanTakeTurn);
         actual.Should().Be(expected);
     }

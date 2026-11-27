@@ -52,7 +52,7 @@ public class PlayersState {
     public IReadOnlyList<PlayerInfo> PlayerInfos {
         get; init {
             // Validation: ToDictionary will throw ArgumentException on non-unique key.
-            _ = value.ToDictionary(p => p.Mark, StringComparer.OrdinalIgnoreCase);
+            _ = value.ToDictionary(p => p.CommandName, StringComparer.OrdinalIgnoreCase);
 
             var indicesByPlayer = new KeyValuePair<PlayerInfo, int>[value.Count];
             for (var i = 0; i < value.Count; i += 1) {
@@ -140,11 +140,15 @@ public class PlayersState {
     public bool CanTakeTurn(int? playerIndex)
     => playerIndex != null && PlayersAvailableForTurn.Any(p => p.Index == playerIndex);
 
+    /// <summary>
+    /// The identity (CommandName) of the player occupying the given mark index.
+    /// The display Mark is a separate concern computed by the ModelNamer.
+    /// </summary>
     public string GetMark(int? markIndex) {
         if (markIndex == Space.ImpasseMarkIndex) {
             return Space.ImpasseChar.ToString();
         } else if (markIndex.HasValue) {
-            return PlayerInfos[markIndex.Value].Mark;
+            return PlayerInfos[markIndex.Value].CommandName;
         } else {
             return Space.EmptyMarkString;
         }

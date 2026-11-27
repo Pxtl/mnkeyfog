@@ -282,7 +282,7 @@ public class BskyGameService : BskyBotService {
                 GameStore.JoinWithIndex(session.Code, senderDid);
                 GameStore.Save(session.Code);
                 await channel.RespondAsync(
-                    $"You joined [{session.Code}] as '{player.Value.Mark}'\n"
+                    $"You joined [{session.Code}] as '{player.Value.CommandName}'\n"
                     + await channel.RenderBoardForAsync(session, cancellationToken)
                     + "\nPlay in DMs: !play <space> (bare space tokens also work if this is your only game).");
             },
@@ -547,7 +547,7 @@ public class BskyGameService : BskyBotService {
         var players = session.GameState.PlayersState;
         var playerIndex = session.GetPlayerIndex(did);
         var playerMark = playerIndex is not null
-            ? $" player {players.PlayerInfos[playerIndex.Value].Mark}"
+            ? $" player {players.PlayerInfos[playerIndex.Value].CommandName}"
             : "";
         var stateText = session.GameState.IsGameOver
             ? "ended"

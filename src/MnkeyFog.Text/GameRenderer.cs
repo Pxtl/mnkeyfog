@@ -71,11 +71,11 @@ public class GameRenderer {
             var winners = gameView.ScoreCard.Highest.AsPlayerInfos(gameView.PlayersState).ToList();
             return winners.Count == 0
                 ? "Game over. Draw."
-                : $"Game over. Winner: {string.Join(", ", winners.Select(w => w.Mark))}";
+                : $"Game over. Winner: {string.Join(", ", winners.Select(w => w.CommandName))}";
         } else {
             var turnMarks = string.Join(
                 ",",
-                gameView.PlayersState.PlayersAvailableForTurn.Select(p => p.Mark)
+                gameView.PlayersState.PlayersAvailableForTurn.Select(p => p.CommandName)
             );
             return $"Turn: {turnMarks}";
         }
@@ -84,7 +84,7 @@ public class GameRenderer {
     private static string RenderActivePlayers(GameView gameView) {
         var scoreCard = gameView.ScoreCard;
         var parts = gameView.PlayersState.ActivePlayers
-            .Select(p => $"{p.Mark}({GetScore(scoreCard, p.Index)})");
+            .Select(p => $"{p.CommandName}({GetScore(scoreCard, p.Index)})");
         var joined = string.Join(" ", parts);
         return joined.Length == 0 ? "" : $"Players: {joined}";
     }
@@ -93,7 +93,7 @@ public class GameRenderer {
         var players = gameView.PlayersState;
         var parts = players.PlayersIndexed
             .Where(p => players.IsResignedPlayer(p.Index))
-            .Select(p => p.Mark);
+            .Select(p => p.CommandName);
         var joined = string.Join(" ", parts);
         return joined.Length == 0 ? "" : $"Resigned: {joined}";
     }

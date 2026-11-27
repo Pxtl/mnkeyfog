@@ -15,7 +15,7 @@ public class RoundRobinPlayManager
 
     public override string GameStateText(PlayersState playerState)
         => playerState.PlayersAvailableForTurn.Count() > 0
-        ? $"Round-robin play. Current player is {playerState.PlayersAvailableForTurn.First().Info.Mark}."
+        ? $"Round-robin play. Current player is {playerState.PlayersAvailableForTurn.First().Info.CommandName}."
         : "Round over.";
 
     public override void EndedRound(GameState gameState, out bool hasStateChanged) {

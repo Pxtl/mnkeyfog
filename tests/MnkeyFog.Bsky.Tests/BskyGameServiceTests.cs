@@ -217,7 +217,7 @@ public class BskyGameServiceTests {
         response.Should().Contain("resigning");
         // p2 resigned, so p1 (player 0) is the only active player → game over.
         session.GameState.IsGameOver.Should().BeTrue();
-        session.GameState.Winners.Single().Mark.Should().Be("X");
+        session.GameState.Winners.Single().CommandName.Should().Be("X");
     }
 
     [Fact]

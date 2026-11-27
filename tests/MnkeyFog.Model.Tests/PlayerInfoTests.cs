@@ -37,13 +37,13 @@ public class PlayerInfoTests {
     public void NewPlayer_AlphaCharIsAllowedMark() {
         var expectedMark = "M";
         var actual = new PlayerInfo(expectedMark);
-        actual.Mark.Should().Be(expectedMark);
+        actual.CommandName.Should().Be(expectedMark);
     }
 
     [Fact]
     public void NewPlayer_SpecialCharIsAllowedMark() {
         var expectedMark = "☂"; //unicode umbrella
         var actual = new PlayerInfo(expectedMark);
-        actual.Mark.Should().Be(expectedMark);
+        actual.CommandName.Should().Be(expectedMark);
     }
 }
