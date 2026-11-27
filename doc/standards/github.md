@@ -7,8 +7,14 @@ Branch names shall be `kebab-case` and do not need to use a prefix or
 
 ## Pull Requests Comments
 
+Resolving comments is the responsibility of the reviewer of the PR, not the PR
+author.  Authors can note reviewer-comments as resolved by replying to them.
+
+### Replying to Comments
+
 The following instruction is primarily for LLMs/Agents, human contributors get
-more flexibility.
+more flexibility and should feel free to reply with just "done" to notify the
+reviewer that a reviewer-comment has been handled and is ready for re-review.
 
 When handling pull request comments, they shall be replied to. If a particular
 commit is relevant to the reply (such as "this issue is resolved in commit X"),
