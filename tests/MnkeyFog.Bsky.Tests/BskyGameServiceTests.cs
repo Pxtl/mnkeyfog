@@ -125,7 +125,7 @@ public class BskyGameServiceTests {
 
         await svc.TestHandleMessageAsync("did:plc:p2", "!list", TestContext.Current.CancellationToken);
         var response = svc.TestedResponses.Single();
-        response.Should().Contain($"[{session.Code}]").And.Contain(template.CommandName).And.Contain("player O");
+        response.Should().Contain($"[{session.Code}]").And.Contain(template.CommandName).And.Contain("player O(O)");
     }
 
     [Fact]
@@ -182,8 +182,10 @@ public class BskyGameServiceTests {
         var template = PlainTemplate();
         var s1 = new GameSession("E1", "at://u1", "did:plc:p1", TwoPlayers(), template);
         s1.Join("did:plc:p2");
-        var line = BskyGameService.FormatGameLine(s1, "did:plc:p2");
-        line.Should().Contain("[E1]").And.Contain(template.CommandName).And.Contain("player O");
+        var line = BskyGameService.FormatGameLine(s1, "did:plc:p2", new ModelNamer());
+        // The joiner's CommandName is "O" (1-char default mark) and its Mark is
+        // also "O" (default: 1-char CommandName → use it), so "player O(O)".
+        line.Should().Contain("[E1]").And.Contain(template.CommandName).And.Contain("player O(O)");
     }
 
     // ── !new player-count validation ──

@@ -372,7 +372,7 @@ public class BskyGameService : BskyBotService {
             return;
         }
 
-        var lines = sessions.Select(s => FormatGameLine(s, senderDid));
+        var lines = sessions.Select(s => FormatGameLine(s, senderDid, _actionParser.Namer));
         await channel.RespondAsync(string.Join("\n", lines));
     }
 
@@ -557,11 +557,11 @@ public class BskyGameService : BskyBotService {
         return (null, tokens);
     }
 
-    internal static string FormatGameLine(GameSession session, string did) {
+    internal static string FormatGameLine(GameSession session, string did, ModelNamer namer) {
         var players = session.GameState.PlayersState;
         var playerIndex = session.GetPlayerIndex(did);
         var playerMark = playerIndex is not null
-            ? $" player {players.PlayerInfos[playerIndex.Value].CommandName}"
+            ? $" player {players.PlayerInfos[playerIndex.Value].CommandName}({namer.GetPlayerMark(playerIndex.Value, players)})"
             : "";
         var stateText = session.GameState.IsGameOver
             ? "ended"
