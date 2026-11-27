@@ -1,4 +1,4 @@
-namespace MnkeyFog.Text;
+namespace MnkeyFog.Model;
 
 /// <summary>
 /// A board's name in the text interface. <see cref="CommandName"/> is what a

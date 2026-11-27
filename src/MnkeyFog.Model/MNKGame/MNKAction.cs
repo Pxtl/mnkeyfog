@@ -48,12 +48,16 @@ public record MNKAction
         => GetBoard(gameState).Spaces[Col, Row];
 
     public override bool IsActionCollision(PlayerAction otherAction, int actionPlayerIndex)
-    => otherAction.GameAction is MNKAction otherTicTacToeAction
-        ? BoardIndex == otherTicTacToeAction.BoardIndex
-            && Col == otherTicTacToeAction.Col
-            && Row == otherTicTacToeAction.Row
-            && actionPlayerIndex != otherAction.PlayerIndex
-        : throw new InvalidOperationException("Cannot compare different action types.");
+    => otherAction.GameAction switch {
+        MNKAction otherMNKAction
+            => BoardIndex == otherMNKAction.BoardIndex
+                && Col == otherMNKAction.Col
+                && Row == otherMNKAction.Row
+                && actionPlayerIndex != otherAction.PlayerIndex,
+        // a pass touches no space, so it can never collide with a space play.
+        PassAction => false,
+        _ => throw new InvalidOperationException("Cannot compare these action types.")
+    };
 
     public override IPlayActionResult Attempt(GameState gameState, int actionPlayerIndex) {
         if (!gameState.PlayersState.CanTakeTurn(actionPlayerIndex)) {

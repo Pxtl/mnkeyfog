@@ -20,6 +20,12 @@ public abstract record GameTemplate()
     /// </summary>
     public string? Description { get; init; }
     /// <summary>
+    /// The <see cref="ModelName.CommandName"/> of this template's default action —
+    /// the action shown as the default in multi-action pickers. Must match the
+    /// command name of one of this template's action factories.
+    /// </summary>
+    public abstract string DefaultActionCommandName { get; }
+    /// <summary>
     /// Explicit list of how many players are allowed for the game.
     /// </summary>
     public IEnumerable<int> LegalPlayerCounts { get; init; } = DefaultLegalPlayerCounts;

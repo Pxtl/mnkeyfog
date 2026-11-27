@@ -33,12 +33,12 @@ public class BskyGameService : BskyBotService {
         "Commands:\n"
         + "  !new [game] [players]  — start a new game (public threads only)\n"
         + "  !join                  — join the game in this thread (public threads)\n"
-        + "  !play <space> <space>  — play a move (DMs)\n"
+        + "  !play <action> <args>  — play a move (DMs); actions: space (!play space 5), pass (!play pass)\n"
         + "  !board                 — show the board\n"
         + "  !list                  — list the games you are in (DMs)\n"
         + "  !help                  — show this help\n"
         + "  !resign                — resign the game (concede to the other players)\n"
-        + "Use g=<code> on any command to target a specific game (DMs): !play 5 g=5F\n"
+        + "Use g=<code> on any command to target a specific game (DMs): !play space 5 g=5F\n"
         + "In DMs the ! prefix is optional — just send '5' to play space 5 (your only game).";
 
     private const string SecretGamePlaceholder =
@@ -444,12 +444,16 @@ public class BskyGameService : BskyBotService {
         }
 
         var playerView = session.GetViewFor(senderDid);
-        var moves = _actionParser.ParsePlay(playerView, _actionParser.Tokenize(message));
-        if (moves.Count == 0) {
-            return;
-        }
-
-        await ExecuteMovesAsync(senderDid, _actionParser.Tokenize(message), session, playerIndex.Value, channel, cancellationToken);
+        var playResult = _actionParser.ParsePlay(playerView, _actionParser.Tokenize(message));
+        await playResult.Match(
+            async moves => {
+                if (moves.Count == 0) {
+                    return;
+                }
+                await ExecuteMovesAsync(senderDid, _actionParser.Tokenize(message), session, playerIndex.Value, channel, cancellationToken);
+            },
+            error => channel.RespondAsync($"Game [{session.Code}]\n{error.Message}")
+        );
     }
 
     private async Task ExecuteMovesAsync(
@@ -461,10 +465,16 @@ public class BskyGameService : BskyBotService {
         CancellationToken cancellationToken
     ) {
         var playerView = session.GetViewFor(senderDid);
-        var moves = _actionParser.ParsePlay(playerView, tokens);
+        var playResult = _actionParser.ParsePlay(playerView, tokens);
+        // OneOf: T0 = IReadOnlyList<GameAction> (moves), T1 = CommandError (error).
+        if (playResult.IsT1) {
+            await channel.RespondAsync($"Game [{session.Code}]\n{playResult.AsT1.Message}");
+            return;
+        }
+        var moves = playResult.AsT0;
         if (moves.Count == 0) {
             await channel.RespondAsync(
-                $"No valid spaces mentioned for game [{session.Code}]. Usage: !play <space> — e.g. !play 5 or !play 1A.");
+                $"No valid spaces mentioned for game [{session.Code}]. Usage: !play <action> <args> — e.g. !play space 5 or !play space 1A 2B; or !play pass.");
             return;
         }
 
