@@ -253,6 +253,14 @@ public class BskyGameService : BskyBotService {
         var result = GameStore.CreateGame(uriKey, senderDid, playerCount, gameTemplate);
         await result.Match(
             async created => {
+                // The creator's CommandName is their handle (typeable identity),
+                // resolved from their DID. Set before the response so the board
+                // shows it.
+                var handle = await GetHandleAsync(senderDid, cancellationToken);
+                if (handle is not null) {
+                    created.Session.GameState.PlayersState.PlayerInfos[0].CommandName = handle;
+                    GameStore.Save(created.Code);
+                }
                 await channel.RespondAsync(
                     $"Started {gameTemplate.CommandName} ({playerCount}p) — code: [{created.Code}]\n"
                     + ((await channel.RenderBoardForAsync(created.Session, cancellationToken)).Match(
@@ -279,10 +287,22 @@ public class BskyGameService : BskyBotService {
         var result = session.Join(senderDid);
         await result.Match(
             async player => {
-                GameStore.JoinWithIndex(session.Code, senderDid);
+                GameStore.JoinGame(session.Code, senderDid);
+                // The joiner's CommandName is their handle (typeable identity),
+                // resolved from their DID. Set before saving so it persists.
+                var handle = await GetHandleAsync(senderDid, cancellationToken);
+                if (handle is not null) {
+                    player.Value.CommandName = handle;
+                }
                 GameStore.Save(session.Code);
+                // The joiner just joined, so they are in the game; a null index
+                // here would be a bug.
+                if (session.GetPlayerIndex(senderDid) is not int joinedPlayerIndex) {
+                    throw new InvalidOperationException($"Joiner {senderDid} not found in game after join.");
+                }
+                var displayName = _actionParser.Namer.GetPlayerDisplayName(joinedPlayerIndex, session.GameState.PlayersState);
                 await channel.RespondAsync(
-                    $"You joined [{session.Code}] as '{player.Value.Mark}'\n"
+                    $"You joined [{session.Code}] as '{displayName}'\n"
                     + await channel.RenderBoardForAsync(session, cancellationToken)
                     + "\nPlay in DMs: !play <space> (bare space tokens also work if this is your only game).");
             },
@@ -358,7 +378,7 @@ public class BskyGameService : BskyBotService {
             return;
         }
 
-        var lines = sessions.Select(s => FormatGameLine(s, senderDid));
+        var lines = sessions.Select(s => FormatGameLine(s, senderDid, _actionParser.Namer));
         await channel.RespondAsync(string.Join("\n", lines));
     }
 
@@ -543,11 +563,11 @@ public class BskyGameService : BskyBotService {
         return (null, tokens);
     }
 
-    internal static string FormatGameLine(GameSession session, string did) {
+    internal static string FormatGameLine(GameSession session, string did, ModelNamer namer) {
         var players = session.GameState.PlayersState;
         var playerIndex = session.GetPlayerIndex(did);
-        var playerMark = playerIndex is not null
-            ? $" player {players.PlayerInfos[playerIndex.Value].Mark}"
+        var playerDisplay = playerIndex is not null
+            ? $" player {namer.GetPlayerDisplayName(playerIndex.Value, players)}"
             : "";
         var stateText = session.GameState.IsGameOver
             ? "ended"
@@ -555,7 +575,7 @@ public class BskyGameService : BskyBotService {
                 ? $"your turn (round {players.RoundIndex + 1}, move {playerIndex.Value + 1})"
                 : "in progress";
         var elapsed = FormatElapsed(DateTimeOffset.UtcNow - session.StartedAt);
-        return $"[{session.Code}] {session.GameState.GameTemplate.CommandName} — {stateText}{playerMark}, started {elapsed}";
+        return $"[{session.Code}] {session.GameState.GameTemplate.CommandName} — {stateText}{playerDisplay}, started {elapsed}";
     }
 
     private static string FormatElapsed(TimeSpan span) {
@@ -572,6 +592,24 @@ public class BskyGameService : BskyBotService {
             return $"{span.Minutes}m ago";
         }
         return "just now";
+    }
+
+    /// <summary>
+    /// Resolve a player's Bluesky handle (their typeable identity, used as their
+    /// CommandName) from their DID. Returns null if the lookup fails.
+    /// The returned handle is the bare handle (e.g. <c>p2.bsky.social</c>) and
+    /// does NOT include a leading <c>@</c>.
+    /// </summary>
+    private async Task<string?> GetHandleAsync(string did, CancellationToken cancellationToken) {
+        try {
+            var result = await Agent.GetProfiles([did], cancellationToken: cancellationToken);
+            if (result.Succeeded && result.Result is { Count: > 0 } profiles) {
+                return profiles.First().Handle.ToString();
+            }
+        } catch (Exception ex) {
+            Logger.LogWarning(ex, "Failed to resolve handle for {did}.", did);
+        }
+        return null;
     }
     #endregion
 }

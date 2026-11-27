@@ -60,12 +60,30 @@ The following items are fully approved and can be taken up immediately.
     `BasicTicTacToe`, and `FreestyleGomoku` shall remain on `MNKTemplate` while
     all other templates shall be on `CasualMNKTemplate`.
 
-- **ModelNamer for Players**.  Much like rows, columns, and boards, Player Names
-  shall be managed by the ModelNamer.  Currently, most Player-related
-  constructions take a Mark or a list of Marks.  The Mark shall instead be the
-  DisplayName of a Player.Name, while the CommandName shall be the name provided
-  during construction of the game (BSky or CLI).  Default (null) implementation
-  shall be that DisplayName = CommandName.
+- **ModelNamer for Players**.  Player marks are managed by the `ModelNamer`,
+  but **not** as `ModelName` objects (unlike boards/rows/columns) — `ModelName`
+  doesn't map cleanly here.  Design:
+  - A player joins a game (or a game is created with a list of players) carrying
+    a **`CommandName`**: the human-typeable name — their BSky handle, or the
+    mark char they picked in the CLI.  (BSky: the handle is resolved from the
+    player's DID via `Agent.GetProfiles` in the message flow — `HandleNewAsync`
+    for the creator, `HandleJoinAsync` for joiners — then set on `PlayerInfo`.)
+  - `ModelNamer` holds a list of `string` **PlayerMarks** (not `ModelName`),
+    assigned by `playerIndex`.  The PlayerMark is what's drawn on the board.
+    In a text message a player displays as
+    `$"{player.CommandName}({namer.GetPlayerMark(playerIndex, playersState)})"`.
+  - `GetPlayerMark(playerIndex, playersState)` default (no marks provided):
+    use the `CommandName` if it is 1 char, else the `playerIndex`.
+  - A **numeric 1-char `CommandName` is a user error** — notify the user it's
+    not allowed.  Won't arise in BSky (handles are multi-char), possible in CLI.
+  - `PlayerInfo`/`Player` expose `CommandName` (`Player` also `Index`).  The mark
+    lookup needs the player's `CommandName` by index (via `PlayersState` or a
+    full `Player`).  Caching the namer-derived Mark on `Player` is an **open
+    question** (very unsure).
+  - The existing CommandLine non-typeable-Mark code **stays** (makes a little
+    less sense now that there's a built-in mark/name distinction, but the CLI
+    generally uses the default mode: each player picks a 1-char Mark — really
+    `PlayerInfo.CommandName` — and the namer returns that CommandName as the Mark).
 
 - **Emoji Styling**.  Depends on "ModelNamer for PLayers" & "BoardRenderer
   Constructor" and "Row/Column BoardRenderer Mode". BSky BoardRenderer shall

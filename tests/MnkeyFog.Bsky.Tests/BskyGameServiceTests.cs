@@ -121,11 +121,15 @@ public class BskyGameServiceTests {
         var template = PlainTemplate();
         var session = CreateGame(svc, "did:plc:p1", template);
         session.Join("did:plc:p2");
-        svc.Store.JoinWithIndex(session.Code, "did:plc:p2");
+        svc.Store.JoinGame(session.Code, "did:plc:p2");
+        // Simulate a resolved handle for the joiner (their CommandName).
+        session.GameState.PlayersState.PlayerInfos[1].CommandName = "p2.bsky.social";
 
         await svc.TestHandleMessageAsync("did:plc:p2", "!list", TestContext.Current.CancellationToken);
         var response = svc.TestedResponses.Single();
-        response.Should().Contain($"[{session.Code}]").And.Contain(template.CommandName).And.Contain("player O");
+        // Multi-char CommandName → default Mark is the player index (1), so the
+        // display name is "CommandName(Mark)".
+        response.Should().Contain($"[{session.Code}]").And.Contain(template.CommandName).And.Contain("p2.bsky.social(1)");
     }
 
     [Fact]
@@ -134,7 +138,7 @@ public class BskyGameServiceTests {
         var template = PlainTemplate();
         var session = CreateGame(svc, "did:plc:p1", template);
         session.Join("did:plc:p2");
-        svc.Store.JoinWithIndex(session.Code, "did:plc:p2");
+        svc.Store.JoinGame(session.Code, "did:plc:p2");
 
         // p1 (player X) has already played, so p2 (player O) is next.
         var moves = new ActionParser(new ModelNamer()).ParsePlay(session.GetViewFor("did:plc:p1"), ["5"]);
@@ -158,8 +162,8 @@ public class BskyGameServiceTests {
         var s2 = CreateGame(svc, "did:plc:p1", template);
         s1.Join("did:plc:p2");
         s2.Join("did:plc:p2");
-        svc.Store.JoinWithIndex(s1.Code, "did:plc:p2");
-        svc.Store.JoinWithIndex(s2.Code, "did:plc:p2");
+        svc.Store.JoinGame(s1.Code, "did:plc:p2");
+        svc.Store.JoinGame(s2.Code, "did:plc:p2");
 
         await svc.TestHandleMessageAsync("did:plc:p2", "!list", TestContext.Current.CancellationToken);
         var response = svc.TestedResponses.Single();
@@ -171,7 +175,7 @@ public class BskyGameServiceTests {
         var svc = new TestableGameService();
         var session = CreateGame(svc, "did:plc:p1", PlainTemplate());
         session.Join("did:plc:p2");
-        svc.Store.JoinWithIndex(session.Code, "did:plc:p2");
+        svc.Store.JoinGame(session.Code, "did:plc:p2");
 
         await svc.TestHandleMessageAsync("did:plc:p2", "!list", TestContext.Current.CancellationToken);
         svc.TestedResponses.Single().Should().Contain("just now");
@@ -182,8 +186,11 @@ public class BskyGameServiceTests {
         var template = PlainTemplate();
         var s1 = new GameSession("E1", "at://u1", "did:plc:p1", TwoPlayers(), template);
         s1.Join("did:plc:p2");
-        var line = BskyGameService.FormatGameLine(s1, "did:plc:p2");
-        line.Should().Contain("[E1]").And.Contain(template.CommandName).And.Contain("player O");
+        s1.GameState.PlayersState.PlayerInfos[1].CommandName = "p2.bsky.social";
+        var line = BskyGameService.FormatGameLine(s1, "did:plc:p2", new ModelNamer());
+        // The joiner's CommandName is a handle (multi-char), so its default Mark
+        // is the player index (1), and the display is "CommandName(Mark)".
+        line.Should().Contain("[E1]").And.Contain(template.CommandName).And.Contain("p2.bsky.social(1)");
     }
 
     // ── !new player-count validation ──
@@ -210,14 +217,14 @@ public class BskyGameServiceTests {
         var svc = new TestableGameService();
         var session = CreateGame(svc, "did:plc:p1", PlainTemplate());
         session.Join("did:plc:p2");
-        svc.Store.JoinWithIndex(session.Code, "did:plc:p2");
+        svc.Store.JoinGame(session.Code, "did:plc:p2");
 
         await svc.TestHandleMessageAsync("did:plc:p2", "!resign", TestContext.Current.CancellationToken);
         var response = svc.TestedResponses.Single();
         response.Should().Contain("resigning");
         // p2 resigned, so p1 (player 0) is the only active player → game over.
         session.GameState.IsGameOver.Should().BeTrue();
-        session.GameState.Winners.Single().Mark.Should().Be("X");
+        session.GameState.Winners.Single().CommandName.Should().Be("X");
     }
 
     [Fact]
@@ -225,7 +232,7 @@ public class BskyGameServiceTests {
         var svc = new TestableGameService();
         var session = CreateGame(svc, "did:plc:p1", PlainTemplate());
         session.Join("did:plc:p2");
-        svc.Store.JoinWithIndex(session.Code, "did:plc:p2");
+        svc.Store.JoinGame(session.Code, "did:plc:p2");
 
         // p2 resigns → game over (p1 is the only active player).
         await svc.TestHandleMessageAsync("did:plc:p2", "!resign", TestContext.Current.CancellationToken);
@@ -239,7 +246,7 @@ public class BskyGameServiceTests {
         var svc = new TestableGameService();
         var session = CreateGame(svc, "did:plc:p1", PlainTemplate());
         session.Join("did:plc:p2");
-        svc.Store.JoinWithIndex(session.Code, "did:plc:p2");
+        svc.Store.JoinGame(session.Code, "did:plc:p2");
 
         await svc.TestHandleMessageAsync("did:plc:p2", "!quit", TestContext.Current.CancellationToken);
         svc.TestedResponses.Single().Should().Contain("Unknown command");

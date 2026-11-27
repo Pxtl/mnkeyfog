@@ -43,7 +43,9 @@ public sealed class GameSession {
         StartedAt = DateTimeOffset.UtcNow;
         GameState = new GameState(playerMarks.ToArray(), template, isRandomPlayerOrder: false);
 
-        // Creator claims the first player slot.
+        // Creator claims the first player slot. Their CommandName (their typeable
+        // identity) is the handle, assigned by the message flow (HandleNewAsync)
+        // after it resolves the handle from the DID.
         _playerByDid[creatorDid] = 0;
     }
 

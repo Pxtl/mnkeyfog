@@ -18,6 +18,7 @@ public class ModelNamer {
     private readonly IReadOnlyList<ModelName>? _boardModelNames;
     private readonly IReadOnlyList<ModelName>? _columnModelNames;
     private readonly IReadOnlyList<ModelName>? _rowModelNames;
+    private readonly IReadOnlyList<string>? _playerMarks;
 
     #region constructors
     /// <summary>
@@ -28,6 +29,7 @@ public class ModelNamer {
         _boardModelNames = null;
         _columnModelNames = null;
         _rowModelNames = null;
+        _playerMarks = null;
     }
 
     /// <summary>
@@ -40,6 +42,7 @@ public class ModelNamer {
         _boardModelNames = boardModelNames.ToList();
         _columnModelNames = null;
         _rowModelNames = null;
+        _playerMarks = null;
     }
 
     /// <summary>
@@ -47,10 +50,18 @@ public class ModelNamer {
     /// have at least as many entries as there are boards/columns/rows, or else
     /// rendering beyond its length throws.
     /// </summary>
+    /// <param name="playerMarks">
+    /// Optional pre-provided player display marks, in player-index order. Unlike
+    /// the board/column/row names, player marks are nullable: when not supplied
+    /// they are derived from the players' CommandNames (1-char marks) or the
+    /// player index. The board/column/row lists are required because a board
+    /// always has columns/rows and there is no fallback source for their names.
+    /// </param>
     public ModelNamer(
         IEnumerable<ModelName> boardModelNames,
         IEnumerable<ModelName> columnModelNames,
-        IEnumerable<ModelName> rowModelNames
+        IEnumerable<ModelName> rowModelNames,
+        IEnumerable<string>? playerMarks = null
     ) {
         ArgumentNullException.ThrowIfNull(boardModelNames);
         ArgumentNullException.ThrowIfNull(columnModelNames);
@@ -58,6 +69,7 @@ public class ModelNamer {
         _boardModelNames = boardModelNames.ToList();
         _columnModelNames = columnModelNames.ToList();
         _rowModelNames = rowModelNames.ToList();
+        _playerMarks = playerMarks?.ToList();
     }
 
     #endregion
@@ -153,56 +165,88 @@ public class ModelNamer {
     }
 
     /// <summary>
-    /// Builds a mapping of key-commands to players, so that actions that
-    /// require choosing a player (like choosing which player is ready in
-    /// hotseat mode) can be done with keyboard commands.  If a player's mark is
-    /// a typeable character, use that.  If not, assign an alternate unused char
-    /// for the player.  Only currently used in `MnkeyFog.CommandLine`.
+    /// The display Mark of the player at <paramref name="playerIndex"/>. If a
+    /// pre-provided <c>PlayerMarks</c> list was given to the namer, that entry
+    /// is used; otherwise the default: the player's <c>CommandName</c> when it
+    /// is a single character, or the <c>playerIndex</c> otherwise. A player's
+    /// <c>CommandName</c> (their typeable identity, e.g. a Bluesky handle)
+    /// does not apply to the board; the Mark is what is drawn in a space the
+    /// player occupies.
     /// </summary>
-    public OrderedDictionary<int, string> BuildPlayerToCommandNameMap(IEnumerable<Player> availablePlayers) {
+    public string GetPlayerMark(int playerIndex, PlayersState playersState) {
+        if (_playerMarks is not null) {
+            if (playerIndex < 0 || playerIndex >= _playerMarks.Count) {
+                throw new ArgumentOutOfRangeException(nameof(playerIndex), $"Player index {playerIndex} is out of range for the {_playerMarks.Count} pre-provided player marks.");
+            }
+            return _playerMarks[playerIndex];
+        }
+        var commandName = playersState.PlayerInfos[playerIndex].CommandName;
+        return commandName.Length == 1 ? commandName : playerIndex.ToString();
+    }
+
+    /// <summary>
+    /// The combined display name of the player at <paramref name="playerIndex"/>: the Mark alone
+    /// when it equals the player's <c>CommandName</c>, otherwise
+    /// <c>"CommandName(Mark)"</c>.
+    /// </summary>
+    public string GetPlayerDisplayName(int playerIndex, PlayersState playersState) {
+        var mark = GetPlayerMark(playerIndex, playersState);
+        var commandName = playersState.PlayerInfos[playerIndex].CommandName;
+        return commandName == mark ? mark : $"{commandName}({mark})";
+    }
+
+    /// <summary>
+    /// Builds a mapping of player index to typeable command name, so that
+    /// actions that require choosing a player (like choosing which player is
+    /// ready in hotseat mode) can be done with keyboard commands.  If a
+    /// player's CommandName is a typeable character, use that.  If not, assign
+    /// an alternate unused char for the player.  Only currently used in
+    /// `MnkeyFog.CommandLine`.
+    /// </summary>
+    public OrderedDictionary<int, string> BuildPlayerToTypeableCommandNameMap(IEnumerable<Player> availablePlayers) {
         // Build alternate key mapping for ALL players before entering loop
         // Keys are uppercase only (A-Z, 0-9)
-        var usedKeys = availablePlayers
-            .Select(p => p.Info.Mark)
+        var usedTypeableCommandNames = availablePlayers
+            .Select(p => p.Info.CommandName)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var playerIndexToKey = new OrderedDictionary<int, string>();
+        var playerIndexToTypeableCommandName = new OrderedDictionary<int, string>();
 
         foreach (var player in availablePlayers) {
-            // Check if mark is typeable (ASCII letter or digit)
-            bool isTypeable = (player.Info.Mark.Length == 1)
+            // Check if CommandName is typeable (ASCII letter or digit)
+            bool isTypeable = (player.Info.CommandName.Length == 1)
                 && Regex.IsMatch(player.Info, "[ABCDEFGHJKLMNOPSTUVWXYZ1-9]", RegexOptions.IgnoreCase); //remove I, R, 0 (zero) and Q.  I and O for confusion, R and Q for command collisions.
 
             if (isTypeable) {
-                // Typeable mark - use the mark itself
-                playerIndexToKey[player.Index] = player.Info.Mark;
+                // Typeable CommandName - use it itself
+                playerIndexToTypeableCommandName[player.Index] = player.Info.CommandName;
             } else {
-                // Non-typeable mark (emoji, Snowman, etc.) - assign alternate key
+                // Non-typeable CommandName (emoji, Snowman, etc.) - assign alternate typeable command name
 
                 // Try digits first (1-9)
                 // Stop if we've exhausted digits (after '9').
                 // Start at 1 because "0" looks too much like "O"
                 for (int numKeyIndex = 1; numKeyIndex < 10; numKeyIndex += 1) {
-                    string digitKey = ((char)('0' + numKeyIndex)).ToString();
-                    if (usedKeys.Contains(digitKey)) {
+                    string digitTypeableCommandName = ((char)('0' + numKeyIndex)).ToString();
+                    if (usedTypeableCommandNames.Contains(digitTypeableCommandName)) {
                         continue;
                     } else {
-                        playerIndexToKey[player.Index] = digitKey;
-                        usedKeys.Add(digitKey);
+                        playerIndexToTypeableCommandName[player.Index] = digitTypeableCommandName;
+                        usedTypeableCommandNames.Add(digitTypeableCommandName);
                         break;
                     }
                 }
 
-                if (!playerIndexToKey.ContainsKey(player.Index)) {
+                if (!playerIndexToTypeableCommandName.ContainsKey(player.Index)) {
                     // If needed, use letters (A-Z)
                     // stop at 26 since then we've exhausted letters.
                     for (int letterKeyIndex = 0; letterKeyIndex < 26; letterKeyIndex += 1) {
-                        string letterKey = ((char)('A' + letterKeyIndex)).ToString();
-                        if (usedKeys.Contains(letterKey)) {
+                        string letterTypeableCommandName = ((char)('A' + letterKeyIndex)).ToString();
+                        if (usedTypeableCommandNames.Contains(letterTypeableCommandName)) {
                             continue;
                         } else {
-                            playerIndexToKey[player.Index] = letterKey;
-                            usedKeys.Add(letterKey);
+                            playerIndexToTypeableCommandName[player.Index] = letterTypeableCommandName;
+                            usedTypeableCommandNames.Add(letterTypeableCommandName);
                             break;
                         }
                     }
@@ -210,7 +254,7 @@ public class ModelNamer {
             }
         }
 
-        return playerIndexToKey;
+        return playerIndexToTypeableCommandName;
     }
 
     public bool TryGetBoardIndexByCommandName(string boardName, int boardsCount, out sbyte boardIndex) {
@@ -273,8 +317,12 @@ public class ModelNamer {
             && !boardView.IsDone
         ) {
             return SpaceCommandName(gameView, boardIndex, col, row);
+        } else if (spaceView.MarkIndex is null) {
+            return Space.EmptyMarkString;
+        } else if (spaceView.MarkIndex == Space.ImpasseMarkIndex) {
+            return Space.ImpasseChar.ToString();
         } else {
-            return gameView.PlayersState.GetMark(spaceView.MarkIndex);
+            return GetPlayerMark(spaceView.MarkIndex.Value, gameView.PlayersState);
         }
     }
 }

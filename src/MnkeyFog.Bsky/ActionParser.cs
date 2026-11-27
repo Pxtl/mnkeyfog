@@ -21,6 +21,9 @@ public partial class ActionParser {
 
     private readonly ModelNamer _namer;
 
+    /// <summary>The ModelNamer used by this parser (for display formatting).</summary>
+    public ModelNamer Namer => _namer;
+
     public ActionParser(ModelNamer namer) {
         _namer = namer;
     }

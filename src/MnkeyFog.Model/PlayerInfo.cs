@@ -3,35 +3,39 @@ using System.ComponentModel;
 namespace MnkeyFog.Model;
 
 /// <summary>
-/// Represents a player in the game. Stores their marker string.
+/// Represents a player in the game. Stores their <see cref="CommandName"/> - the
+/// human-typeable name the player joins with (a CLI mark char, or a BSky handle).
+/// The display Mark is a separate concern, computed by the ModelNamer.
 /// </summary>
 [ModelSerializable]
-[ImmutableObject(true)]
 public sealed record PlayerInfo {
-    public PlayerInfo(string mark) {
-        if (mark == null) {
-            throw new ArgumentNullException("Mark must be provided", nameof(mark));
-        } else if (mark.Length != 1) {
-            throw new ArgumentException("Mark must be length 1", nameof(mark));
-        } else if (string.IsNullOrWhiteSpace(mark)) {
-            throw new ArgumentException("Mark must not be whitespace.", nameof(mark));
-        } else if (char.IsControl(mark[0])) {
-            throw new ArgumentException("Mark must not be a control char.", nameof(mark));
+    public PlayerInfo(string commandName) {
+        if (commandName == null) {
+            throw new ArgumentNullException("CommandName must be provided", nameof(commandName));
+        } else if (string.IsNullOrWhiteSpace(commandName)) {
+            throw new ArgumentException("CommandName must not be empty or whitespace.", nameof(commandName));
+        } else if (char.IsControl(commandName[0])) {
+            throw new ArgumentException("CommandName must not be a control char.", nameof(commandName));
         }
-        Mark = mark;
+        CommandName = commandName;
     }
-    public string Mark { get; init; }
-
-    public override string ToString()
-        => Mark;
 
     /// <summary>
-    /// Create a Player from a char.
+    /// The human-typeable name the player joins with. Settable so the BSky join
+    /// path can assign the player's handle after the slot is claimed.
+    /// </summary>
+    public string CommandName { get; set; }
+
+    public override string ToString()
+        => CommandName;
+
+    /// <summary>
+    /// Create a PlayerInfo from a char.
     /// </summary>
     public static PlayerInfo FromChar(char value) => new PlayerInfo(value.ToString());
 
     /// <summary>
-    /// Create a Player from a 1-character nullable string.  Returns null if the
+    /// Create a PlayerInfo from a 1-character nullable string.  Returns null if the
     /// parameter is not a 1-character string.
     /// </summary>
     public static PlayerInfo? FromString(string? value) {
@@ -44,17 +48,17 @@ public sealed record PlayerInfo {
     }
 
     /// <summary>
-    /// Implicit conversion from char string to Player.
+    /// Implicit conversion from char string to PlayerInfo.
     /// </summary>
     public static implicit operator PlayerInfo(string value) => new PlayerInfo(value);
 
     /// <summary>
-    /// Implicit conversion from char to Player.
+    /// Implicit conversion from char to PlayerInfo.
     /// </summary>
     public static implicit operator PlayerInfo(char value) => new PlayerInfo(value.ToString());
 
     /// <summary>
-    /// Implicit conversion from Player to string.
+    /// Implicit conversion from PlayerInfo to string.
     /// </summary>
-    public static implicit operator string(PlayerInfo player) => player.Mark;
+    public static implicit operator string(PlayerInfo player) => player.CommandName;
 }

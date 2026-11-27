@@ -26,15 +26,23 @@ internal class ConsoleLoop {
         StateStorage.SaveState(state, sharedStateFilePath.FullName);
 
         Console.Out.WriteLine(joinAsPlayer.Match(
-            player => $"Joining game-file '{sharedStateFilePath.FullName}' as player '{player}'.",
+            player => {
+                var joinIndex = state.PlayersState.GetPlayer(player).Index;
+                var joinDisplayName = _namer.GetPlayerDisplayName(joinIndex, state.PlayersState);
+                return $"Joining game-file '{sharedStateFilePath.FullName}' as player '{joinDisplayName}'.";
+            },
             localHotseatGame => "Running in hotseat mode."
         ));
 
-        Console.Out.WriteLine($"Players are {string.Join(", ", state.PlayersState.PlayerInfos)}.");
+        var consolePlayersState = state.PlayersState;
+        var playerNames = consolePlayersState.PlayersIndexed.Select(p => _namer.GetPlayerDisplayName(p.Index, consolePlayersState));
+        Console.Out.WriteLine($"Players are {string.Join(", ", playerNames)}.");
         Console.Out.WriteLine($"Game is {state.GameTemplate.CommandName}.");
         Console.Out.WriteLine($"Description: {state.GameTemplate.Description}");
         foreach (var aiPlayer in aiPlayers) {
-            Console.Out.WriteLine($"AI Player {aiPlayer.Key.Mark}: {aiPlayer.Value.Description}.");
+            var aiIndex = consolePlayersState.GetPlayer(aiPlayer.Key).Index;
+            var aiDisplayName = _namer.GetPlayerDisplayName(aiIndex, consolePlayersState);
+            Console.Out.WriteLine($"AI Player {aiDisplayName}: {aiPlayer.Value.Description}.");
         }
 
         bool isGameOver = false;
@@ -62,7 +70,8 @@ internal class ConsoleLoop {
                                 }
                             }
                         }
-                        Console.Out.WriteLine($"AI Player {player.Info} has finished their turn.");
+                        var aiFinishedName = _namer.GetPlayerDisplayName(player.Index, state.PlayersState);
+                        Console.Out.WriteLine($"AI Player {aiFinishedName} has finished their turn.");
                     }
                 }
             }
@@ -146,7 +155,8 @@ internal class ConsoleLoop {
         IPlayActionResult? playActionResult = null;
         while (playActionResult == null || !playActionResult.IsTurnDone) {
             Console.Out.WriteLine(state.GameStateText);
-            Console.Out.WriteLine($"Player {player.Info}, take your turn.");
+            var turnName = _namer.GetPlayerDisplayName(player.Index, state.PlayersState);
+            Console.Out.WriteLine($"Player {turnName}, take your turn.");
             var gameView = state.GetView(player);
             var boardRenderer = new BoardRenderer(_namer, BoardRendererConfiguration.FullPipes);
             Console.Out.WriteLine(boardRenderer.DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn, maxRenderWidth: Console.BufferWidth));
@@ -214,10 +224,10 @@ internal class ConsoleLoop {
     }
 
     internal OneOf<Result<Player>, RoundIsOver, GameIsOver> DoPlayerChooserLoop(PlayersState playerState) {
-        // Use ModelToKeyUtility for clean, testable key mapping
-        var playerIndexToCommand = _namer.BuildPlayerToCommandNameMap(playerState.PlayersAvailableForTurn);
+        // Use the namer for clean, testable key mapping
+        var playerIndexToTypeableCommandName = _namer.BuildPlayerToTypeableCommandNameMap(playerState.PlayersAvailableForTurn);
 
-        var commandToPlayerIndex = playerIndexToCommand
+        var commandToPlayerIndex = playerIndexToTypeableCommandName
             .ToOrderedDictionary(
                 p => p.Value,
                 p => p.Key,
@@ -240,11 +250,11 @@ internal class ConsoleLoop {
             // Display all available players with alternate key hints for non-typeable marks
             var playerDisplayList = playerState.PlayersAvailableForTurn
                 .Select(p => {
-                    var altKey = playerIndexToCommand[p.Index];
-                    var keyDisplay = altKey.Equals(p.Info.Mark, StringComparison.OrdinalIgnoreCase)
+                    var typeableCommandName = playerIndexToTypeableCommandName[p.Index];
+                    var keyDisplay = typeableCommandName.Equals(p.Info.CommandName, StringComparison.OrdinalIgnoreCase)
                         ? ""
-                        : $" ({altKey})";
-                    return $"Player {p.Info.Mark}{keyDisplay}";
+                        : $" ({typeableCommandName})";
+                    return $"Player {_namer.GetPlayerDisplayName(p.Index, playerState)}{keyDisplay}";
                 });
 
             var prompt = "Who will take the next turn? Press the player's key to take their turn (or press 'q' to quit the game for everyone)."

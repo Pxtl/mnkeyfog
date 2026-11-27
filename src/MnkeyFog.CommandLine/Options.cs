@@ -99,6 +99,9 @@ internal static class Options {
         } else if (result.Tokens.Select(t => t.Value).Distinct().Count() != result.Tokens.Count) {
             result.AddError("Player mark characters must be distinct from each other.");
             return null;
+        } else if (result.Tokens.Any(t => t.Value.Length == 1 && char.IsDigit(t.Value[0]))) {
+            result.AddError("Player mark characters cannot be numeric (0-9).");
+            return null;
         } else {
             return result.Tokens.Select(t => t.Value).ToArray();
         }

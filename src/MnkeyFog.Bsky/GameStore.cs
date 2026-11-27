@@ -150,7 +150,7 @@ public sealed class GameStore {
     }
 
     /// <summary>Index <paramref name="did"/> as playing in the session with the given code.</summary>
-    public void JoinWithIndex(string code, string did) {
+    public void JoinGame(string code, string did) {
         IndexDid(did, code);
     }
 
