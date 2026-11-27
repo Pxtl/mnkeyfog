@@ -7,10 +7,10 @@ public class ModelNamerTests {
     private readonly ModelNamer _namer = new();
 
 
-    #region BuildPlayerToCommandNameMap
+    #region BuildPlayerToTypeableCommandNameMap
     [Fact]
-    public void BuildPlayerToCommandNameMap_SingleTypeableMark() {
-        var map = _namer.BuildPlayerToCommandNameMap(
+    public void BuildPlayerToTypeableCommandNameMap_SingleTypeableMark() {
+        var map = _namer.BuildPlayerToTypeableCommandNameMap(
             (new[] { new PlayerInfo("A") }).ToPlayersIndexed()
         );
 
@@ -19,10 +19,10 @@ public class ModelNamerTests {
     }
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_WithOnlyTypeableMarks_ReturnsIdentity() {
+    public void BuildPlayerToTypeableCommandNameMap_WithOnlyTypeableMarks_ReturnsIdentity() {
         var players = (new[] { "X", "O", "9", "5" }).ToPlayersIndexed();
 
-        var result = _namer.BuildPlayerToCommandNameMap(players);
+        var result = _namer.BuildPlayerToTypeableCommandNameMap(players);
 
         Assert.Equal(4, result.Count);
         foreach (var player in players) {
@@ -31,10 +31,10 @@ public class ModelNamerTests {
     }
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_LowercaseLettersAreIdentity() {
+    public void BuildPlayerToTypeableCommandNameMap_LowercaseLettersAreIdentity() {
         var players = (new[] { "x", "a", "z", "b" }).ToPlayersIndexed();
 
-        var result = _namer.BuildPlayerToCommandNameMap(players);
+        var result = _namer.BuildPlayerToTypeableCommandNameMap(players);
 
         foreach (var player in players) {
             Assert.Equal(player.Info.CommandName, result[player.Index]);
@@ -42,10 +42,10 @@ public class ModelNamerTests {
     }
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_AlphabeticLettersAreTypeable() {
+    public void BuildPlayerToTypeableCommandNameMap_AlphabeticLettersAreTypeable() {
         var players = (new[] { "X", "O", "A", "Z", "B" }).ToPlayersIndexed();
 
-        var result = _namer.BuildPlayerToCommandNameMap(players);
+        var result = _namer.BuildPlayerToTypeableCommandNameMap(players);
 
         foreach (var player in players) {
             Assert.Equal(player.Info.CommandName, result[player.Index]);
@@ -53,7 +53,7 @@ public class ModelNamerTests {
     }
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_PunctuationMarksAreNonTypeable() {
+    public void BuildPlayerToTypeableCommandNameMap_PunctuationMarksAreNonTypeable() {
         var players = (new[] { ".", "!", "?", ":", ";" }).ToPlayersIndexed();
 
         var expected = new Dictionary<int, string> {
@@ -63,12 +63,12 @@ public class ModelNamerTests {
             [players.Single(p => p.CommandName == ":").Index] = "4",
             [players.Single(p => p.CommandName == ";").Index] = "5"
         };
-        var actual = _namer.BuildPlayerToCommandNameMap(players);
+        var actual = _namer.BuildPlayerToTypeableCommandNameMap(players);
         actual.Should().BeEquivalentTo(expected);
     }
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_ExcludesUsedMarksFromAlternates() {
+    public void BuildPlayerToTypeableCommandNameMap_ExcludesUsedMarksFromAlternates() {
         var players = (new[] { "A", ".", "!", "1" }).ToPlayersIndexed();
 
         var expected = new Dictionary<int, string> {
@@ -77,12 +77,12 @@ public class ModelNamerTests {
             [players.Single(p => p.CommandName == "!").Index] = "3",
             [players.Single(p => p.CommandName == "1").Index] = "1"
         };
-        var actual = _namer.BuildPlayerToCommandNameMap(players);
+        var actual = _namer.BuildPlayerToTypeableCommandNameMap(players);
         actual.Should().BeEquivalentTo(expected);
     }
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_AllNumbersConsumedUsesLetters() {
+    public void BuildPlayerToTypeableCommandNameMap_AllNumbersConsumedUsesLetters() {
         var players = (new[] { "1", "2", "3", "4", "5", ".", "!", "?", ":", ";", "/" }).ToPlayersIndexed();
 
         var expected = new Dictionary<int, string> {
@@ -98,12 +98,12 @@ public class ModelNamerTests {
             [players.Single(p => p.CommandName == ";").Index] = "A",
             [players.Single(p => p.CommandName == "/").Index] = "B",
         };
-        var actual = _namer.BuildPlayerToCommandNameMap(players);
+        var actual = _namer.BuildPlayerToTypeableCommandNameMap(players);
         actual.Should().BeEquivalentTo(expected);
     }
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_MultiCharMarkGetsAlternateKey() {
+    public void BuildPlayerToTypeableCommandNameMap_MultiCharMarkGetsAlternateKey() {
         // Multi-char marks cannot be used directly ( ArgumentException), 
         // but we can test they are not typeable by using Player.FromString with null
         var typeableMark = "A";
@@ -112,20 +112,20 @@ public class ModelNamerTests {
         }.ToPlayersIndexed();
 
         var typeablePlayerInfo = playerInfos.First();
-        var result = _namer.BuildPlayerToCommandNameMap(playerInfos);
+        var result = _namer.BuildPlayerToTypeableCommandNameMap(playerInfos);
 
         // Single-char typeable mark returns identity
         Assert.Equal(typeableMark, result[typeablePlayerInfo.Index]);
     }
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_PreservesPlayerReferencesInDictionary() {
+    public void BuildPlayerToTypeableCommandNameMap_PreservesPlayerReferencesInDictionary() {
         var playerInfos = new List<PlayerInfo> {
             new PlayerInfo("X"),
             new PlayerInfo("O")
         }.ToPlayersIndexed();
 
-        var result = _namer.BuildPlayerToCommandNameMap(playerInfos);
+        var result = _namer.BuildPlayerToTypeableCommandNameMap(playerInfos);
 
         var originalX = playerInfos.First(p => p.CommandName == "X");
         Assert.True(result.ContainsKey(originalX.Index));
@@ -133,17 +133,17 @@ public class ModelNamerTests {
     }
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_ReturnsCorrectCountForEmptyInput() {
+    public void BuildPlayerToTypeableCommandNameMap_ReturnsCorrectCountForEmptyInput() {
         var emptyPlayerInfos = new List<PlayerInfo>().ToPlayersIndexed();
-        var result = _namer.BuildPlayerToCommandNameMap(emptyPlayerInfos);
+        var result = _namer.BuildPlayerToTypeableCommandNameMap(emptyPlayerInfos);
         Assert.Empty(result);
     }
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_DigitsAreTypeable() {
+    public void BuildPlayerToTypeableCommandNameMap_DigitsAreTypeable() {
         var players = (new[] { "1", "8", "9" }).ToPlayersIndexed();
 
-        var result = _namer.BuildPlayerToCommandNameMap(players);
+        var result = _namer.BuildPlayerToTypeableCommandNameMap(players);
 
         foreach (var player in players) {
             Assert.Equal(player.Info.CommandName, result[player.Index]);
@@ -151,7 +151,7 @@ public class ModelNamerTests {
     }
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_MixedTypeableAndNonTypeableWorksCorrectly() {
+    public void BuildPlayerToTypeableCommandNameMap_MixedTypeableAndNonTypeableWorksCorrectly() {
         var playerInfos = new List<PlayerInfo>() {
             //typeable
             new("X"),
@@ -167,18 +167,18 @@ public class ModelNamerTests {
             [playerInfos.Single(p => p.CommandName == ".").Index] = "1",
             [playerInfos.Single(p => p.CommandName == "!").Index] = "2"
         };
-        var actual = _namer.BuildPlayerToCommandNameMap(playerInfos);
+        var actual = _namer.BuildPlayerToTypeableCommandNameMap(playerInfos);
 
         actual.Should().BeEquivalentTo(expected);
     }
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_TwoSpecialChars_ReturnMap1and2() {
+    public void BuildPlayerToTypeableCommandNameMap_TwoSpecialChars_ReturnMap1and2() {
         var player1 = new PlayerInfo("☃"); //unicode snowman
         var player2 = new PlayerInfo("☂"); //unicode umbrella
         var player1Index = 0;
         var player2Index = 1;
-        var map = _namer.BuildPlayerToCommandNameMap(
+        var map = _namer.BuildPlayerToTypeableCommandNameMap(
             new[] { player1, player2 }.ToPlayersIndexed()
         );
 
@@ -187,19 +187,19 @@ public class ModelNamerTests {
     }
     #endregion
 
-    #region BuildPlayerToCommandNameMap Edge Cases
+    #region BuildPlayerToTypeableCommandNameMap Edge Cases
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_EmptyArray() {
-        var map = _namer.BuildPlayerToCommandNameMap(Array.Empty<Player>());
+    public void BuildPlayerToTypeableCommandNameMap_EmptyArray() {
+        var map = _namer.BuildPlayerToTypeableCommandNameMap(Array.Empty<Player>());
 
         map.Count.Should().Be(0);
     }
 
     [Fact]
-    public void BuildPlayerToCommandNameMap_NullValueThrows() {
+    public void BuildPlayerToTypeableCommandNameMap_NullValueThrows() {
         var action = () => {
-            _ = _namer.BuildPlayerToCommandNameMap(null!);
+            _ = _namer.BuildPlayerToTypeableCommandNameMap(null!);
         };
         action.Should().Throw<ArgumentNullException>();
     }

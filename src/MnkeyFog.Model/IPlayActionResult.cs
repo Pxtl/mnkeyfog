@@ -51,7 +51,7 @@ public record struct NewlyLearned(int MarkIndex)
     public bool IsViewChanged => true;
     public bool IsTurnDone => true;
     public string GetResultText(PlayersState playersState)
-    => $"Space already filled: '{playersState.GetMark(MarkIndex)}'.";
+    => $"Space already filled: '{playersState.GetCommandName(MarkIndex)}'.";
 };
 public struct BoardIsDone
 : IPlayActionResult {

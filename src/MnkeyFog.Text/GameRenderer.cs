@@ -22,9 +22,11 @@ public class GameRenderer {
     private const int MaxRenderWidth = 15;
 
     private readonly BoardRenderer _renderer;
+    private readonly ModelNamer _namer;
 
-    public GameRenderer(BoardRenderer renderer) {
+    public GameRenderer(BoardRenderer renderer, ModelNamer namer) {
         _renderer = renderer;
+        _namer = namer;
     }
 
     /// <summary>
@@ -66,34 +68,38 @@ public class GameRenderer {
         return result.Length <= maxChars ? result : result[..maxChars];
     }
 
-    private static string RenderEventMessage(GameView gameView) {
+    private string RenderEventMessage(GameView gameView) {
+        var players = gameView.PlayersState;
         if (gameView.IsGameOver) {
-            var winners = gameView.ScoreCard.Highest.AsPlayerInfos(gameView.PlayersState).ToList();
-            return winners.Count == 0
+            var winners = gameView.ScoreCard.Highest.PlayerScores
+                .Select(ps => _namer.GetPlayerDisplayName(ps.PlayerIndex, players));
+            var joined = string.Join(", ", winners);
+            return joined.Length == 0
                 ? "Game over. Draw."
-                : $"Game over. Winner: {string.Join(", ", winners.Select(w => w.CommandName))}";
+                : $"Game over. Winner: {joined}";
         } else {
-            var turnMarks = string.Join(
+            var turnNames = string.Join(
                 ",",
-                gameView.PlayersState.PlayersAvailableForTurn.Select(p => p.CommandName)
+                players.PlayersAvailableForTurn.Select(p => _namer.GetPlayerDisplayName(p.Index, players))
             );
-            return $"Turn: {turnMarks}";
+            return $"Turn: {turnNames}";
         }
     }
 
-    private static string RenderActivePlayers(GameView gameView) {
+    private string RenderActivePlayers(GameView gameView) {
+        var players = gameView.PlayersState;
         var scoreCard = gameView.ScoreCard;
-        var parts = gameView.PlayersState.ActivePlayers
-            .Select(p => $"{p.CommandName}({GetScore(scoreCard, p.Index)})");
+        var parts = players.ActivePlayers
+            .Select(p => $"{_namer.GetPlayerDisplayName(p.Index, players)} : {GetScore(scoreCard, p.Index)}");
         var joined = string.Join(" ", parts);
         return joined.Length == 0 ? "" : $"Players: {joined}";
     }
 
-    private static string RenderResignedPlayers(GameView gameView) {
+    private string RenderResignedPlayers(GameView gameView) {
         var players = gameView.PlayersState;
         var parts = players.PlayersIndexed
             .Where(p => players.IsResignedPlayer(p.Index))
-            .Select(p => p.CommandName);
+            .Select(p => _namer.GetPlayerDisplayName(p.Index, players));
         var joined = string.Join(" ", parts);
         return joined.Length == 0 ? "" : $"Resigned: {joined}";
     }

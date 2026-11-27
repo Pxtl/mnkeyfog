@@ -10,7 +10,7 @@ namespace MnkeyFog.Bsky.Tests;
 /// </summary>
 internal sealed class TestableGameService : BskyGameService {
     public TestableGameService()
-        : base(NullLogger.Instance, new ActionParser(new ModelNamer()), new GameRenderer(new BoardRenderer(new ModelNamer()))) { }
+        : base(NullLogger.Instance, new ActionParser(new ModelNamer()), new GameRenderer(new BoardRenderer(new ModelNamer()), new ModelNamer())) { }
 
     /// <summary>
     /// The service's <see cref="BskyBotService.GameStore"/>, exposed for test

@@ -141,10 +141,11 @@ public class PlayersState {
     => playerIndex != null && PlayersAvailableForTurn.Any(p => p.Index == playerIndex);
 
     /// <summary>
-    /// The identity (CommandName) of the player occupying the given mark index.
-    /// The display Mark is a separate concern computed by the ModelNamer.
+    /// The CommandName (identity) of the player occupying the given mark index,
+    /// or the impasse/empty sentinel string. The display Mark is a separate
+    /// concern computed by the ModelNamer.
     /// </summary>
-    public string GetMark(int? markIndex) {
+    public string GetCommandName(int? markIndex) {
         if (markIndex == Space.ImpasseMarkIndex) {
             return Space.ImpasseChar.ToString();
         } else if (markIndex.HasValue) {

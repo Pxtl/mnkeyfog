@@ -30,7 +30,9 @@ internal class ConsoleLoop {
             localHotseatGame => "Running in hotseat mode."
         ));
 
-        Console.Out.WriteLine($"Players are {string.Join(", ", state.PlayersState.PlayerInfos)}.");
+        var consolePlayersState = state.PlayersState;
+        var playerNames = consolePlayersState.PlayersIndexed.Select(p => _namer.GetPlayerDisplayName(p.Index, consolePlayersState));
+        Console.Out.WriteLine($"Players are {string.Join(", ", playerNames)}.");
         Console.Out.WriteLine($"Game is {state.GameTemplate.CommandName}.");
         Console.Out.WriteLine($"Description: {state.GameTemplate.Description}");
         foreach (var aiPlayer in aiPlayers) {
@@ -214,10 +216,10 @@ internal class ConsoleLoop {
     }
 
     internal OneOf<Result<Player>, RoundIsOver, GameIsOver> DoPlayerChooserLoop(PlayersState playerState) {
-        // Use ModelToKeyUtility for clean, testable key mapping
-        var playerIndexToCommand = _namer.BuildPlayerToCommandNameMap(playerState.PlayersAvailableForTurn);
+        // Use the namer for clean, testable key mapping
+        var playerIndexToTypeableCommandName = _namer.BuildPlayerToTypeableCommandNameMap(playerState.PlayersAvailableForTurn);
 
-        var commandToPlayerIndex = playerIndexToCommand
+        var commandToPlayerIndex = playerIndexToTypeableCommandName
             .ToOrderedDictionary(
                 p => p.Value,
                 p => p.Key,
@@ -240,10 +242,10 @@ internal class ConsoleLoop {
             // Display all available players with alternate key hints for non-typeable marks
             var playerDisplayList = playerState.PlayersAvailableForTurn
                 .Select(p => {
-                    var altKey = playerIndexToCommand[p.Index];
-                    var keyDisplay = altKey.Equals(p.Info.CommandName, StringComparison.OrdinalIgnoreCase)
+                    var typeableCommandName = playerIndexToTypeableCommandName[p.Index];
+                    var keyDisplay = typeableCommandName.Equals(p.Info.CommandName, StringComparison.OrdinalIgnoreCase)
                         ? ""
-                        : $" ({altKey})";
+                        : $" ({typeableCommandName})";
                     return $"Player {p.Info.CommandName}{keyDisplay}";
                 });
 

@@ -56,6 +56,6 @@ public sealed record Space {
     /// </summary>
     public string ToString(Player? player, PlayersState playersState)
         => (player == null || IsKnownToPlayerIndex(player.Index))
-            ? playersState.GetMark(MarkIndex)
+            ? playersState.GetCommandName(MarkIndex)
             : EmptyMarkString;
 }

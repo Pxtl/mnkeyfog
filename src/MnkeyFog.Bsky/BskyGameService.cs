@@ -295,8 +295,12 @@ public class BskyGameService : BskyBotService {
                     player.Value.CommandName = handle;
                 }
                 GameStore.Save(session.Code);
+                var joinedPlayerIndex = session.GetPlayerIndex(senderDid);
+                var displayName = joinedPlayerIndex.HasValue
+                    ? _actionParser.Namer.GetPlayerDisplayName(joinedPlayerIndex.Value, session.GameState.PlayersState)
+                    : player.Value.CommandName;
                 await channel.RespondAsync(
-                    $"You joined [{session.Code}] as '{player.Value.CommandName}'\n"
+                    $"You joined [{session.Code}] as '{displayName}'\n"
                     + await channel.RenderBoardForAsync(session, cancellationToken)
                     + "\nPlay in DMs: !play <space> (bare space tokens also work if this is your only game).");
             },

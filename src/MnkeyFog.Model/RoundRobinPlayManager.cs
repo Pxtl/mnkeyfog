@@ -13,6 +13,8 @@ public class RoundRobinPlayManager
 : PlayManager {
     public static RoundRobinPlayManager Instance { get; } = new RoundRobinPlayManager();
 
+    //HACK: model-level text can't use the Text-layer display-name calculation
+    //(CommandName(Mark)); shows the CommandName (identity) instead.
     public override string GameStateText(PlayersState playerState)
         => playerState.PlayersAvailableForTurn.Count() > 0
         ? $"Round-robin play. Current player is {playerState.PlayersAvailableForTurn.First().Info.CommandName}."
