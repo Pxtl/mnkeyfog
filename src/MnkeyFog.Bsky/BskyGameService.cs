@@ -295,10 +295,12 @@ public class BskyGameService : BskyBotService {
                     player.Value.CommandName = handle;
                 }
                 GameStore.Save(session.Code);
-                var joinedPlayerIndex = session.GetPlayerIndex(senderDid);
-                var displayName = joinedPlayerIndex.HasValue
-                    ? _actionParser.Namer.GetPlayerDisplayName(joinedPlayerIndex.Value, session.GameState.PlayersState)
-                    : player.Value.CommandName;
+                // The joiner just joined, so they are in the game; a null index
+                // here would be a bug.
+                if (session.GetPlayerIndex(senderDid) is not int joinedPlayerIndex) {
+                    throw new InvalidOperationException($"Joiner {senderDid} not found in game after join.");
+                }
+                var displayName = _actionParser.Namer.GetPlayerDisplayName(joinedPlayerIndex, session.GameState.PlayersState);
                 await channel.RespondAsync(
                     $"You joined [{session.Code}] as '{displayName}'\n"
                     + await channel.RenderBoardForAsync(session, cancellationToken)
@@ -595,6 +597,8 @@ public class BskyGameService : BskyBotService {
     /// <summary>
     /// Resolve a player's Bluesky handle (their typeable identity, used as their
     /// CommandName) from their DID. Returns null if the lookup fails.
+    /// The returned handle is the bare handle (e.g. <c>p2.bsky.social</c>) and
+    /// does NOT include a leading <c>@</c>.
     /// </summary>
     private async Task<string?> GetHandleAsync(string did, CancellationToken cancellationToken) {
         try {

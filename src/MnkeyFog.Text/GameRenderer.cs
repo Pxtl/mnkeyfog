@@ -22,11 +22,9 @@ public class GameRenderer {
     private const int MaxRenderWidth = 15;
 
     private readonly BoardRenderer _renderer;
-    private readonly ModelNamer _namer;
 
-    public GameRenderer(BoardRenderer renderer, ModelNamer namer) {
+    public GameRenderer(BoardRenderer renderer) {
         _renderer = renderer;
-        _namer = namer;
     }
 
     /// <summary>
@@ -72,7 +70,7 @@ public class GameRenderer {
         var players = gameView.PlayersState;
         if (gameView.IsGameOver) {
             var winners = gameView.ScoreCard.Highest.PlayerScores
-                .Select(ps => _namer.GetPlayerDisplayName(ps.PlayerIndex, players));
+                .Select(ps => _renderer.ModelNamer.GetPlayerDisplayName(ps.PlayerIndex, players));
             var joined = string.Join(", ", winners);
             return joined.Length == 0
                 ? "Game over. Draw."
@@ -80,7 +78,7 @@ public class GameRenderer {
         } else {
             var turnNames = string.Join(
                 ",",
-                players.PlayersAvailableForTurn.Select(p => _namer.GetPlayerDisplayName(p.Index, players))
+                players.PlayersAvailableForTurn.Select(p => _renderer.ModelNamer.GetPlayerDisplayName(p.Index, players))
             );
             return $"Turn: {turnNames}";
         }
@@ -90,7 +88,7 @@ public class GameRenderer {
         var players = gameView.PlayersState;
         var scoreCard = gameView.ScoreCard;
         var parts = players.ActivePlayers
-            .Select(p => $"{_namer.GetPlayerDisplayName(p.Index, players)} : {GetScore(scoreCard, p.Index)}");
+            .Select(p => $"{_renderer.ModelNamer.GetPlayerDisplayName(p.Index, players)} : {GetScore(scoreCard, p.Index)}");
         var joined = string.Join(" ", parts);
         return joined.Length == 0 ? "" : $"Players: {joined}";
     }
@@ -99,7 +97,7 @@ public class GameRenderer {
         var players = gameView.PlayersState;
         var parts = players.PlayersIndexed
             .Where(p => players.IsResignedPlayer(p.Index))
-            .Select(p => _namer.GetPlayerDisplayName(p.Index, players));
+            .Select(p => _renderer.ModelNamer.GetPlayerDisplayName(p.Index, players));
         var joined = string.Join(" ", parts);
         return joined.Length == 0 ? "" : $"Resigned: {joined}";
     }

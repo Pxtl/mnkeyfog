@@ -50,6 +50,13 @@ public class ModelNamer {
     /// have at least as many entries as there are boards/columns/rows, or else
     /// rendering beyond its length throws.
     /// </summary>
+    /// <param name="playerMarks">
+    /// Optional pre-provided player display marks, in player-index order. Unlike
+    /// the board/column/row names, player marks are nullable: when not supplied
+    /// they are derived from the players' CommandNames (1-char marks) or the
+    /// player index. The board/column/row lists are required because a board
+    /// always has columns/rows and there is no fallback source for their names.
+    /// </param>
     public ModelNamer(
         IEnumerable<ModelName> boardModelNames,
         IEnumerable<ModelName> columnModelNames,

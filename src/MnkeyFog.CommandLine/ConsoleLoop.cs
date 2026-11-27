@@ -26,7 +26,11 @@ internal class ConsoleLoop {
         StateStorage.SaveState(state, sharedStateFilePath.FullName);
 
         Console.Out.WriteLine(joinAsPlayer.Match(
-            player => $"Joining game-file '{sharedStateFilePath.FullName}' as player '{player}'.",
+            player => {
+                var joinIndex = state.PlayersState.GetPlayer(player).Index;
+                var joinDisplayName = _namer.GetPlayerDisplayName(joinIndex, state.PlayersState);
+                return $"Joining game-file '{sharedStateFilePath.FullName}' as player '{joinDisplayName}'.";
+            },
             localHotseatGame => "Running in hotseat mode."
         ));
 
@@ -36,7 +40,9 @@ internal class ConsoleLoop {
         Console.Out.WriteLine($"Game is {state.GameTemplate.CommandName}.");
         Console.Out.WriteLine($"Description: {state.GameTemplate.Description}");
         foreach (var aiPlayer in aiPlayers) {
-            Console.Out.WriteLine($"AI Player {aiPlayer.Key.CommandName}: {aiPlayer.Value.Description}.");
+            var aiIndex = consolePlayersState.GetPlayer(aiPlayer.Key).Index;
+            var aiDisplayName = _namer.GetPlayerDisplayName(aiIndex, consolePlayersState);
+            Console.Out.WriteLine($"AI Player {aiDisplayName}: {aiPlayer.Value.Description}.");
         }
 
         bool isGameOver = false;
@@ -64,7 +70,8 @@ internal class ConsoleLoop {
                                 }
                             }
                         }
-                        Console.Out.WriteLine($"AI Player {player.Info} has finished their turn.");
+                        var aiFinishedName = _namer.GetPlayerDisplayName(player.Index, state.PlayersState);
+                        Console.Out.WriteLine($"AI Player {aiFinishedName} has finished their turn.");
                     }
                 }
             }
@@ -148,7 +155,8 @@ internal class ConsoleLoop {
         IPlayActionResult? playActionResult = null;
         while (playActionResult == null || !playActionResult.IsTurnDone) {
             Console.Out.WriteLine(state.GameStateText);
-            Console.Out.WriteLine($"Player {player.Info}, take your turn.");
+            var turnName = _namer.GetPlayerDisplayName(player.Index, state.PlayersState);
+            Console.Out.WriteLine($"Player {turnName}, take your turn.");
             var gameView = state.GetView(player);
             var boardRenderer = new BoardRenderer(_namer, BoardRendererConfiguration.FullPipes);
             Console.Out.WriteLine(boardRenderer.DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn, maxRenderWidth: Console.BufferWidth));
@@ -246,7 +254,7 @@ internal class ConsoleLoop {
                     var keyDisplay = typeableCommandName.Equals(p.Info.CommandName, StringComparison.OrdinalIgnoreCase)
                         ? ""
                         : $" ({typeableCommandName})";
-                    return $"Player {p.Info.CommandName}{keyDisplay}";
+                    return $"Player {_namer.GetPlayerDisplayName(p.Index, playerState)}{keyDisplay}";
                 });
 
             var prompt = "Who will take the next turn? Press the player's key to take their turn (or press 'q' to quit the game for everyone)."
