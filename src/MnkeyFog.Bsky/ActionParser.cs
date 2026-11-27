@@ -111,10 +111,10 @@ public partial class ActionParser {
     /// resolve space names (board prefixes etc.); fog is not a factor — fogged
     /// spaces remain playable, per Kriegspiel rules.
     /// </summary>
-    public PlayResult ParsePlay(GameView playerView, IReadOnlyList<string> tokens) {
+    public OneOf<IReadOnlyList<GameAction>, CommandError> ParsePlay(GameView playerView, IReadOnlyList<string> tokens) {
         var moves = new List<GameAction>();
         if (tokens.Count == 0) {
-            return PlayResult.Ok(moves);
+            return moves;
         }
 
         // The first token may name an action ('space' / 'pass'); if so it selects
@@ -126,7 +126,7 @@ public partial class ActionParser {
             .FirstOrDefault(f => f.Name.CommandName.Equals(firstToken, StringComparison.OrdinalIgnoreCase));
         if (namedFactory is null && KnownActionCommandNames.Contains(firstToken)) {
             var available = string.Join(", ", playerView.AvailableActions.Select(f => f.Name.CommandName));
-            return PlayResult.Fail($"Invalid action '{firstToken}'. Valid actions: {available}.");
+            return new CommandError($"Invalid action '{firstToken}'. Valid actions: {available}.");
         }
         var argTokens = namedFactory is not null ? tokens.Skip(1) : tokens;
         var factory = namedFactory ?? playerView.AvailableActions
@@ -142,9 +142,11 @@ public partial class ActionParser {
             }
         } else if (factory is GameActionFactoryForSimple simpleFactory) {
             moves.Add(simpleFactory.Create());
+        } else {
+            throw new NotSupportedException($"Unsupported action factory type: {factory?.GetType().Name ?? "none"}.");
         }
 
-        return PlayResult.Ok(moves);
+        return moves;
     }
 
     /// <summary>
@@ -179,11 +181,3 @@ public partial class ActionParser {
 /// </summary>
 public sealed record CommandToken(string Command, IReadOnlyList<string> Arg);
 
-/// <summary>
-/// Result of parsing a <c>!play</c> argument: the parsed moves, or an error if
-/// the argument named an action the game does not support.
-/// </summary>
-public sealed record PlayResult(IReadOnlyList<GameAction> Moves, string? Error) {
-    public static PlayResult Ok(IReadOnlyList<GameAction> moves) => new(moves, null);
-    public static PlayResult Fail(string error) => new(Array.Empty<GameAction>(), error);
-}

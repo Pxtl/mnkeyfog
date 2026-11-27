@@ -57,9 +57,9 @@ public class ActionParserTests {
         var state = NewCasualState();
         var view = state.GetView(state.PlayersState.GetPlayer("X"));
         var result = _parser.ParsePlay(view, ["space", "5"]);
-        result.Error.Should().BeNull();
-        result.Moves.Should().HaveCount(1);
-        result.Moves[0].Should().BeOfType<MNKAction>();
+        result.IsT1.Should().BeFalse();
+        result.AsT0.Should().HaveCount(1);
+        result.AsT0[0].Should().BeOfType<MNKAction>();
     }
 
     [Fact]
@@ -67,9 +67,9 @@ public class ActionParserTests {
         var state = NewCasualState();
         var view = state.GetView(state.PlayersState.GetPlayer("X"));
         var result = _parser.ParsePlay(view, ["5"]);
-        result.Error.Should().BeNull();
-        result.Moves.Should().HaveCount(1);
-        result.Moves[0].Should().BeOfType<MNKAction>();
+        result.IsT1.Should().BeFalse();
+        result.AsT0.Should().HaveCount(1);
+        result.AsT0[0].Should().BeOfType<MNKAction>();
     }
 
     [Fact]
@@ -77,9 +77,9 @@ public class ActionParserTests {
         var state = NewCasualState();
         var view = state.GetView(state.PlayersState.GetPlayer("X"));
         var result = _parser.ParsePlay(view, ["pass"]);
-        result.Error.Should().BeNull();
-        result.Moves.Should().HaveCount(1);
-        result.Moves[0].Should().BeOfType<PassAction>();
+        result.IsT1.Should().BeFalse();
+        result.AsT0.Should().HaveCount(1);
+        result.AsT0[0].Should().BeOfType<PassAction>();
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class ActionParserTests {
         var state = NewSpaceOnlyState();
         var view = state.GetView(state.PlayersState.GetPlayer("X"));
         var result = _parser.ParsePlay(view, ["pass"]);
-        result.Error.Should().NotBeNull();
-        result.Error.Should().Contain("Invalid action 'pass'");
+        result.IsT1.Should().BeTrue();
+        result.AsT1.Message.Should().Contain("Invalid action 'pass'");
     }
 }
