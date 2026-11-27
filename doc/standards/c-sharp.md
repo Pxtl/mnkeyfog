@@ -101,7 +101,9 @@
 - Existing code is inconsistent for trailing parens in multi-line blocks,
   whether or not it should be linebreak-before `)` or not.  Use whichever
   convention is common in the codebase.  So both of the following examples are
-  valid, but a codebase should pick one and stick to it.
+  valid, but a codebase should pick one and stick to it. The first option below
+  is generally preferred, but prioritize consistency within the surrounding
+  code.
   
   ```csharp
   longFunctionCall(
@@ -204,7 +206,8 @@ generally not have the `is` prefix common in C#.
   public void RunGame(
       char[] players,
       bool isRandomPlayerOrder,
-      bool isSynchronousMode) {
+      bool isSynchronousMode
+    ) {
       ...
   }
   
@@ -391,8 +394,10 @@ generally not have the `is` prefix common in C#.
 
 - Prefer the lambda-based `Switch`/`Match` methods for branching between
   outcomes; avoid `IsT0`/`AsT0`-style accessors, which scattered-type-check the
-  union and lose exhaustiveness. Use them only where necessary (e.g. a quick
-  `IsT1` bail-out in non-branching code).
+  union and lose exhaustiveness and are not human-readable. Use them only where
+  necessary (e.g. a quick `IsT1` bail-out in non-branching code).
+- If you _must_ use the `IsTN`/`AsTN` accessors, _always_ comment the block of
+  code with information about what the `N` values represent.
 
 ## Miscellaneous Patterns
 
