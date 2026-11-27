@@ -74,7 +74,7 @@ The following items are fully approved and can be taken up immediately.
   
   Use fullwidth text for rows & space, number-buttons for columns.  Small black
   square for blank spaces, Full black square for lines between spaces if
-  gridding.
+  gridding and for the Impasse marker.
 
   ```
   　0️⃣1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣🔟
@@ -90,6 +90,12 @@ The following items are fully approved and can be taken up immediately.
   Ｊ▪️▪️▪️▪️▪️▪️▪️▪️▪️🟣▪️
   Ｋ▪️▪️▪️▪️▪️▪️▪️▪️▪️▪️▪️
   ```
+
+  On further thought, even though the above board only supports 11x11 and the
+  circle-surrounded-letter don't *perfectly* line up with emoji buttons, we'll
+  go to 15x15. Use the Enclosed Alphanumeric 2-digit numbers for columnIndex
+  11-14. They will slightly go out of alignment with the rows below but at only
+  4 characters that's probably small-enough deviation in visual alignment.
 
   List in planned player order:
 
