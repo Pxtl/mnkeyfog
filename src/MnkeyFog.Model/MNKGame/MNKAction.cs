@@ -56,7 +56,7 @@ public record MNKAction
                 && actionPlayerIndex != otherAction.PlayerIndex,
         // a pass touches no space, so it can never collide with a space play.
         PassAction => false,
-        _ => throw new InvalidOperationException("Cannot compare different action types.")
+        _ => throw new InvalidOperationException("Cannot compare these action types.")
     };
 
     public override IPlayActionResult Attempt(GameState gameState, int actionPlayerIndex) {

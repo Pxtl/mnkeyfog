@@ -466,6 +466,7 @@ public class BskyGameService : BskyBotService {
     ) {
         var playerView = session.GetViewFor(senderDid);
         var playResult = _actionParser.ParsePlay(playerView, tokens);
+        // OneOf: T0 = IReadOnlyList<GameAction> (moves), T1 = CommandError (error).
         if (playResult.IsT1) {
             await channel.RespondAsync($"Game [{session.Code}]\n{playResult.AsT1.Message}");
             return;

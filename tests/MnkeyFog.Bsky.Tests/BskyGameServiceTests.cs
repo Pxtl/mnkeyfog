@@ -142,6 +142,7 @@ public class BskyGameServiceTests {
 
         // p1 (player X) has already played, so p2 (player O) is next.
         var moves = new ActionParser(new ModelNamer()).ParsePlay(session.GetViewFor("did:plc:p1"), ["5"]);
+        // OneOf: T0 = IReadOnlyList<GameAction> (moves), T1 = CommandError (error).
         foreach (var move in moves.AsT0) {
             session.Attempt(0, move);
             session.GameState.ExecutePendingActions();
