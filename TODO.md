@@ -65,7 +65,9 @@ The following items are fully approved and can be taken up immediately.
   doesn't map cleanly here.  Design:
   - A player joins a game (or a game is created with a list of players) carrying
     a **`CommandName`**: the human-typeable name — their BSky handle, or the
-    mark char they picked in the CLI.
+    mark char they picked in the CLI.  (BSky: the handle is resolved from the
+    player's DID via `Agent.GetProfiles` in the message flow — `HandleNewAsync`
+    for the creator, `HandleJoinAsync` for joiners — then set on `PlayerInfo`.)
   - `ModelNamer` holds a list of `string` **PlayerMarks** (not `ModelName`),
     assigned by `playerIndex`.  The PlayerMark is what's drawn on the board.
     In a text message a player displays as

@@ -125,7 +125,7 @@ public class BskyGameServiceTests {
 
         await svc.TestHandleMessageAsync("did:plc:p2", "!list", TestContext.Current.CancellationToken);
         var response = svc.TestedResponses.Single();
-        response.Should().Contain($"[{session.Code}]").And.Contain(template.CommandName).And.Contain("player did:plc:p2");
+        response.Should().Contain($"[{session.Code}]").And.Contain(template.CommandName).And.Contain("player O");
     }
 
     [Fact]
@@ -183,7 +183,7 @@ public class BskyGameServiceTests {
         var s1 = new GameSession("E1", "at://u1", "did:plc:p1", TwoPlayers(), template);
         s1.Join("did:plc:p2");
         var line = BskyGameService.FormatGameLine(s1, "did:plc:p2");
-        line.Should().Contain("[E1]").And.Contain(template.CommandName).And.Contain("player did:plc:p2");
+        line.Should().Contain("[E1]").And.Contain(template.CommandName).And.Contain("player O");
     }
 
     // ── !new player-count validation ──
@@ -217,7 +217,7 @@ public class BskyGameServiceTests {
         response.Should().Contain("resigning");
         // p2 resigned, so p1 (player 0) is the only active player → game over.
         session.GameState.IsGameOver.Should().BeTrue();
-        session.GameState.Winners.Single().CommandName.Should().Be("did:plc:p1");
+        session.GameState.Winners.Single().CommandName.Should().Be("X");
     }
 
     [Fact]

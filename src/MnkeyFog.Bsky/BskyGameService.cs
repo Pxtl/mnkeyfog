@@ -253,6 +253,14 @@ public class BskyGameService : BskyBotService {
         var result = GameStore.CreateGame(uriKey, senderDid, playerCount, gameTemplate);
         await result.Match(
             async created => {
+                // The creator's CommandName is their handle (typeable identity),
+                // resolved from their DID. Set before the response so the board
+                // shows it.
+                var handle = await GetHandleAsync(senderDid, cancellationToken);
+                if (handle is not null) {
+                    created.Session.GameState.PlayersState.PlayerInfos[0].CommandName = handle;
+                    GameStore.Save(created.Code);
+                }
                 await channel.RespondAsync(
                     $"Started {gameTemplate.CommandName} ({playerCount}p) — code: [{created.Code}]\n"
                     + ((await channel.RenderBoardForAsync(created.Session, cancellationToken)).Match(
@@ -280,6 +288,12 @@ public class BskyGameService : BskyBotService {
         await result.Match(
             async player => {
                 GameStore.JoinWithIndex(session.Code, senderDid);
+                // The joiner's CommandName is their handle (typeable identity),
+                // resolved from their DID. Set before saving so it persists.
+                var handle = await GetHandleAsync(senderDid, cancellationToken);
+                if (handle is not null) {
+                    player.Value.CommandName = handle;
+                }
                 GameStore.Save(session.Code);
                 await channel.RespondAsync(
                     $"You joined [{session.Code}] as '{player.Value.CommandName}'\n"
@@ -572,6 +586,22 @@ public class BskyGameService : BskyBotService {
             return $"{span.Minutes}m ago";
         }
         return "just now";
+    }
+
+    /// <summary>
+    /// Resolve a player's Bluesky handle (their typeable identity, used as their
+    /// CommandName) from their DID. Returns null if the lookup fails.
+    /// </summary>
+    private async Task<string?> GetHandleAsync(string did, CancellationToken cancellationToken) {
+        try {
+            var result = await Agent.GetProfiles([did], cancellationToken: cancellationToken);
+            if (result.Succeeded && result.Result is { Count: > 0 } profiles) {
+                return profiles.First().Handle.ToString();
+            }
+        } catch (Exception ex) {
+            Logger.LogWarning(ex, "Failed to resolve handle for {did}.", did);
+        }
+        return null;
     }
     #endregion
 }
