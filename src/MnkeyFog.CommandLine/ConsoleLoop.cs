@@ -173,25 +173,37 @@ internal class ConsoleLoop {
 
     private IPlayActionResult DoPlayerAction(ref GameState state, Player player, string sharedStateFilePath) {
         var gameView = state.GetView(player);
-        var actionFactories = gameView.AvailableActions; ;
+        var availableActions = gameView.AvailableActions.ToList();
+        GameActionFactory actionFactory;
 
-        if (actionFactories.Count() == 1) {
-            var actionFactory = actionFactories.Single();
-
-            if (actionFactory is GameActionFactoryForBoard actionFactoryForBoard) {
-                return DoBoardSelection(ref state, player, sharedStateFilePath, actionFactoryForBoard);
-            } else if (actionFactory is GameActionFactoryForSimple actionFactoryForSimple) {
-                using (var stateStorage = new StateStorage(sharedStateFilePath, out state)) {
-                    return actionFactoryForSimple.Create().Attempt(state, player);
-                }
-            } else if (actionFactory is GameActionFactoryForSpace actionFactoryForSpace) {
-                return DoSpaceSelection(ref state, player, sharedStateFilePath, actionFactoryForSpace);
-            } else {
-                throw new InvalidOperationException("Unknown or unsupported Action Factory.");
+        if (availableActions.Count > 1) {
+            // Multiple actions are available; let the player choose.  The first
+            // action is the default (e.g. 'space') and is listed as such.
+            var names = availableActions.Select(f => f.Name.CommandName).ToList();
+            var prompt = "Choose an action: "
+                + string.Join(" ", names.Select((name, i) => i == 0 ? $"{name} (default)" : name))
+                + " (or 'r' to resign, 'q' to save game and quit).";
+            var choice = InputUtility.ReadCommandInputLoop(prompt, new[] { "r", "q" }.Concat(names));
+            if ("r".Equals(choice, StringComparison.OrdinalIgnoreCase)) {
+                return state.GetView(player).ResignPlayer();
+            } else if ("q".Equals(choice, StringComparison.OrdinalIgnoreCase)) {
+                return Quit();
             }
+            actionFactory = availableActions.Single(f => f.Name.CommandName.Equals(choice, StringComparison.OrdinalIgnoreCase));
         } else {
-            //TODO: ActionFactories picker.
-            throw new NotImplementedException("Multiple Action Factories is not supported yet.");
+            actionFactory = availableActions.Single();
+        }
+
+        if (actionFactory is GameActionFactoryForBoard actionFactoryForBoard) {
+            return DoBoardSelection(ref state, player, sharedStateFilePath, actionFactoryForBoard);
+        } else if (actionFactory is GameActionFactoryForSimple actionFactoryForSimple) {
+            using (var stateStorage = new StateStorage(sharedStateFilePath, out state)) {
+                return actionFactoryForSimple.Create().Attempt(state, player);
+            }
+        } else if (actionFactory is GameActionFactoryForSpace actionFactoryForSpace) {
+            return DoSpaceSelection(ref state, player, sharedStateFilePath, actionFactoryForSpace);
+        } else {
+            throw new InvalidOperationException("Unknown or unsupported Action Factory.");
         }
     }
 

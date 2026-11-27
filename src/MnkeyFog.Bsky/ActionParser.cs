@@ -106,19 +106,31 @@ public partial class ActionParser {
     /// </summary>
     public IReadOnlyList<GameAction> ParsePlay(GameView playerView, IReadOnlyList<string> tokens) {
         var moves = new List<GameAction>();
-        GameActionFactoryForSpace? factory = playerView.AvailableActions
-            .OfType<GameActionFactoryForSpace>()
-            .FirstOrDefault();
-
-        if (factory is null) {
+        if (tokens.Count == 0) {
             return moves;
         }
 
-        foreach (var rawToken in tokens) {
-            var token = SpaceAssignmentPrefixRegex().Replace(rawToken, "");
-            if (TryCreateMove(factory, playerView, token, out var move)) {
-                moves.Add(move);
+        // The first token may name an action ('space' / 'pass'); if so it selects
+        // the factory and the rest of the tokens are its arguments. Otherwise
+        // the default (first space) action takes all the tokens — this keeps
+        // bare space-token moves working in DMs.
+        var firstToken = tokens[0].ToLowerInvariant();
+        var namedFactory = playerView.AvailableActions
+            .FirstOrDefault(f => f.Name.CommandName.Equals(firstToken, StringComparison.OrdinalIgnoreCase));
+        var argTokens = namedFactory is not null ? tokens.Skip(1) : tokens;
+        var factory = namedFactory ?? playerView.AvailableActions
+            .OfType<GameActionFactoryForSpace>()
+            .FirstOrDefault();
+
+        if (factory is GameActionFactoryForSpace spaceFactory) {
+            foreach (var rawToken in argTokens) {
+                var token = SpaceAssignmentPrefixRegex().Replace(rawToken, "");
+                if (TryCreateMove(spaceFactory, playerView, token, out var move)) {
+                    moves.Add(move);
+                }
             }
+        } else if (factory is GameActionFactoryForSimple simpleFactory) {
+            moves.Add(simpleFactory.Create());
         }
 
         return moves;

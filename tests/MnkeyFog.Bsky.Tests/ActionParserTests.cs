@@ -30,4 +30,45 @@ public class ActionParserTests {
         var cmd = Parse("!board", isPrefixOptional: false);
         cmd!.Command.Should().Be("board");
     }
+
+    private static GameState NewCasualState()
+        => new(
+            new[] { new PlayerInfo("X"), new PlayerInfo("O") },
+            new CasualMNKTemplate(
+                "3x3",
+                "3x3 casual",
+                [2],
+                [new BoardBuilder(3, 3, new MNKBoardRuleset(ScoringLength: null, IsBoardDoneWhenScored: true))],
+                isKriegspiel: false,
+                isSynchronousMode: false
+            ),
+            isRandomPlayerOrder: false
+        );
+
+    [Fact]
+    public void ParsePlay_NamedSpaceAction_CreatesMoves() {
+        var state = NewCasualState();
+        var view = state.GetView(state.PlayersState.GetPlayer("X"));
+        var moves = _parser.ParsePlay(view, ["space", "5"]);
+        moves.Should().HaveCount(1);
+        moves[0].Should().BeOfType<MNKAction>();
+    }
+
+    [Fact]
+    public void ParsePlay_BareSpaceTokens_DefaultToSpace() {
+        var state = NewCasualState();
+        var view = state.GetView(state.PlayersState.GetPlayer("X"));
+        var moves = _parser.ParsePlay(view, ["5"]);
+        moves.Should().HaveCount(1);
+        moves[0].Should().BeOfType<MNKAction>();
+    }
+
+    [Fact]
+    public void ParsePlay_PassAction_CreatesPass() {
+        var state = NewCasualState();
+        var view = state.GetView(state.PlayersState.GetPlayer("X"));
+        var moves = _parser.ParsePlay(view, ["pass"]);
+        moves.Should().HaveCount(1);
+        moves[0].Should().BeOfType<PassAction>();
+    }
 }
