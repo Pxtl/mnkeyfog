@@ -43,8 +43,10 @@ public sealed class GameSession {
         StartedAt = DateTimeOffset.UtcNow;
         GameState = new GameState(playerMarks.ToArray(), template, isRandomPlayerOrder: false);
 
-        // Creator claims the first player slot.
+        // Creator claims the first player slot and takes their DID as their
+        // CommandName (their typeable identity for text messages).
         _playerByDid[creatorDid] = 0;
+        GameState.PlayersState.PlayerInfos[0].CommandName = creatorDid;
     }
 
     /// <summary>Restore a session from persisted state (crash recovery).</summary>
@@ -82,7 +84,10 @@ public sealed class GameSession {
             for (var i = 0; i < GameState.PlayersState.PlayerInfos.Count; i++) {
                 if (!claimedIndices.Contains(i)) {
                     _playerByDid[did] = i;
-                    return new Result<PlayerInfo>(GameState.PlayersState.PlayerInfos[i]);
+                    // The joiner takes their DID as their CommandName.
+                    var playerInfo = GameState.PlayersState.PlayerInfos[i];
+                    playerInfo.CommandName = did;
+                    return new Result<PlayerInfo>(playerInfo);
                 }
             }
 
