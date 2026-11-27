@@ -10,7 +10,8 @@ public record class BoardRendererConfiguration {
         char? topLeftCorner, char? topIntersection, char? topRightCorner,
         char? leftIntersection, char? middleIntersection, char? rightIntersection,
         char? bottomLeftCorner, char? bottomIntersection, char? bottomRightCorner,
-        string emptyBoardLeader, string doneBoardLeader, Func<string, string> boardNameMappingToBoardLeader
+        string emptyBoardLeader, string doneBoardLeader, Func<string, string> boardNameMappingToBoardLeader,
+        bool showRowColumnLabels = false
     ) {
         CellWidth = cellWidth;
         CellColumnSeparatorChar = cellColumnSeparator;
@@ -27,6 +28,7 @@ public record class BoardRendererConfiguration {
         EmptyBoardLeader = emptyBoardLeader;
         DoneBoardLeader = doneBoardLeader;
         BoardNameMappingToBoardLeader = boardNameMappingToBoardLeader;
+        ShowRowColumnLabels = showRowColumnLabels;
     }
     #endregion
 
@@ -46,6 +48,7 @@ public record class BoardRendererConfiguration {
     public string EmptyBoardLeader { get; }
     public string DoneBoardLeader { get; }
     public Func<string, string> BoardNameMappingToBoardLeader { get; }
+    public bool ShowRowColumnLabels { get; }
     #endregion
 
     private readonly string FinalFailoverString = " ";
