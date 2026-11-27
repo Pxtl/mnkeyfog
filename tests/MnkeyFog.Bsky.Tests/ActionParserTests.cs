@@ -45,30 +45,49 @@ public class ActionParserTests {
             isRandomPlayerOrder: false
         );
 
+    private static GameState NewSpaceOnlyState()
+        => new(
+            new[] { new PlayerInfo("X"), new PlayerInfo("O") },
+            GameTemplates.BasicTicTacToe,
+            isRandomPlayerOrder: false
+        );
+
     [Fact]
     public void ParsePlay_NamedSpaceAction_CreatesMoves() {
         var state = NewCasualState();
         var view = state.GetView(state.PlayersState.GetPlayer("X"));
-        var moves = _parser.ParsePlay(view, ["space", "5"]);
-        moves.Should().HaveCount(1);
-        moves[0].Should().BeOfType<MNKAction>();
+        var result = _parser.ParsePlay(view, ["space", "5"]);
+        result.Error.Should().BeNull();
+        result.Moves.Should().HaveCount(1);
+        result.Moves[0].Should().BeOfType<MNKAction>();
     }
 
     [Fact]
     public void ParsePlay_BareSpaceTokens_DefaultToSpace() {
         var state = NewCasualState();
         var view = state.GetView(state.PlayersState.GetPlayer("X"));
-        var moves = _parser.ParsePlay(view, ["5"]);
-        moves.Should().HaveCount(1);
-        moves[0].Should().BeOfType<MNKAction>();
+        var result = _parser.ParsePlay(view, ["5"]);
+        result.Error.Should().BeNull();
+        result.Moves.Should().HaveCount(1);
+        result.Moves[0].Should().BeOfType<MNKAction>();
     }
 
     [Fact]
     public void ParsePlay_PassAction_CreatesPass() {
         var state = NewCasualState();
         var view = state.GetView(state.PlayersState.GetPlayer("X"));
-        var moves = _parser.ParsePlay(view, ["pass"]);
-        moves.Should().HaveCount(1);
-        moves[0].Should().BeOfType<PassAction>();
+        var result = _parser.ParsePlay(view, ["pass"]);
+        result.Error.Should().BeNull();
+        result.Moves.Should().HaveCount(1);
+        result.Moves[0].Should().BeOfType<PassAction>();
+    }
+
+    [Fact]
+    public void ParsePlay_PassOnSpaceOnlyGame_InvalidAction() {
+        var state = NewSpaceOnlyState();
+        var view = state.GetView(state.PlayersState.GetPlayer("X"));
+        var result = _parser.ParsePlay(view, ["pass"]);
+        result.Error.Should().NotBeNull();
+        result.Error.Should().Contain("Invalid action 'pass'");
     }
 }

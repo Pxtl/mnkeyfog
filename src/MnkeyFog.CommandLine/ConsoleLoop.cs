@@ -174,14 +174,24 @@ internal class ConsoleLoop {
     private IPlayActionResult DoPlayerAction(ref GameState state, Player player, string sharedStateFilePath) {
         var gameView = state.GetView(player);
         var availableActions = gameView.AvailableActions.ToList();
+        var defaultActionCommandName = state.GameTemplate.DefaultActionCommandName;
+        if (availableActions.Count > 0
+            && availableActions.All(f => !f.Name.CommandName.Equals(defaultActionCommandName, StringComparison.OrdinalIgnoreCase))) {
+            throw new InvalidOperationException(
+                $"DefaultActionCommandName '{defaultActionCommandName}' does not match any available action.");
+        }
         GameActionFactory actionFactory;
 
         if (availableActions.Count > 1) {
-            // Multiple actions are available; let the player choose.  The first
-            // action is the default (e.g. 'space') and is listed as such.
+            // Multiple actions are available; let the player choose.  The
+            // template's default action (DefaultActionCommandName) is labeled as
+            // the default.
             var names = availableActions.Select(f => f.Name.CommandName).ToList();
             var prompt = "Choose an action: "
-                + string.Join(" ", names.Select((name, i) => i == 0 ? $"{name} (default)" : name))
+                + string.Join(" ", names.Select(name =>
+                    name.Equals(defaultActionCommandName, StringComparison.OrdinalIgnoreCase)
+                        ? $"{name} (default)"
+                        : name))
                 + " (or 'r' to resign, 'q' to save game and quit).";
             var choice = InputUtility.ReadCommandInputLoop(prompt, new[] { "r", "q" }.Concat(names));
             if ("r".Equals(choice, StringComparison.OrdinalIgnoreCase)) {
@@ -203,6 +213,7 @@ internal class ConsoleLoop {
         } else if (actionFactory is GameActionFactoryForSpace actionFactoryForSpace) {
             return DoSpaceSelection(ref state, player, sharedStateFilePath, actionFactoryForSpace);
         } else {
+            //TODO: support for the other action factory types
             throw new InvalidOperationException("Unknown or unsupported Action Factory.");
         }
     }

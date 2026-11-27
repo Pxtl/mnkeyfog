@@ -43,6 +43,11 @@ public record MNKTemplate
     #endregion
 
     #region data members
+    /// <summary>
+    /// The default action for an MNK game is a space move.
+    /// </summary>
+    public override string DefaultActionCommandName => "space";
+
     public bool IsKriegspiel { get; init; }
 
     [JsonProperty(TypeNameHandling = TypeNameHandling.Objects)]

@@ -19,6 +19,13 @@ public partial class ActionParser {
     /// <summary>Command names the bot recognizes (without the '!' prefix).</summary>
     public static readonly IReadOnlyList<string> KnownCommands = ["new", "join", "play", "board", "list", "help", "resign"];
 
+    /// <summary>
+    /// Action names a player can name in a <c>!play</c> argument. A token that
+    /// names one of these but is not available on the current game is an
+    /// invalid action (not a space name).
+    /// </summary>
+    public static readonly IReadOnlyList<string> KnownActionCommandNames = ["space", "pass"];
+
     private readonly ModelNamer _namer;
 
     /// <summary>The ModelNamer used by this parser (for display formatting).</summary>
@@ -104,10 +111,10 @@ public partial class ActionParser {
     /// resolve space names (board prefixes etc.); fog is not a factor — fogged
     /// spaces remain playable, per Kriegspiel rules.
     /// </summary>
-    public IReadOnlyList<GameAction> ParsePlay(GameView playerView, IReadOnlyList<string> tokens) {
+    public PlayResult ParsePlay(GameView playerView, IReadOnlyList<string> tokens) {
         var moves = new List<GameAction>();
         if (tokens.Count == 0) {
-            return moves;
+            return PlayResult.Ok(moves);
         }
 
         // The first token may name an action ('space' / 'pass'); if so it selects
@@ -117,6 +124,10 @@ public partial class ActionParser {
         var firstToken = tokens[0].ToLowerInvariant();
         var namedFactory = playerView.AvailableActions
             .FirstOrDefault(f => f.Name.CommandName.Equals(firstToken, StringComparison.OrdinalIgnoreCase));
+        if (namedFactory is null && KnownActionCommandNames.Contains(firstToken)) {
+            var available = string.Join(", ", playerView.AvailableActions.Select(f => f.Name.CommandName));
+            return PlayResult.Fail($"Invalid action '{firstToken}'. Valid actions: {available}.");
+        }
         var argTokens = namedFactory is not null ? tokens.Skip(1) : tokens;
         var factory = namedFactory ?? playerView.AvailableActions
             .OfType<GameActionFactoryForSpace>()
@@ -133,7 +144,7 @@ public partial class ActionParser {
             moves.Add(simpleFactory.Create());
         }
 
-        return moves;
+        return PlayResult.Ok(moves);
     }
 
     /// <summary>
@@ -167,3 +178,12 @@ public partial class ActionParser {
 /// whitespace-split argument tokens following it.
 /// </summary>
 public sealed record CommandToken(string Command, IReadOnlyList<string> Arg);
+
+/// <summary>
+/// Result of parsing a <c>!play</c> argument: the parsed moves, or an error if
+/// the argument named an action the game does not support.
+/// </summary>
+public sealed record PlayResult(IReadOnlyList<GameAction> Moves, string? Error) {
+    public static PlayResult Ok(IReadOnlyList<GameAction> moves) => new(moves, null);
+    public static PlayResult Fail(string error) => new(Array.Empty<GameAction>(), error);
+}

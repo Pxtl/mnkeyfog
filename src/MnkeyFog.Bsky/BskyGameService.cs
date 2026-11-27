@@ -444,8 +444,12 @@ public class BskyGameService : BskyBotService {
         }
 
         var playerView = session.GetViewFor(senderDid);
-        var moves = _actionParser.ParsePlay(playerView, _actionParser.Tokenize(message));
-        if (moves.Count == 0) {
+        var playResult = _actionParser.ParsePlay(playerView, _actionParser.Tokenize(message));
+        if (playResult.Error is not null) {
+            await channel.RespondAsync($"Game [{session.Code}]\n{playResult.Error}");
+            return;
+        }
+        if (playResult.Moves.Count == 0) {
             return;
         }
 
@@ -461,7 +465,12 @@ public class BskyGameService : BskyBotService {
         CancellationToken cancellationToken
     ) {
         var playerView = session.GetViewFor(senderDid);
-        var moves = _actionParser.ParsePlay(playerView, tokens);
+        var playResult = _actionParser.ParsePlay(playerView, tokens);
+        if (playResult.Error is not null) {
+            await channel.RespondAsync($"Game [{session.Code}]\n{playResult.Error}");
+            return;
+        }
+        var moves = playResult.Moves;
         if (moves.Count == 0) {
             await channel.RespondAsync(
                 $"No valid spaces mentioned for game [{session.Code}]. Usage: !play <action> <args> — e.g. !play space 5 or !play space 1A 2B; or !play pass.");

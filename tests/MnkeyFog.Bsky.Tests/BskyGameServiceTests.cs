@@ -142,7 +142,7 @@ public class BskyGameServiceTests {
 
         // p1 (player X) has already played, so p2 (player O) is next.
         var moves = new ActionParser(new ModelNamer()).ParsePlay(session.GetViewFor("did:plc:p1"), ["5"]);
-        foreach (var move in moves) {
+        foreach (var move in moves.Moves) {
             session.Attempt(0, move);
             session.GameState.ExecutePendingActions();
         }
