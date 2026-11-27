@@ -415,6 +415,54 @@ public class ModelNamerTests {
 
     #endregion
 
+    #region GetPlayerMark
+    [Fact]
+    public void GetPlayerMark_Default_1CharCommandName_ReturnsCommandName() {
+        var players = new PlayerInfo[] { new("X"), new("O") };
+        var playersState = new PlayersState(players, RoundRobinPlayManager.Instance);
+
+        _namer.GetPlayerMark(0, playersState).Should().Be("X");
+        _namer.GetPlayerMark(1, playersState).Should().Be("O");
+    }
+
+    [Fact]
+    public void GetPlayerMark_Default_MultiCharCommandName_ReturnsIndex() {
+        var players = new PlayerInfo[] { new("alice"), new("bob") };
+        var playersState = new PlayersState(players, RoundRobinPlayManager.Instance);
+
+        _namer.GetPlayerMark(0, playersState).Should().Be("0");
+        _namer.GetPlayerMark(1, playersState).Should().Be("1");
+    }
+
+    [Fact]
+    public void GetPlayerMark_PreProvided_ReturnsPreProvidedMark() {
+        var namer = new ModelNamer(
+            boardModelNames: new[] { new ModelName("1", "1") },
+            columnModelNames: new[] { new ModelName("A", "A") },
+            rowModelNames: new[] { new ModelName("1", "1") },
+            playerMarks: new[] { "α", "β" });
+        var players = new PlayerInfo[] { new("alice"), new("bob") };
+        var playersState = new PlayersState(players, RoundRobinPlayManager.Instance);
+
+        namer.GetPlayerMark(0, playersState).Should().Be("α");
+        namer.GetPlayerMark(1, playersState).Should().Be("β");
+    }
+
+    [Fact]
+    public void GetPlayerMark_PreProvided_OutOfRangeThrows() {
+        var namer = new ModelNamer(
+            boardModelNames: new[] { new ModelName("1", "1") },
+            columnModelNames: new[] { new ModelName("A", "A") },
+            rowModelNames: new[] { new ModelName("1", "1") },
+            playerMarks: new[] { "α" });
+        var players = new PlayerInfo[] { new("alice"), new("bob") };
+        var playersState = new PlayersState(players, RoundRobinPlayManager.Instance);
+
+        var action = () => namer.GetPlayerMark(1, playersState);
+        action.Should().Throw<ArgumentOutOfRangeException>();
+    }
+    #endregion
+
     #region SpaceCommandName
     [Fact]
     public void SpaceCommandName_ReturnsSpaceNameForEmptySpaces() {

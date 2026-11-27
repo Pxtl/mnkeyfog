@@ -18,6 +18,7 @@ public class ModelNamer {
     private readonly IReadOnlyList<ModelName>? _boardModelNames;
     private readonly IReadOnlyList<ModelName>? _columnModelNames;
     private readonly IReadOnlyList<ModelName>? _rowModelNames;
+    private readonly IReadOnlyList<string>? _playerMarks;
 
     #region constructors
     /// <summary>
@@ -28,6 +29,7 @@ public class ModelNamer {
         _boardModelNames = null;
         _columnModelNames = null;
         _rowModelNames = null;
+        _playerMarks = null;
     }
 
     /// <summary>
@@ -40,6 +42,7 @@ public class ModelNamer {
         _boardModelNames = boardModelNames.ToList();
         _columnModelNames = null;
         _rowModelNames = null;
+        _playerMarks = null;
     }
 
     /// <summary>
@@ -50,7 +53,8 @@ public class ModelNamer {
     public ModelNamer(
         IEnumerable<ModelName> boardModelNames,
         IEnumerable<ModelName> columnModelNames,
-        IEnumerable<ModelName> rowModelNames
+        IEnumerable<ModelName> rowModelNames,
+        IEnumerable<string>? playerMarks = null
     ) {
         ArgumentNullException.ThrowIfNull(boardModelNames);
         ArgumentNullException.ThrowIfNull(columnModelNames);
@@ -58,6 +62,7 @@ public class ModelNamer {
         _boardModelNames = boardModelNames.ToList();
         _columnModelNames = columnModelNames.ToList();
         _rowModelNames = rowModelNames.ToList();
+        _playerMarks = playerMarks?.ToList();
     }
 
     #endregion
@@ -150,6 +155,26 @@ public class ModelNamer {
             throw new ArgumentOutOfRangeException(nameof(rowIndex), $"Row index {rowIndex} is out of range for the {_rowModelNames.Count} pre-provided row names.");
         }
         return _rowModelNames[rowIndex];
+    }
+
+    /// <summary>
+    /// The display Mark of the player at <paramref name="playerIndex"/>. If a
+    /// pre-provided <c>PlayerMarks</c> list was given to the namer, that entry
+    /// is used; otherwise the default: the player's <c>CommandName</c> when it
+    /// is a single character, or the <c>playerIndex</c> otherwise. A player's
+    /// <c>CommandName</c> (their typeable identity, e.g. a Bluesky handle)
+    /// does not apply to the board; the Mark is what is drawn in a space the
+    /// player occupies.
+    /// </summary>
+    public string GetPlayerMark(int playerIndex, PlayersState playersState) {
+        if (_playerMarks is not null) {
+            if (playerIndex < 0 || playerIndex >= _playerMarks.Count) {
+                throw new ArgumentOutOfRangeException(nameof(playerIndex), $"Player index {playerIndex} is out of range for the {_playerMarks.Count} pre-provided player marks.");
+            }
+            return _playerMarks[playerIndex];
+        }
+        var commandName = playersState.PlayerInfos[playerIndex].CommandName;
+        return commandName.Length == 1 ? commandName : playerIndex.ToString();
     }
 
     /// <summary>
@@ -273,8 +298,12 @@ public class ModelNamer {
             && !boardView.IsDone
         ) {
             return SpaceCommandName(gameView, boardIndex, col, row);
+        } else if (spaceView.MarkIndex is null) {
+            return Space.EmptyMarkString;
+        } else if (spaceView.MarkIndex == Space.ImpasseMarkIndex) {
+            return Space.ImpasseChar.ToString();
         } else {
-            return gameView.PlayersState.GetMark(spaceView.MarkIndex);
+            return GetPlayerMark(spaceView.MarkIndex.Value, gameView.PlayersState);
         }
     }
 }
