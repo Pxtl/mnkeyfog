@@ -97,7 +97,43 @@ The following items are fully approved and can be taken up immediately.
 
   Upper limit for size for this mode shall be 11.
 
-  
+- **Bsky Turn Interval** depends on the Pass feature.  Much like we have a
+  DefaultAction command name, we need a Timeout Action command name.  For Casual
+  MNK games the timeout action will be pass.  For traditional mnk games the
+  timeout action will be null, which will be interpreted as "resign".  Timeout
+  action must be a simple action, no other types are acceptable.
+  - Add a parameter to the create game that is the time interval.  We will use a
+    custom C# timespan format where the user supplies a case-insensitive string
+    of suffixed numbers, where "w" means weeks, "d" means days, "h" means hours,
+    "m" means minutes, "s" means seconds.  EG "1d2h3m" would mean "26 hours and
+    3 minutes". This string format will be used both to display the interval and
+    to the users where appropriate, and to recieve the interval from the users
+    as a parameter when creating a game.  Default value shall be 20 minutes.
+    Unparseable values shall be rejected.
+  - The Bsky Bot will check all active sessions for games where current time is
+    greater than last executed turn time + interval.  To be clear: In round
+    robin mode, last executed turn is the turn of the previous player, while in
+    synchroneous mode it's the last completed *round*.  Modeling it as time
+    since start of awaiting current turn to end might be the best approach. If
+    the session is awaiting one or more player(s) actions and we have reached
+    timeout, those players will be forced to play their timeout action (which is
+    resign or pass).
+  - Interval data (interval string, last played turn in UTC or Timespan Ago) can
+    be included when requesting metadata about the session... do we have a
+    function for that besides !board?  Maybe in !list.
+
+- **Add AI player to games in Bsky**.  Depends on **ModelNamer for Players**
+    !addaiplayer command after a game has been created and slots are available.
+    AI players do not have a "did" so handling them will be tricky it means that
+    Bsky session players are a heterogeneous collection. Their commandnames
+    shall be the AI name (the first word of the Description, it may make sense
+    to change the AI names to be constructed from multiple poperties, one for
+    string Name and one for sbyte Difficutly) but prefixed with "🤖".  If there
+    is a name collision (eg adding 2 of the same AI difficulty to a game),
+    append or increment a final number suffix to the commandname (starting with
+    2) so that if a game has a human player and 3 Randys, they will be named
+    Randy, Randy2, and Randy3.  AI players will take their turns as soon as they
+    are able with no delay.
 
 ## Feasible Items
 
