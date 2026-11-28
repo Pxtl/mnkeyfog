@@ -26,6 +26,11 @@ public abstract record GameTemplate()
     /// </summary>
     public abstract string DefaultActionCommandName { get; }
     /// <summary>
+    /// The command name of the action forced on a player who exceeds the turn
+    /// interval without acting. Null means the player resigns instead.
+    /// </summary>
+    public abstract string? TimeoutActionCommandName { get; }
+    /// <summary>
     /// Explicit list of how many players are allowed for the game.
     /// </summary>
     public IEnumerable<int> LegalPlayerCounts { get; init; } = DefaultLegalPlayerCounts;

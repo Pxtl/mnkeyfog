@@ -4,6 +4,7 @@ public interface IGameTemplate {
     string? CommandName { get; }
     string? Description { get; }
     string DefaultActionCommandName { get; }
+    string? TimeoutActionCommandName { get; }
     IEnumerable<int> LegalPlayerCounts { get; }
     PlayManager PlayManager { get; }
     IEnumerable<GameActionFactory> GetAvailableActions(GameState gameState, int playerIndex);
