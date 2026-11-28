@@ -20,7 +20,7 @@ public class BskyGameServiceTests {
     }
 
     private static GameSession CreateGame(TestableGameService svc, string creator, IGameTemplate template, int players = 2) {
-        var result = svc.Store.CreateGame($"at://did:plc:root/{Guid.NewGuid():N}", creator, players, template);
+        var result = svc.Store.CreateGame($"at://did:plc:root/{Guid.NewGuid():N}", creator, players, template, TurnInterval.Default);
         return result.Match(
             created => created.Session,
             error => throw new Exception($"CreateGame failed: {error.Message}"));
@@ -28,20 +28,20 @@ public class BskyGameServiceTests {
 
     [Fact]
     public void IsSecret_Kriegspiel_IsTrue() {
-        var s = new GameSession("A", "at://u", "creator", TwoPlayers(), KriegspielTemplate());
+        var s = new GameSession("A", "at://u", "creator", TwoPlayers(), KriegspielTemplate(), TurnInterval.Default);
         s.IsSecret.Should().BeTrue();
     }
 
     [Fact]
     public void IsSecret_Plain_IsFalse() {
-        var s = new GameSession("B", "at://u", "creator", TwoPlayers(), PlainTemplate());
+        var s = new GameSession("B", "at://u", "creator", TwoPlayers(), PlainTemplate(), TurnInterval.Default);
         s.IsSecret.Should().BeFalse();
     }
 
     [Fact]
     public async Task RenderPublic_Kriegspiel_ReturnsBoardHidden() {
         var svc = new TestableGameService();
-        var s = new GameSession("C", "at://u", "creator", TwoPlayers(), KriegspielTemplate());
+        var s = new GameSession("C", "at://u", "creator", TwoPlayers(), KriegspielTemplate(), TurnInterval.Default);
         s.Join("d2");
         (await svc.RenderPublicBoardAsync(s, TestContext.Current.CancellationToken)).IsT1.Should().BeTrue();
     }
@@ -49,7 +49,7 @@ public class BskyGameServiceTests {
     [Fact]
     public async Task RenderPublic_Plain_ReturnsBoardView() {
         var svc = new TestableGameService();
-        var s = new GameSession("D", "at://u", "creator", TwoPlayers(), PlainTemplate());
+        var s = new GameSession("D", "at://u", "creator", TwoPlayers(), PlainTemplate(), TurnInterval.Default);
         s.Join("d2");
         (await svc.RenderPublicBoardAsync(s, TestContext.Current.CancellationToken)).IsT0.Should().BeTrue();
     }
@@ -185,7 +185,7 @@ public class BskyGameServiceTests {
     [Fact]
     public void FormatGameLine_MultipleGames_IsConsistent() {
         var template = PlainTemplate();
-        var s1 = new GameSession("E1", "at://u1", "did:plc:p1", TwoPlayers(), template);
+        var s1 = new GameSession("E1", "at://u1", "did:plc:p1", TwoPlayers(), template, TurnInterval.Default);
         s1.Join("did:plc:p2");
         s1.GameState.PlayersState.PlayerInfos[1].CommandName = "p2.bsky.social";
         var line = BskyGameService.FormatGameLine(s1, "did:plc:p2", new ModelNamer());

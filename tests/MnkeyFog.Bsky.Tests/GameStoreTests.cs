@@ -14,7 +14,7 @@ file static class GameStoreTestHelper {
     public static string NextUri() => $"at://did:plc:root/{Guid.NewGuid():N}";
 
     public static GameStore.CreatedGame Created(GameStore store, string creator) {
-        var result = store.CreateGame(NextUri(), creator, 2, MakeTemplate());
+        var result = store.CreateGame(NextUri(), creator, 2, MakeTemplate(), TurnInterval.Default);
         return result.Match(created => created, error => throw new Exception($"CreateGame failed: {error}"));
     }
 }

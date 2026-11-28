@@ -250,7 +250,7 @@ public class BskyGameService : BskyBotService {
             playerCount = legalPlayerCounts.Min();
         }
 
-        var result = GameStore.CreateGame(uriKey, senderDid, playerCount, gameTemplate);
+        var result = GameStore.CreateGame(uriKey, senderDid, playerCount, gameTemplate, TurnInterval.Default);
         await result.Match(
             async created => {
                 // The creator's CommandName is their handle (typeable identity),
