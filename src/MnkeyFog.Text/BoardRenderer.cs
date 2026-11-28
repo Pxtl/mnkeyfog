@@ -7,6 +7,12 @@ namespace MnkeyFog.Text;
 /// the given player.
 /// </summary>
 public class BoardRenderer {
+    private enum RowKind {
+        Space,
+        RowColumnHeader,
+        RowColumnData
+    }
+
     #region constructors
     public BoardRenderer()
     : this(new ModelNamer(), BoardRendererConfiguration.FullPipes) {
@@ -30,148 +36,73 @@ public class BoardRenderer {
 
     public BoardRendererConfiguration Configuration { get; }
 
-    public string DrawBoards(
-        GameView gameView,
-        bool doShowSpaceCommandName,
-        int maxRenderWidth = int.MaxValue
-    ) {
-        if (Configuration.ShowRowColumnLabels) {
-            return DrawBoardsRowColumn(gameView, maxRenderWidth);
-        }
+    public string DrawBoards(GameView gameView, bool doShowSpaceCommandName, int maxRenderWidth = int.MaxValue) {
+        bool isRowColumn = Configuration.ShowRowColumnLabels;
         bool doShowBoardNameForAllBoards = gameView.BoardsCount > 1;
         var maxRowCount = gameView.Boards.Max(b => b.RowCount);
         var sb = new StringBuilder();
-
         sbyte nextDrawnBoardIndex = 0;
-        var boardRenderWidth = GetBoardRenderWidth(gameView.GetBoardViewByIndex(nextDrawnBoardIndex));
-
-        while (nextDrawnBoardIndex < gameView.BoardsCount) {
-            sbyte drawBoardIndex = nextDrawnBoardIndex;
-
-            var doShowBoardName = doShowBoardNameForAllBoards;
-            if (Configuration.HasTopBorder) {
-                DrawBorderRow(
-                    gameView,
-                    drawBoardIndex,
-                    Configuration.TopLeftCorner,
-                    Configuration.TopIntersection,
-                    Configuration.TopRightCorner,
-                    Configuration.CellRowSeparator,
-                    doShowBoardName,
-                    maxRenderWidth,
-                    sb
-                );
-                doShowBoardName = false;
-            }
-
-            for (sbyte row = 0; row < maxRowCount; row += 1) {
-                if (row > 0) {
-                    if (Configuration.HasRowSeparators) {
-                        DrawBorderRow(
-                            gameView,
-                            drawBoardIndex,
-                            Configuration.LeftIntersection,
-                            Configuration.MiddleIntersection,
-                            Configuration.RightIntersection,
-                            Configuration.CellRowSeparator,
-                            false,
-                            maxRenderWidth,
-                            sb
-                        );
-                    }
-                }
-                nextDrawnBoardIndex = DrawBoardSpacesRow(
-                    gameView,
-                    drawBoardIndex,
-                    row,
-                    boardRenderWidth,
-                    doShowBoardName,
-                    maxRenderWidth,
-                    sb,
-                    doShowSpaceCommandName
-                );
-                doShowBoardName = false;
-            }
-            if (Configuration.HasBottomBorder) {
-                DrawBorderRow(
-                    gameView,
-                    drawBoardIndex,
-                    Configuration.BottomLeftCorner,
-                    Configuration.BottomIntersection,
-                    Configuration.BottomRightCorner,
-                    Configuration.CellRowSeparator,
-                    false,
-                    maxRenderWidth,
-                    sb
-                );
-            }
-        }
-
-        sb.AppendLine();
-        return sb.ToString();
-    }
-
-    public int GetBoardRenderWidth(BoardView board)
-        => board.ColumnCount * Configuration.CellWidth
-        + (Configuration.HasColumnSeparators ? board.ColumnCount - 1 : 0)
-        + (Configuration.HasLeftBorder ? 1 : 0)
-        + (Configuration.HasRightBorder ? 1 : 0)
-        + 2; //indent
-
-    /// <summary>
-    /// Row/Column-mode board rendering: an extra leading column of row display
-    /// names, a header row of column display names (the board name is drawn in
-    /// the top-left cell), and space cells that show occupying marks only
-    /// (space command names are never drawn in this mode).
-    /// </summary>
-    private string DrawBoardsRowColumn(GameView gameView, int maxRenderWidth) {
-        bool doShowBoardNameForAllBoards = gameView.BoardsCount > 1;
-        var maxRowCount = gameView.Boards.Max(b => b.RowCount);
-        var sb = new StringBuilder();
-
-        sbyte nextDrawnBoardIndex = 0;
-        var boardRenderWidth = GetBoardRenderWidthRowColumn(gameView.GetBoardViewByIndex(nextDrawnBoardIndex));
+        var extraColumns = isRowColumn ? 1 : 0;
+        var hasLeader = !isRowColumn;
+        var boardRenderWidth = GetBoardRenderWidth(gameView.GetBoardViewByIndex(0).ColumnCount + extraColumns, hasLeader);
 
         while (nextDrawnBoardIndex < gameView.BoardsCount) {
             sbyte drawBoardIndex = nextDrawnBoardIndex;
             var doShowBoardName = doShowBoardNameForAllBoards;
 
             if (Configuration.HasTopBorder) {
-                nextDrawnBoardIndex = DrawBorderRowRowColumn(
+                DrawBorderRow(
                     gameView, drawBoardIndex,
-                    Configuration.TopLeftCorner, Configuration.TopIntersection, Configuration.TopRightCorner,
+                    Configuration.TopLeftCorner.ToString(),
+                    Configuration.TopIntersection.ToString(),
+                    Configuration.TopRightCorner.ToString(),
                     Configuration.CellRowSeparator,
-                    boardRenderWidth, maxRenderWidth, sb
+                    doShowBoardName, maxRenderWidth, sb,
+                    extraColumns, hasLeader
                 );
+                if (hasLeader) {
+                    doShowBoardName = false;
+                }
             }
 
-            // Header row: board name (cell 0) + column display names.
-            nextDrawnBoardIndex = DrawLabeledRowRowColumn(
-                gameView, drawBoardIndex, null, doShowBoardName,
-                boardRenderWidth, maxRenderWidth, sb
-            );
+            if (isRowColumn) {
+                nextDrawnBoardIndex = DrawBoardRow(
+                    gameView, drawBoardIndex, 0, boardRenderWidth, doShowBoardName, maxRenderWidth, sb,
+                    RowKind.RowColumnHeader, doShowSpaceCommandName
+                );
+                doShowBoardName = false;
+            }
 
             for (sbyte row = 0; row < maxRowCount; row += 1) {
-                if (Configuration.HasRowSeparators) {
-                    nextDrawnBoardIndex = DrawBorderRowRowColumn(
+                if ((row > 0 || isRowColumn) && Configuration.HasRowSeparators) {
+                    DrawBorderRow(
                         gameView, drawBoardIndex,
-                        Configuration.LeftIntersection, Configuration.MiddleIntersection, Configuration.RightIntersection,
+                        Configuration.LeftIntersection.ToString(),
+                        Configuration.MiddleIntersection.ToString(),
+                        Configuration.RightIntersection.ToString(),
                         Configuration.CellRowSeparator,
-                        boardRenderWidth, maxRenderWidth, sb
+                        false, maxRenderWidth, sb,
+                        extraColumns, hasLeader
                     );
                 }
-                nextDrawnBoardIndex = DrawLabeledRowRowColumn(
-                    gameView, drawBoardIndex, row, false,
-                    boardRenderWidth, maxRenderWidth, sb
+                var rowKind = isRowColumn ? RowKind.RowColumnData : RowKind.Space;
+                var showSpaceCommandName = isRowColumn ? false : doShowSpaceCommandName;
+                nextDrawnBoardIndex = DrawBoardRow(
+                    gameView, drawBoardIndex, row, boardRenderWidth, doShowBoardName, maxRenderWidth, sb,
+                    rowKind, showSpaceCommandName
                 );
+                doShowBoardName = false;
             }
 
             if (Configuration.HasBottomBorder) {
-                nextDrawnBoardIndex = DrawBorderRowRowColumn(
+                DrawBorderRow(
                     gameView, drawBoardIndex,
-                    Configuration.BottomLeftCorner, Configuration.BottomIntersection, Configuration.BottomRightCorner,
+                    Configuration.BottomLeftCorner.ToString(),
+                    Configuration.BottomIntersection.ToString(),
+                    Configuration.BottomRightCorner.ToString(),
                     Configuration.CellRowSeparator,
-                    boardRenderWidth, maxRenderWidth, sb
+                    false, maxRenderWidth, sb,
+                    extraColumns, hasLeader
                 );
             }
         }
@@ -180,108 +111,16 @@ public class BoardRenderer {
         return sb.ToString();
     }
 
-    private int GetBoardRenderWidthRowColumn(BoardView board) {
-        var colCount = board.ColumnCount + 1;
-        return colCount * Configuration.CellWidth
-            + (Configuration.HasColumnSeparators ? colCount - 1 : 0)
+    public int GetBoardRenderWidth(BoardView board) => GetBoardRenderWidth(board.ColumnCount, hasLeader: true);
+
+    private int GetBoardRenderWidth(int cellCount, bool hasLeader) {
+        return cellCount * Configuration.CellWidth
+            + (Configuration.HasColumnSeparators ? cellCount - 1 : 0)
             + (Configuration.HasLeftBorder ? 1 : 0)
-            + (Configuration.HasRightBorder ? 1 : 0);
+            + (Configuration.HasRightBorder ? 1 : 0)
+            + (hasLeader ? 2 : 0);
     }
 
-    private sbyte DrawBorderRowRowColumn(
-        GameView gameView,
-        sbyte startBoardIndex,
-        string cellStartString,
-        string cellIntersectionString,
-        string cellEndString,
-        string cellSpanString,
-        int boardRenderWidth,
-        int maxRenderWidth,
-        StringBuilder sb
-    ) {
-        var boardIndex = startBoardIndex;
-        for (; boardIndex < gameView.BoardsCount; boardIndex += 1) {
-            var board = gameView.GetBoardViewByIndex(boardIndex);
-            var cursorX = GetCursorX(sb);
-
-            // wrap check - break if cursor would exceed maxWidth
-            if (cursorX > 0 && (cursorX + boardRenderWidth > maxRenderWidth)) {
-                break;
-            }
-
-            sb.Append($"{cellStartString}{cellSpanString}");
-            for (sbyte col = 0; col < board.ColumnCount; col += 1) {
-                sb.Append($"{cellIntersectionString}{cellSpanString}");
-            }
-            sb.Append(cellEndString);
-        }
-        sb.AppendLine();
-        return boardIndex;
-    }
-
-    private sbyte DrawLabeledRowRowColumn(
-        GameView gameView,
-        sbyte startBoardIndex,
-        sbyte? rowIndex,
-        bool doShowBoardName,
-        int boardRenderWidth,
-        int maxRenderWidth,
-        StringBuilder sb
-    ) {
-        var boardIndex = startBoardIndex;
-        for (; boardIndex < gameView.BoardsCount; boardIndex += 1) {
-            var board = gameView.GetBoardViewByIndex(boardIndex);
-            var cursorX = GetCursorX(sb);
-
-            // wrap check - break if cursor would exceed maxWidth
-            if (cursorX > 0 && (cursorX + boardRenderWidth > maxRenderWidth)) {
-                break;
-            }
-
-            if (Configuration.HasLeftBorder) {
-                sb.Append(Configuration.CellColumnSeparator);
-            }
-            for (sbyte cell = 0; cell <= board.ColumnCount; cell += 1) {
-                if (cell > 0 && Configuration.HasColumnSeparators) {
-                    sb.Append(Configuration.CellColumnSeparator);
-                }
-                var body = GetRowColumnCellBody(gameView, boardIndex, cell, rowIndex, doShowBoardName);
-                DrawSpaceBody(body, Configuration.CellWidth, sb);
-            }
-            if (Configuration.HasRightBorder) {
-                sb.Append(Configuration.CellColumnSeparator);
-            }
-        }
-        sb.AppendLine();
-        return boardIndex;
-    }
-
-    private string GetRowColumnCellBody(
-        GameView gameView,
-        sbyte boardIndex,
-        sbyte cellIndex,
-        sbyte? rowIndex,
-        bool doShowBoardName
-    ) {
-        var board = gameView.GetBoardViewByIndex(boardIndex);
-        if (cellIndex == 0) {
-            // Leading label column: board name (header row) or row display name (data row).
-            if (rowIndex is null) {
-                return doShowBoardName ? ModelNamer.GetBoardModelName(boardIndex).DisplayName : string.Empty;
-            }
-            return ModelNamer.GetRowModelName(rowIndex.Value, board.RowCount).DisplayName;
-        }
-        var col = (sbyte)(cellIndex - 1);
-        if (rowIndex is null) {
-            return ModelNamer.GetColumnModelName(col, board.ColumnCount).DisplayName;
-        }
-        return ModelNamer.GetSpaceBody(gameView, boardIndex, col, rowIndex.Value, doShowSpaceCommandName: false);
-    }
-
-    /// <summary>
-    /// Helper function to draw a border row of the board.
-    /// Wraps to newline when maxWidth is exceeded.
-    /// </summary>
     private sbyte DrawBorderRow(
         GameView gameView,
         sbyte startBoardIndex,
@@ -291,23 +130,24 @@ public class BoardRenderer {
         string cellSpanString,
         bool doShowBoardName,
         int maxRenderWidth,
-        StringBuilder sb
+        StringBuilder sb,
+        int extraColumns,
+        bool hasLeader
     ) {
         var boardIndex = startBoardIndex;
         for (; boardIndex < gameView.BoardsCount; boardIndex += 1) {
             var board = gameView.GetBoardViewByIndex(boardIndex);
             var cursorX = GetCursorX(sb);
-
-            //wrap check - break if cursor would exceed maxWidth
-            if (cursorX > 0 && (cursorX + GetBoardRenderWidth(board) > maxRenderWidth)) {
+            var cellCount = board.ColumnCount + extraColumns;
+            var boardWidth = GetBoardRenderWidth(cellCount, hasLeader);
+            if (cursorX > 0 && (cursorX + boardWidth > maxRenderWidth)) {
                 break;
             }
-
-            DrawBoardLeader(doShowBoardName, sb, boardIndex, board);
-
+            if (hasLeader) {
+                DrawBoardLeader(doShowBoardName, sb, boardIndex, board);
+            }
             sb.Append($"{cellStartString}{cellSpanString}");
-
-            for (sbyte col = 0; col < board.ColumnCount - 1; col += 1) {
+            for (int col = 0; col < cellCount - 1; col += 1) {
                 sb.Append($"{cellIntersectionString}{cellSpanString}");
             }
             sb.Append(cellEndString);
@@ -316,11 +156,7 @@ public class BoardRenderer {
         return boardIndex;
     }
 
-    /// <summary>
-    /// Draw a row of board spaces with window wrapping.
-    /// Wraps to newline when maxWidth is exceeded.
-    /// </summary>
-    private sbyte DrawBoardSpacesRow(
+    private sbyte DrawBoardRow(
         GameView gameView,
         sbyte startBoardIndex,
         sbyte rowIndex,
@@ -328,28 +164,30 @@ public class BoardRenderer {
         bool doShowBoardName,
         int maxRenderWidth,
         StringBuilder sb,
+        RowKind rowKind,
         bool doShowSpaceCommandName
     ) {
         var boardIndex = startBoardIndex;
+        var isRowColumn = rowKind != RowKind.Space;
+        var extraColumns = isRowColumn ? 1 : 0;
         for (; boardIndex < gameView.BoardsCount; boardIndex += 1) {
             var board = gameView.GetBoardViewByIndex(boardIndex);
             var cursorX = GetCursorX(sb);
-
-            //wrap check - break if cursor would exceed maxWidth
+            var cellCount = board.ColumnCount + extraColumns;
             if (cursorX > 0 && (cursorX + boardRenderWidth > maxRenderWidth)) {
                 break;
             }
-
-            DrawBoardLeader(doShowBoardName, sb, boardIndex, board);
-
+            if (!isRowColumn) {
+                DrawBoardLeader(doShowBoardName, sb, boardIndex, board);
+            }
             if (Configuration.HasLeftBorder) {
                 sb.Append(Configuration.CellColumnSeparator);
             }
-            for (sbyte col = 0; col < board.ColumnCount; col += 1) {
-                if (col > 0 && Configuration.HasColumnSeparators) {
+            for (int cell = 0; cell < cellCount; cell += 1) {
+                if (cell > 0 && Configuration.HasColumnSeparators) {
                     sb.Append(Configuration.CellColumnSeparator);
                 }
-                var body = ModelNamer.GetSpaceBody(gameView, boardIndex, col, rowIndex, doShowSpaceCommandName);
+                var body = GetCellBody(gameView, boardIndex, (sbyte)cell, rowIndex, rowKind, doShowSpaceCommandName, doShowBoardName);
                 DrawSpaceBody(body, Configuration.CellWidth, sb);
             }
             if (Configuration.HasRightBorder) {
@@ -360,18 +198,37 @@ public class BoardRenderer {
         return boardIndex;
     }
 
+    private string GetCellBody(
+        GameView gameView,
+        sbyte boardIndex,
+        sbyte cellIndex,
+        sbyte rowIndex,
+        RowKind rowKind,
+        bool doShowSpaceCommandName,
+        bool doShowBoardName
+    ) {
+        var board = gameView.GetBoardViewByIndex(boardIndex);
+        return rowKind switch {
+            RowKind.Space => ModelNamer.GetSpaceBody(gameView, boardIndex, cellIndex, rowIndex, doShowSpaceCommandName),
+            RowKind.RowColumnHeader => cellIndex == 0
+                ? (doShowBoardName ? ModelNamer.GetBoardModelName(boardIndex).DisplayName : string.Empty)
+                : ModelNamer.GetColumnModelName((sbyte)(cellIndex - 1), board.ColumnCount).DisplayName,
+            RowKind.RowColumnData => cellIndex == 0
+                ? ModelNamer.GetRowModelName(rowIndex, board.RowCount).DisplayName
+                : ModelNamer.GetSpaceBody(gameView, boardIndex, (sbyte)(cellIndex - 1), rowIndex, doShowSpaceCommandName: false),
+            _ => throw new ArgumentOutOfRangeException(nameof(rowKind))
+        };
+    }
+
     private void DrawBoardLeader(bool doShowBoardName, StringBuilder sb, sbyte boardIndex, BoardView board) {
         sb.Append(doShowBoardName
             ? (board.IsDone
                 ? Configuration.DoneBoardLeader
-                : Configuration.BoardNameMappingToBoardLeader(ModelNamer.GetBoardModelName(boardIndex).DisplayName)
-            ) : Configuration.EmptyBoardLeader
+                : Configuration.BoardNameMappingToBoardLeader(ModelNamer.GetBoardModelName(boardIndex).DisplayName))
+            : Configuration.EmptyBoardLeader
         );
     }
 
-    /// <summary>
-    /// Helper function to draw the body-spaces of the board.
-    /// </summary>
     private static void DrawSpaceBody(string body, int cellWidth, StringBuilder sb) {
         body = body.PadLeft(cellWidth / 2 + 1);
         body = body.PadRight(cellWidth);
