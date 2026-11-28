@@ -493,5 +493,118 @@ public class BoardRendererTests {
 
         actual.TrimEnd().Should().Be(expected);
     }
+
+    [Fact]
+    public void DrawBoards_RowColumnMode_4x4_EmptyBoards_ReturnsRowColumnGridString() {
+        var boardBuilder = MNKBoardRuleset.CreateBoardBuilder(4, 4);
+        var namer = new ModelNamer(new[] {
+            new ModelName("P", "U"),
+            new ModelName("Q", "V")
+        });
+        var config = new BoardRendererConfiguration(
+            3, '│', '─',
+            '┌', '┬', '┐',
+            '├', '┼', '┤',
+            '└', '┴', '┘',
+            "  ", " ✓", boardName => boardName.PadLeft(2),
+            showRowColumnLabels: true
+        );
+        var state = new GameState(
+            (new[] { 'X', 'O' }).ToPlayersArray(),
+            new MNKTemplate([boardBuilder, boardBuilder], isSynchronousMode: false, isKriegspiel: false),
+            isRandomPlayerOrder: false
+        );
+        var gameView = new GameView(state, state.PlayersState.PlayersAvailableForTurn.First().Index);
+        // doShowSpaceCommandName: true is deliberately passed to prove row/column
+        // mode never shows space command names in cells (marks/empty only).
+        var actual = new BoardRenderer(namer, config)
+            .DrawBoards(gameView, doShowSpaceCommandName: true, maxRenderWidth: 30);
+
+        var expected = @"
+┌───┬───┬───┬───┬───┐
+│ U │ A │ B │ C │ D │
+├───┼───┼───┼───┼───┤
+│ 4 │   │   │   │   │
+├───┼───┼───┼───┼───┤
+│ 3 │   │   │   │   │
+├───┼───┼───┼───┼───┤
+│ 2 │   │   │   │   │
+├───┼───┼───┼───┼───┤
+│ 1 │   │   │   │   │
+└───┴───┴───┴───┴───┘
+┌───┬───┬───┬───┬───┐
+│ V │ A │ B │ C │ D │
+├───┼───┼───┼───┼───┤
+│ 4 │   │   │   │   │
+├───┼───┼───┼───┼───┤
+│ 3 │   │   │   │   │
+├───┼───┼───┼───┼───┤
+│ 2 │   │   │   │   │
+├───┼───┼───┼───┼───┤
+│ 1 │   │   │   │   │
+└───┴───┴───┴───┴───┘
+"
+            .NormalizeString()
+            .RemoveStartingBreak();
+
+        actual.TrimEnd().Should().Be(expected);
+    }
+
+    [Fact]
+    public void DrawBoards_RowColumnMode_4x4_WithMove_ReturnsMarkInCell() {
+        var boardBuilder = MNKBoardRuleset.CreateBoardBuilder(4, 4);
+        var namer = new ModelNamer(new[] {
+            new ModelName("P", "U"),
+            new ModelName("Q", "V")
+        });
+        var config = new BoardRendererConfiguration(
+            3, '│', '─',
+            '┌', '┬', '┐',
+            '├', '┼', '┤',
+            '└', '┴', '┘',
+            "  ", " ✓", boardName => boardName.PadLeft(2),
+            showRowColumnLabels: true
+        );
+        var state = new GameState(
+            (new[] { 'X', 'O' }).ToPlayersArray(),
+            new MNKTemplate([boardBuilder, boardBuilder], isSynchronousMode: false, isKriegspiel: false),
+            isRandomPlayerOrder: false
+        );
+        var currentPlayer = state.PlayersState.GetPlayer("X");
+        state.GetView(currentPlayer).Attempt(new MNKAction(0, 0, 0));
+        var gameView = new GameView(state, currentPlayer.Index);
+        var actual = new BoardRenderer(namer, config)
+            .DrawBoards(gameView, doShowSpaceCommandName: gameView.CanTakeTurn, maxRenderWidth: 30);
+
+        // X's mark lands at board 0, col 0, row 0 → column "A", row "4" (top-left data cell).
+        var expected = @"
+┌───┬───┬───┬───┬───┐
+│ U │ A │ B │ C │ D │
+├───┼───┼───┼───┼───┤
+│ 4 │ X │   │   │   │
+├───┼───┼───┼───┼───┤
+│ 3 │   │   │   │   │
+├───┼───┼───┼───┼───┤
+│ 2 │   │   │   │   │
+├───┼───┼───┼───┼───┤
+│ 1 │   │   │   │   │
+└───┴───┴───┴───┴───┘
+┌───┬───┬───┬───┬───┐
+│ V │ A │ B │ C │ D │
+├───┼───┼───┼───┼───┤
+│ 4 │   │   │   │   │
+├───┼───┼───┼───┼───┤
+│ 3 │   │   │   │   │
+├───┼───┼───┼───┼───┤
+│ 2 │   │   │   │   │
+├───┼───┼───┼───┼───┤
+│ 1 │   │   │   │   │
+└───┴───┴───┴───┴───┘
+"
+            .NormalizeString()
+            .RemoveStartingBreak();
+
+        actual.TrimEnd().Should().Be(expected);
+    }
 }
 #pragma warning restore IDE0027 // Simplify nested expression
