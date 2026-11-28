@@ -48,6 +48,12 @@ public record MNKTemplate
     /// </summary>
     public override string DefaultActionCommandName => "space";
 
+    /// <summary>
+    /// A traditional MNK game has no pass action; a player who exceeds the turn
+    /// interval resigns (null timeout action).
+    /// </summary>
+    public override string? TimeoutActionCommandName => null;
+
     public bool IsKriegspiel { get; init; }
 
     [JsonProperty(TypeNameHandling = TypeNameHandling.Objects)]

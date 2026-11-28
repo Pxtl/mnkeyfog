@@ -69,7 +69,7 @@ public sealed class GameStore {
     /// Returns a <see cref="CommandError"/> if a session is already anchored to that
     /// thread or the template does not allow the requested player count.
     /// </summary>
-    public OneOf<CreatedGame, CommandError> CreateGame(string uriKey, string creatorDid, int playerCount, IGameTemplate template) {
+    public OneOf<CreatedGame, CommandError> CreateGame(string uriKey, string creatorDid, int playerCount, IGameTemplate template, TurnInterval interval) {
         if (!template.LegalPlayerCounts.Contains(playerCount)) {
             return new CommandError(
                 $"Game '{template.CommandName}' supports player-counts: {string.Join(", ", template.LegalPlayerCounts)}."
@@ -89,7 +89,7 @@ public sealed class GameStore {
 
         GameSession session;
         try {
-            session = new GameSession(code, uriKey, creatorDid, players, template);
+            session = new GameSession(code, uriKey, creatorDid, players, template, interval);
         } catch (ApplicationException ex) {
             return new CommandError(ex.Message);
         }
@@ -103,6 +103,14 @@ public sealed class GameStore {
         _byUri[uriKey] = code;
         PersistSession(session);
         return new CreatedGame(code, session);
+    }
+
+    /// <summary>All currently active sessions (not completed).</summary>
+    public IReadOnlyList<GameSession> GetActiveSessions() {
+        return _sessions.Values
+            .Where(s => s.CompletedAt is null)
+            .Select(s => s.Session)
+            .ToList();
     }
 
     /// <summary>Try to retrieve a session by code (case-insensitive).</summary>
@@ -266,11 +274,15 @@ public sealed class GameStore {
     private void LoadPersisted() {
         foreach (var persisted in _store.LoadAll()) {
             try {
+                var interval = persisted.Interval ?? TurnInterval.Default.Value;
+                var turnStartedAt = persisted.TurnStartedAt ?? persisted.StartedAt;
                 var session = new GameSession(
                     persisted.Code,
                     persisted.ThreadKey,
                     persisted.CreatorId,
                     persisted.StartedAt,
+                    new TurnInterval(interval),
+                    turnStartedAt,
                     persisted.Players.ToDictionary(p => p.Id, p => p.PlayerIndex, StringComparer.OrdinalIgnoreCase),
                     persisted.GameState
                 );
@@ -299,7 +311,9 @@ public sealed class GameStore {
                 session.CreatorDid,
                 session.StartedAt,
                 [.. session.PlayerDids.Select(kvp => new PersistedPlayer(kvp.Key, kvp.Value))],
-                session.GameState
+                session.GameState,
+                Interval: session.Interval.Value,
+                TurnStartedAt: session.TurnStartedAt
             );
             _store.Save(persisted);
         } catch (IOException ex) {

@@ -20,7 +20,7 @@ public class BskyGameServiceTests {
     }
 
     private static GameSession CreateGame(TestableGameService svc, string creator, IGameTemplate template, int players = 2) {
-        var result = svc.Store.CreateGame($"at://did:plc:root/{Guid.NewGuid():N}", creator, players, template);
+        var result = svc.Store.CreateGame($"at://did:plc:root/{Guid.NewGuid():N}", creator, players, template, TurnInterval.Default);
         return result.Match(
             created => created.Session,
             error => throw new Exception($"CreateGame failed: {error.Message}"));
@@ -28,20 +28,20 @@ public class BskyGameServiceTests {
 
     [Fact]
     public void IsSecret_Kriegspiel_IsTrue() {
-        var s = new GameSession("A", "at://u", "creator", TwoPlayers(), KriegspielTemplate());
+        var s = new GameSession("A", "at://u", "creator", TwoPlayers(), KriegspielTemplate(), TurnInterval.Default);
         s.IsSecret.Should().BeTrue();
     }
 
     [Fact]
     public void IsSecret_Plain_IsFalse() {
-        var s = new GameSession("B", "at://u", "creator", TwoPlayers(), PlainTemplate());
+        var s = new GameSession("B", "at://u", "creator", TwoPlayers(), PlainTemplate(), TurnInterval.Default);
         s.IsSecret.Should().BeFalse();
     }
 
     [Fact]
     public async Task RenderPublic_Kriegspiel_ReturnsBoardHidden() {
         var svc = new TestableGameService();
-        var s = new GameSession("C", "at://u", "creator", TwoPlayers(), KriegspielTemplate());
+        var s = new GameSession("C", "at://u", "creator", TwoPlayers(), KriegspielTemplate(), TurnInterval.Default);
         s.Join("d2");
         (await svc.RenderPublicBoardAsync(s, TestContext.Current.CancellationToken)).IsT1.Should().BeTrue();
     }
@@ -49,7 +49,7 @@ public class BskyGameServiceTests {
     [Fact]
     public async Task RenderPublic_Plain_ReturnsBoardView() {
         var svc = new TestableGameService();
-        var s = new GameSession("D", "at://u", "creator", TwoPlayers(), PlainTemplate());
+        var s = new GameSession("D", "at://u", "creator", TwoPlayers(), PlainTemplate(), TurnInterval.Default);
         s.Join("d2");
         (await svc.RenderPublicBoardAsync(s, TestContext.Current.CancellationToken)).IsT0.Should().BeTrue();
     }
@@ -185,13 +185,36 @@ public class BskyGameServiceTests {
     [Fact]
     public void FormatGameLine_MultipleGames_IsConsistent() {
         var template = PlainTemplate();
-        var s1 = new GameSession("E1", "at://u1", "did:plc:p1", TwoPlayers(), template);
+        var s1 = new GameSession("E1", "at://u1", "did:plc:p1", TwoPlayers(), template, TurnInterval.Default);
         s1.Join("did:plc:p2");
         s1.GameState.PlayersState.PlayerInfos[1].CommandName = "p2.bsky.social";
         var line = BskyGameService.FormatGameLine(s1, "did:plc:p2", new ModelNamer());
         // The joiner's CommandName is a handle (multi-char), so its default Mark
         // is the player index (1), and the display is "CommandName(Mark)".
         line.Should().Contain("[E1]").And.Contain(template.CommandName).And.Contain("p2.bsky.social(1)");
+    }
+
+    [Fact]
+    public void FormatGameLine_ActiveGame_ShowsTurnElapsedAndInterval() {
+        var template = PlainTemplate();
+        var interval = new TurnInterval(TimeSpan.FromHours(1));
+        var s1 = new GameSession("E1", "at://u1", "did:plc:p1", TwoPlayers(), template, interval);
+        s1.Join("did:plc:p2");
+        // Advance 'now' 5 minutes past the turn start so the awaiting elapsed is
+        // deterministic, and pass it explicitly so the line is time-deterministic.
+        var now = s1.TurnStartedAt.AddMinutes(5);
+        var line = BskyGameService.FormatGameLine(s1, "did:plc:p2", new ModelNamer(), now: now);
+        line.Should().Contain("turn 5m / 1h");
+    }
+
+    [Fact]
+    public void FormatGameLine_EndedGame_HidesTurnInfo() {
+        var template = PlainTemplate();
+        var s1 = new GameSession("E1", "at://u1", "did:plc:p1", TwoPlayers(), template, TurnInterval.Default);
+        s1.Join("did:plc:p2");
+        s1.Resign(0); // resigning one of two players ends the game
+        var line = BskyGameService.FormatGameLine(s1, "did:plc:p2", new ModelNamer());
+        line.Should().Contain("ended").And.NotContain(" / ");
     }
 
     // ── !new player-count validation ──
@@ -209,6 +232,29 @@ public class BskyGameServiceTests {
         var svc = new TestableGameService();
         await svc.TestHandleMentionAsync("at://u", "did:plc:p1", "!new basic-tictactoe abc", TestContext.Current.CancellationToken);
         svc.TestedResponses.Single().Should().Contain("not a valid player count");
+    }
+
+    [Fact]
+    public async Task New_WithInterval_SetsSessionInterval() {
+        var svc = new TestableGameService();
+        await svc.TestHandleMentionAsync("at://u", "did:plc:p1", "!new basic-tictactoe 2 1h", TestContext.Current.CancellationToken);
+        var session = svc.Store.GetActiveSessions().Single();
+        session.Interval.Value.Should().Be(TimeSpan.FromHours(1));
+    }
+
+    [Fact]
+    public async Task New_DefaultInterval_IsTwentyMinutes() {
+        var svc = new TestableGameService();
+        await svc.TestHandleMentionAsync("at://u", "did:plc:p1", "!new basic-tictactoe", TestContext.Current.CancellationToken);
+        var session = svc.Store.GetActiveSessions().Single();
+        session.Interval.Value.Should().Be(TimeSpan.FromMinutes(20));
+    }
+
+    [Fact]
+    public async Task New_InvalidInterval_Rejected() {
+        var svc = new TestableGameService();
+        await svc.TestHandleMentionAsync("at://u", "did:plc:p1", "!new basic-tictactoe 2 99x", TestContext.Current.CancellationToken);
+        svc.TestedResponses.Single().Should().Contain("not a valid turn interval");
     }
 
     // ── !resign tests ──

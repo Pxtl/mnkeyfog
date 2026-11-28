@@ -21,6 +21,12 @@ public record CasualMNKTemplate
     ) : base(commandName, description, legalPlayerCounts, boardBuilders, isKriegspiel, isSynchronousMode) {
     }
 
+    /// <summary>
+    /// A casual MNK game's timeout action is a pass: a player who exceeds the
+    /// turn interval passes their turn.
+    /// </summary>
+    public override string? TimeoutActionCommandName => "pass";
+
     public override IEnumerable<GameActionFactory> GetAvailableActions(GameState gameState, int playerIndex)
     => gameState.PlayersState.CanTakeTurn(playerIndex)
         ? [new MNKActionFactory(), new PassActionFactory()]

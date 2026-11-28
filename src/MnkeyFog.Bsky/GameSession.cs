@@ -27,12 +27,21 @@ public sealed class GameSession {
     public string CreatorDid { get; }
     public DateTimeOffset StartedAt { get; }
 
+    /// <summary>The interval after which a player who has not acted is timed out.</summary>
+    public TurnInterval Interval { get; }
+
+    /// <summary>
+    /// When the current turn (round-robin) or round (synchronous) started
+    /// awaiting. A player is timed out once this exceeds <see cref="Interval"/>.
+    /// </summary>
+    public DateTimeOffset TurnStartedAt { get; private set; }
+
     /// <summary>Maps Bluesky DIDs to player indices in the game.</summary>
     public IReadOnlyDictionary<string, int> PlayerDids => _playerByDid;
     private readonly ConcurrentDictionary<string, int> _playerByDid = new();
     #endregion
 
-    public GameSession(string code, string uriKey, string creatorDid, IReadOnlyList<PlayerInfo> playerMarks, IGameTemplate template) {
+    public GameSession(string code, string uriKey, string creatorDid, IReadOnlyList<PlayerInfo> playerMarks, IGameTemplate template, TurnInterval interval) {
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
         ArgumentException.ThrowIfNullOrWhiteSpace(uriKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(creatorDid);
@@ -41,6 +50,8 @@ public sealed class GameSession {
         UriKey = uriKey;
         CreatorDid = creatorDid;
         StartedAt = DateTimeOffset.UtcNow;
+        Interval = interval;
+        TurnStartedAt = StartedAt;
         GameState = new GameState(playerMarks.ToArray(), template, isRandomPlayerOrder: false);
 
         // Creator claims the first player slot. Their CommandName (their typeable
@@ -50,7 +61,7 @@ public sealed class GameSession {
     }
 
     /// <summary>Restore a session from persisted state (crash recovery).</summary>
-    internal GameSession(string code, string uriKey, string creatorDid, DateTimeOffset startedAt, IReadOnlyDictionary<string, int> playerDids, GameState gameState) {
+    internal GameSession(string code, string uriKey, string creatorDid, DateTimeOffset startedAt, TurnInterval interval, DateTimeOffset turnStartedAt, IReadOnlyDictionary<string, int> playerDids, GameState gameState) {
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
         ArgumentException.ThrowIfNullOrWhiteSpace(uriKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(creatorDid);
@@ -61,6 +72,8 @@ public sealed class GameSession {
         UriKey = uriKey;
         CreatorDid = creatorDid;
         StartedAt = startedAt;
+        Interval = interval;
+        TurnStartedAt = turnStartedAt;
         GameState = gameState;
 
         foreach (var (did, index) in playerDids) {
@@ -118,10 +131,36 @@ public sealed class GameSession {
         => GameState.GameTemplate.PlayManager is SynchronizedPlayManager
             || GameState.GameTemplate is MNKTemplate { IsKriegspiel: true };
 
+    /// <summary>
+    /// Reset the turn/round-start timer. Call when a new turn (round-robin) or
+    /// round (synchronous) begins awaiting a player.
+    /// </summary>
+    public void MarkTurnStarted() {
+        TurnStartedAt = DateTimeOffset.UtcNow;
+    }
+
     #region commands
     /// <summary>Attempt a move for the given player. Returns the play result.</summary>
     public IPlayActionResult Attempt(int playerIndex, GameAction action) {
-        return GameState.Attempt(action.GetPlayerAction(playerIndex));
+        var result = GameState.Attempt(action.GetPlayerAction(playerIndex));
+        if (result.IsTurnDone && !GameState.IsGameOver) {
+            // A turn was consumed and the game continues: the next active
+            // player's turn clock starts now.
+            MarkTurnStarted();
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// End the current round (synchronous mode) and start the next round's turn
+    /// clock. The play managers only advance on round end, so this is where the
+    /// round boundary resets the turn clock for synchronous games.
+    /// </summary>
+    public void EndRound() {
+        GameState.EndRound(out _);
+        if (!GameState.IsGameOver) {
+            MarkTurnStarted();
+        }
     }
 
     /// <summary>Resign the given player, conceding the game to the other players. Returns the resign result.</summary>

@@ -75,6 +75,7 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
         _pollingTask = Task.Run(() => RunPollersAsync(
             options.MentionPollInterval ?? options.DirectMessagePollInterval ?? TimeSpan.FromSeconds(10),
             options.DirectMessagePollInterval ?? TimeSpan.FromSeconds(10),
+            options.TurnTimeoutPollInterval ?? TimeSpan.FromSeconds(10),
             _pollingCancellationSource.Token
         ));
 
@@ -143,15 +144,27 @@ public abstract class BskyBotService : IAsyncDisposable, IPlayerNotifier {
     private async Task RunPollersAsync(
         TimeSpan mentionInterval,
         TimeSpan dmInterval,
+        TimeSpan timeoutInterval,
         CancellationToken cancellationToken
     ) {
-        // Run both pollers concurrently; the loop stays alive until cancellation.
+        // Run all pollers concurrently; the loop stays alive until cancellation.
         var mentionPoller = PollMentionsAsync(mentionInterval, cancellationToken);
         var dmPoller = PollDirectMessagesAsync(dmInterval, cancellationToken);
-        await Task.WhenAll(mentionPoller, dmPoller);
+        var timeoutPoller = PollTimeoutsAsync(timeoutInterval, cancellationToken);
+        await Task.WhenAll(mentionPoller, dmPoller, timeoutPoller);
     }
 
-    private static async Task WaitForIntervalAsync(TimeSpan interval, CancellationToken cancellationToken) {
+    /// <summary>
+    /// Polls active games for turns that have exceeded their interval and
+    /// applies the template's timeout action. The base bot has no timed-out
+    /// turns to process, so this is a no-op; <see cref="BskyGameService"/>
+    /// overrides it.
+    /// </summary>
+    protected virtual Task PollTimeoutsAsync(TimeSpan interval, CancellationToken cancellationToken) { // c#-fmt
+        return Task.CompletedTask;
+    }
+
+    protected static async Task WaitForIntervalAsync(TimeSpan interval, CancellationToken cancellationToken) {
         try {
             await Task.Delay(interval, cancellationToken);
         } catch (OperationCanceledException) {
