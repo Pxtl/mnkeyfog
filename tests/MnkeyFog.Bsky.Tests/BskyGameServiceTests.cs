@@ -211,6 +211,29 @@ public class BskyGameServiceTests {
         svc.TestedResponses.Single().Should().Contain("not a valid player count");
     }
 
+    [Fact]
+    public async Task New_WithInterval_SetsSessionInterval() {
+        var svc = new TestableGameService();
+        await svc.TestHandleMentionAsync("at://u", "did:plc:p1", "!new basic-tictactoe 2 1h", TestContext.Current.CancellationToken);
+        var session = svc.Store.GetActiveSessions().Single();
+        session.Interval.Value.Should().Be(TimeSpan.FromHours(1));
+    }
+
+    [Fact]
+    public async Task New_DefaultInterval_IsTwentyMinutes() {
+        var svc = new TestableGameService();
+        await svc.TestHandleMentionAsync("at://u", "did:plc:p1", "!new basic-tictactoe", TestContext.Current.CancellationToken);
+        var session = svc.Store.GetActiveSessions().Single();
+        session.Interval.Value.Should().Be(TimeSpan.FromMinutes(20));
+    }
+
+    [Fact]
+    public async Task New_InvalidInterval_Rejected() {
+        var svc = new TestableGameService();
+        await svc.TestHandleMentionAsync("at://u", "did:plc:p1", "!new basic-tictactoe 2 99x", TestContext.Current.CancellationToken);
+        svc.TestedResponses.Single().Should().Contain("not a valid turn interval");
+    }
+
     // ── !resign tests ──
 
     [Fact]

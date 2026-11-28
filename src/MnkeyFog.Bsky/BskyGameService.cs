@@ -243,14 +243,22 @@ public class BskyGameService : BskyBotService {
         int playerCount;
         if (commandArgs.Count > 1) {
             if (!int.TryParse(commandArgs[1], out playerCount)) {
-                await channel.RespondAsync($"'{commandArgs[1]}' is not a valid player count. Usage: !new [game] [players]");
+                await channel.RespondAsync($"'{commandArgs[1]}' is not a valid player count. Usage: !new [game] [players] [interval]");
                 return;
             }
         } else {
             playerCount = legalPlayerCounts.Min();
         }
 
-        var result = GameStore.CreateGame(uriKey, senderDid, playerCount, gameTemplate, TurnInterval.Default);
+        TurnInterval interval = TurnInterval.Default;
+        if (commandArgs.Count > 2) {
+            if (!TurnInterval.TryParse(commandArgs[2], out interval)) {
+                await channel.RespondAsync($"'{commandArgs[2]}' is not a valid turn interval. Usage: !new [game] [players] [interval]");
+                return;
+            }
+        }
+
+        var result = GameStore.CreateGame(uriKey, senderDid, playerCount, gameTemplate, interval);
         await result.Match(
             async created => {
                 // The creator's CommandName is their handle (typeable identity),
