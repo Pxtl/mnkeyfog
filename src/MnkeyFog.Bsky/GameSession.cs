@@ -142,7 +142,25 @@ public sealed class GameSession {
     #region commands
     /// <summary>Attempt a move for the given player. Returns the play result.</summary>
     public IPlayActionResult Attempt(int playerIndex, GameAction action) {
-        return GameState.Attempt(action.GetPlayerAction(playerIndex));
+        var result = GameState.Attempt(action.GetPlayerAction(playerIndex));
+        if (result.IsTurnDone && !GameState.IsGameOver) {
+            // A turn was consumed and the game continues: the next active
+            // player's turn clock starts now.
+            MarkTurnStarted();
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// End the current round (synchronous mode) and start the next round's turn
+    /// clock. The play managers only advance on round end, so this is where the
+    /// round boundary resets the turn clock for synchronous games.
+    /// </summary>
+    public void EndRound() {
+        GameState.EndRound(out _);
+        if (!GameState.IsGameOver) {
+            MarkTurnStarted();
+        }
     }
 
     /// <summary>Resign the given player, conceding the game to the other players. Returns the resign result.</summary>

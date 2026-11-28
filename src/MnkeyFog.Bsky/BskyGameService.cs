@@ -418,7 +418,7 @@ public class BskyGameService : BskyBotService {
         var resultText = result.GetResultText(session.GameState.PlayersState);
 
         if (session.GameState.PlayersState.IsRoundOver) {
-            session.GameState.EndRound(out _);
+            session.EndRound();
         }
 
         if (session.GameState.IsGameOver) {
@@ -498,7 +498,7 @@ public class BskyGameService : BskyBotService {
         }
 
         if (session.GameState.PlayersState.IsRoundOver) {
-            session.GameState.EndRound(out _);
+            session.EndRound();
         }
 
         // Public/DM channel response — for secret games this posts the

@@ -33,6 +33,29 @@ public class GameSessionTurnTimingTests {
     }
 
     [Fact]
+    public void Attempt_ConsumedTurn_ResetsTurnStartedAt() {
+        var s = new GameSession("A", "at://u", "creator", TwoPlayers(), MakeTemplate(), TurnInterval.Default);
+        s.Join("did:plc:p2");
+        var before = DateTimeOffset.UtcNow;
+        var result = s.Attempt(0, new MNKAction(0, 1, 1));
+        result.IsTurnDone.Should().BeTrue();
+        s.TurnStartedAt.Should().BeOnOrAfter(before);
+    }
+
+    [Fact]
+    public void EndRound_ResetsTurnStartedAt() {
+        var s = new GameSession("A", "at://u", "creator", TwoPlayers(), SynchronousTemplate(), TurnInterval.Default);
+        var before = DateTimeOffset.UtcNow;
+        s.EndRound();
+        s.TurnStartedAt.Should().BeOnOrAfter(before);
+    }
+
+    private static MNKTemplate SynchronousTemplate() {
+        var b = MNKBoardRuleset.CreateBoardBuilder(3, 3);
+        return new MNKTemplate([b], isSynchronousMode: true, isKriegspiel: false);
+    }
+
+    [Fact]
     public void CreateGame_PassesIntervalToSession() {
         var store = new GameStore();
         var interval = new TurnInterval(TimeSpan.FromMinutes(45));
