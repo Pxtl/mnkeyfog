@@ -23,6 +23,12 @@ public record BskyBotOptions {
     public TimeSpan? MentionPollInterval { get; init; }
 
     /// <summary>
+    /// How often to check active games for timed-out turns. Defaults to 10
+    /// seconds when unset.
+    /// </summary>
+    public TimeSpan? TurnTimeoutPollInterval { get; init; }
+
+    /// <summary>
     /// Optional directory for game-state persistence. When set, active games are
     /// mirrored to JSON files there and reloaded on startup (crash recovery).
     /// </summary>

@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using idunno.AtProto;
 using idunno.Bluesky;
 using Microsoft.Extensions.Logging;
+using MnkeyFog.Model.MNKGame;
 
 namespace MnkeyFog.Bsky;
 
@@ -526,6 +527,87 @@ public class BskyGameService : BskyBotService {
         } else {
             GameStore.Save(session.Code);
         }
+    }
+    #endregion
+
+    #region turn timeouts
+    /// <inheritdoc/>
+    protected override async Task PollTimeoutsAsync(TimeSpan interval, CancellationToken cancellationToken) {
+        while (!cancellationToken.IsCancellationRequested) {
+            try {
+                await CheckAndApplyTurnTimeoutsAsync(cancellationToken: cancellationToken);
+            } catch (OperationCanceledException) {
+                throw;
+            } catch (Exception ex) {
+                Logger.LogWarning(ex, "Turn timeout check failed; will retry.");
+            }
+
+            await WaitForIntervalAsync(interval, cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Applies the template's timeout action to every active game whose current
+    /// turn has exceeded its interval, then DMs the timed-out player(s) and
+    /// persists. <paramref name="now"/> defaults to <see cref="DateTimeOffset.UtcNow"/>
+    /// so tests can supply a fixed value.
+    /// </summary>
+    protected internal async Task CheckAndApplyTurnTimeoutsAsync(DateTimeOffset? now = null, CancellationToken cancellationToken = default) {
+        now ??= DateTimeOffset.UtcNow;
+        foreach (var session in GameStore.GetActiveSessions()) {
+            if (session.GameState.IsGameOver) {
+                continue;
+            }
+            if (now - session.TurnStartedAt < session.Interval.Value) {
+                continue;
+            }
+
+            await ApplyTurnTimeoutAsync(session, cancellationToken);
+        }
+    }
+
+    private async Task ApplyTurnTimeoutAsync(GameSession session, CancellationToken cancellationToken) {
+        var available = session.GameState.PlayersState.PlayersAvailableForTurn.ToList();
+        if (available.Count == 0) {
+            return;
+        }
+
+        var isResign = session.GameState.GameTemplate.TimeoutActionCommandName is null;
+        foreach (var player in available) {
+            if (isResign) {
+                session.Resign(player.Index);
+            } else {
+                session.Attempt(player.Index, new PassAction());
+            }
+        }
+
+        if (!session.GameState.IsGameOver) {
+            session.MarkTurnStarted();
+        }
+
+        foreach (var player in available) {
+            var did = GetDidByIndex(session, player.Index);
+            if (did is null) {
+                continue;
+            }
+
+            var text = isResign
+                ? $"Your turn timed out in game {session.Code}. Resigning you from the game."
+                : $"Your turn timed out in game {session.Code}. Passing for you.";
+            await SendDmToPlayerAsync(did, text, cancellationToken);
+        }
+
+        GameStore.Save(session.Code);
+    }
+
+    private static string? GetDidByIndex(GameSession session, int playerIndex) {
+        foreach (var (did, index) in session.PlayerDids) {
+            if (index == playerIndex) {
+                return did;
+            }
+        }
+
+        return null;
     }
     #endregion
 
