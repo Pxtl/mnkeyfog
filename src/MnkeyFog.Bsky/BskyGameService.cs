@@ -663,7 +663,7 @@ public class BskyGameService : BskyBotService {
         return (null, tokens);
     }
 
-    internal static string FormatGameLine(GameSession session, string did, ModelNamer namer) {
+    internal static string FormatGameLine(GameSession session, string did, ModelNamer namer, DateTimeOffset? now = null) {
         var players = session.GameState.PlayersState;
         var playerIndex = session.GetPlayerIndex(did);
         var playerDisplay = playerIndex is not null
@@ -674,8 +674,12 @@ public class BskyGameService : BskyBotService {
             : playerIndex is not null && players.CanTakeTurn(playerIndex)
                 ? $"your turn (round {players.RoundIndex + 1}, move {playerIndex.Value + 1})"
                 : "in progress";
-        var elapsed = FormatElapsed(DateTimeOffset.UtcNow - session.StartedAt);
-        return $"[{session.Code}] {session.GameState.GameTemplate.CommandName} — {stateText}{playerDisplay}, started {elapsed}";
+        var nowResolved = now ?? DateTimeOffset.UtcNow;
+        var elapsed = FormatElapsed(nowResolved - session.StartedAt);
+        var turnInfo = session.GameState.IsGameOver
+            ? ""
+            : $", turn {TurnInterval.Format(nowResolved - session.TurnStartedAt)} / {session.Interval}";
+        return $"[{session.Code}] {session.GameState.GameTemplate.CommandName} — {stateText}{playerDisplay}{turnInfo}, started {elapsed}";
     }
 
     private static string FormatElapsed(TimeSpan span) {

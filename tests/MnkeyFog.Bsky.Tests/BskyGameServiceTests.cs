@@ -194,6 +194,29 @@ public class BskyGameServiceTests {
         line.Should().Contain("[E1]").And.Contain(template.CommandName).And.Contain("p2.bsky.social(1)");
     }
 
+    [Fact]
+    public void FormatGameLine_ActiveGame_ShowsTurnElapsedAndInterval() {
+        var template = PlainTemplate();
+        var interval = new TurnInterval(TimeSpan.FromHours(1));
+        var s1 = new GameSession("E1", "at://u1", "did:plc:p1", TwoPlayers(), template, interval);
+        s1.Join("did:plc:p2");
+        // Advance 'now' 5 minutes past the turn start so the awaiting elapsed is
+        // deterministic, and pass it explicitly so the line is time-deterministic.
+        var now = s1.TurnStartedAt.AddMinutes(5);
+        var line = BskyGameService.FormatGameLine(s1, "did:plc:p2", new ModelNamer(), now: now);
+        line.Should().Contain("turn 5m / 1h");
+    }
+
+    [Fact]
+    public void FormatGameLine_EndedGame_HidesTurnInfo() {
+        var template = PlainTemplate();
+        var s1 = new GameSession("E1", "at://u1", "did:plc:p1", TwoPlayers(), template, TurnInterval.Default);
+        s1.Join("did:plc:p2");
+        s1.Resign(0); // resigning one of two players ends the game
+        var line = BskyGameService.FormatGameLine(s1, "did:plc:p2", new ModelNamer());
+        line.Should().Contain("ended").And.NotContain(" / ");
+    }
+
     // ── !new player-count validation ──
 
     [Fact]
